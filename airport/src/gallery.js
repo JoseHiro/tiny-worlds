@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as P from './parts.js';
 import * as I from './interior.js';
 import * as R from './rooms.js';
+import * as C from './cabin.js';
 
 function lineup() {
   const g = new THREE.Group();
@@ -107,6 +108,16 @@ const ITEMS = [
   { group: 'r9', tag: 'R9 · Door', name: '到着口（自動ドア）', note: '幅2.4 · ガラス戸が左右に開く · 黄色の看板', build: () => R.arrivalDoors() },
   { group: 'r9', tag: 'R9 · Prop', name: '柵・出迎えボード', note: '金属の柵 · 手に持つ看板（名前入り）', build: () => { const g = new THREE.Group(); g.add(R.railing(2.4)); const p = P.person('woman', { mode: 'hold' }); p.position.z = 0.6; p.rotation.y = -Math.PI / 2; p.add(R.welcomeBoard('SORA!')); g.add(p); g.userData.update = (t) => p.userData.update(t); return g; } },
   { group: 'r9', tag: 'R9 · Desk', name: '案内所', note: '半円のカウンター · スカイの「i」', build: () => R.infoDesk() },
+
+  // ---- 機内（人の縮尺、上半分を切り取った機体）----
+  { group: 'cabin', tag: 'Cabin · Kit', name: '機内（3-3配列 × 18列）', note: '全長36 · 窓の高さで切った断面 · 前方ギャレー・後方トイレ・コックピット · 乗客が通路を進み、棚に荷物を上げて座る · 全員が座るとベルトサインが点く', wide: true, build: () => C.cabinKit(), view: [0.55, 1.25, 1.0], zoom: 0.62 },
+  { group: 'cabin', tag: 'Cabin · Seat', name: '座席（3連）', note: '座面0.3 · ピッチ0.85 · 前3列はティール、他はネイビー · ヘッドレストに白いカバー', build: () => { const g = new THREE.Group(); const a = C.seatTriple({ color: P.PALETTE.teal }); a.position.x = 0.85; g.add(a, C.seatTriple()); return g; }, view: [1, 0.8, 0.9] },
+  { group: 'cabin', tag: 'Cabin · Bins', name: '荷物棚', note: '座席の上 y 1.6〜2.0 · 半透明（断面表示で座席が隠れないように）· 扉が持ち上がる', build: () => { const b = C.overheadBins(4); b.userData.update = (t) => { const o = (Math.sin(t) + 1) / 2; b.children.forEach((c) => { if (c.userData.dynamic) c.rotation.x = o * 1.2; }); }; return b; } },
+  { group: 'cabin', tag: 'Cabin · Galley', name: 'ギャレー', note: 'カート3台の収納 · コーヒーメーカー · オーブン', build: () => C.galleyBlock() },
+  { group: 'cabin', tag: 'Cabin · Lav', name: 'トイレ', note: '空き表示が緑に光る', build: () => C.lavatory() },
+  { group: 'cabin', tag: 'Cabin · Cockpit', name: 'コックピット', note: '操縦席2 · 光る計器 · 機長と副操縦士が座る', build: () => { const c = C.cockpit(); const ps = c.userData.seats.map((p) => { const x = P.person('pilot', { mode: 'sit' }); x.position.copy(p); c.add(x); return x; }); const up = c.userData.update; c.userData.update = (t) => { up(t); ps.forEach((x) => x.userData.update(t)); }; return c; }, view: [-0.8, 0.9, 1.0] },
+  { group: 'cabin', tag: 'Cabin · Cart', name: 'サービスカート', note: '0.6×0.34 · オレンジの天板 · 飲み物', build: () => C.serviceCart() },
+  { group: 'cabin', tag: 'Cabin · Sign', name: 'ベルト着用サイン', note: '天井の表示 · 点灯で着席の合図', build: () => { const b = C.beltSign(); b.position.y = 0.6; const up = b.userData.update; b.userData.update = (t) => { b.userData.on = Math.sin(t) > 0; up(); }; return b; } },
 ];
 
 function pair(a, b, mode) {
@@ -148,7 +159,7 @@ function luggageSet() {
   return g;
 }
 
-const GROUPS = { all: 'すべて', outside: '機体・車両・人', r1: 'R1 チェックイン', r2: 'R2 保安検査', r3: 'R3 ラウンジ', r4: 'R4 ゲート', r5: 'R5 仕分け', r6: 'R6 到着通路', r7: 'R7/R8 手荷物受取', r9: 'R9 到着ロビー' };
+const GROUPS = { all: 'すべて', outside: '機体・車両・人', r1: 'R1 チェックイン', r2: 'R2 保安検査', r3: 'R3 ラウンジ', r4: 'R4 ゲート', r5: 'R5 仕分け', r6: 'R6 到着通路', r7: 'R7/R8 手荷物受取', r9: 'R9 到着ロビー', cabin: '機内' };
 
 function crowd() {
   const g = new THREE.Group();
@@ -299,7 +310,7 @@ function openDetail(stage) {
 // console hook for inspecting a part up close: __gallery.look([x,y,z], [tx,ty,tz])
 // __gallery.shot('r2') renders that group's room kit at 1200×760 and overlays the image.
 window.__gallery = {
-  shot(group, advance = 0, w = 1200, h = 760) {
+  shot(group, advance = 0, w = 1200, h = 760, camPos = null, target = null) {
     const stage = stages.find((s) => s.item.group === group && s.item.wide);
     const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
     r.setSize(w, h, false);
@@ -308,6 +319,7 @@ window.__gallery = {
     r.toneMapping = THREE.NeutralToneMapping;
     r.setClearColor(0xf1ece3);
     const cam = stage.camera.clone();
+    if (camPos) { cam.position.set(...camPos); cam.lookAt(...target); }
     cam.aspect = w / h;
     cam.updateProjectionMatrix();
     stage.pivot.rotation.y = 0;
