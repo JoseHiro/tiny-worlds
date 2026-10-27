@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tiny Worlds</title>
+  <meta name="description" content="Small 3D dioramas with stories inside — built in the browser with three.js." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg: #efe8dc; --card: #f7f2ea; --line: #ddd4c5; --ink: #1c2232; --muted: #7a7366; --accent: #e8673c; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #141a28; --card: #1c2333; --line: #2f374a; --ink: #f1ece3; --muted: #a7a2b4; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 Inter, system-ui, sans-serif; }
+    main { max-width: 960px; margin: 0 auto; padding: 72px 24px 96px; }
+    .eyebrow { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+    h1 { font: italic 400 clamp(56px, 10vw, 96px)/0.95 'Instrument Serif', serif; margin: 10px 0 18px; }
+    h1 span { color: var(--accent); }
+    .lede { max-width: 560px; color: var(--muted); margin: 0 0 48px; }
+    .world { display: grid; grid-template-columns: 220px 1fr; gap: 28px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; }
+    .world svg { width: 100%; height: auto; border-radius: 12px; background: #e5dccc; }
+    .world h2 { font: italic 400 40px/1 'Instrument Serif', serif; margin: 4px 0 10px; }
+    .world p { margin: 0 0 14px; color: var(--muted); }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+    .tags span { font-size: 11px; border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; color: var(--muted); }
+    .links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .links a { text-decoration: none; font-weight: 500; font-size: 13px; padding: 8px 14px; border-radius: 9px; border: 1px solid var(--ink); color: var(--ink); }
+    .links a.primary { background: var(--ink); color: var(--bg); }
+    .soon { margin-top: 18px; border: 1px dashed var(--line); border-radius: 18px; padding: 22px 24px; color: var(--muted); }
+    footer { margin-top: 56px; font-size: 12px; color: var(--muted); }
+    footer a { color: inherit; }
+    @media (max-width: 640px) { .world { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">Dioramas · Stories · three.js</div>
+    <h1>Tiny Worlds<span>.</span></h1>
+    <p class="lede">小さな3Dの世界に、それぞれの物語を詰めたジオラマ集です。人も乗り物も荷物も、一つひとつが自分の目的を持って動いています。<br>Small 3D worlds, each with its own stories. Every person, vehicle and suitcase has somewhere to be.</p>
+
+    <article class="world">
+      <svg viewBox="0 0 220 150" role="img" aria-label="Mini Airport">
+        <rect x="18" y="62" width="184" height="64" rx="6" fill="#b7cd96" />
+        <rect x="18" y="122" width="184" height="10" fill="#8a6a4c" />
+        <rect x="26" y="70" width="168" height="10" rx="2" fill="#4a4f5b" />
+        <rect x="60" y="92" width="100" height="22" rx="2" fill="#f4f0e8" />
+        <rect x="60" y="111" width="100" height="3" fill="#e8673c" />
+        <rect x="170" y="78" width="6" height="34" fill="#f4f0e8" />
+        <rect x="166" y="72" width="14" height="8" rx="2" fill="#2c3a57" />
+        <g transform="translate(70 40) rotate(-8)">
+          <rect x="0" y="6" width="64" height="9" rx="4.5" fill="#f4f0e8" />
+          <path d="M26 10 L18 -6 L26 -6 L40 10 Z" fill="#e8f0f4" />
+          <path d="M2 10 L-4 -2 L4 -2 L10 8 Z" fill="#e8673c" />
+          <circle cx="58" cy="10" r="2" fill="#2c3a57" />
+        </g>
+      </svg>
+      <div>
+        <div class="eyebrow">World 01</div>
+        <h2>Mini Airport</h2>
+        <p>滑走路1本・スポット6つ、2階建てターミナルの空港の午後。チェックインから搭乗、手荷物の旅、到着ロビーでの再会まで、乗客と荷物を一人ずつ、一個ずつ追いかけられます。<br>
+          One runway, six stands and a two-storey terminal. Follow any passenger or suitcase from check-in to boarding, or from the aircraft to the arrivals hall.</p>
+        <div class="tags"><span>断面表示 cutaway</span><span>便ごとの乗客 per-flight passengers</span><span>手荷物の追跡 bag tracking</span><span>ストーリー story cast</span><span>日本語 / English</span></div>
+        <div class="links">
+          <a class="primary" href="./airport/">開く Open</a>
+          <a href="./airport/parts.html">パーツと部屋 Parts &amp; rooms</a>
+          <a href="https://github.com/JoseHiro/tiny-worlds/blob/main/airport/DESIGN.md">設計書 Design notes</a>
+        </div>
+      </div>
+    </article>
+
+    <div class="soon">次の世界を準備中… / More worlds coming.</div>
+
+    <footer>Built with <a href="https://threejs.org">three.js</a> · <a href="https://github.com/JoseHiro/tiny-worlds">GitHub</a></footer>
+  </main>
+</body>
+</html>

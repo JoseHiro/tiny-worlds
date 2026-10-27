@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mini Airport</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #efe8dc;
+      --panel: rgba(250, 247, 241, 0.88);
+      --line: #ddd4c5;
+      --ink: #1c2232;
+      --muted: #7a7366;
+      --accent: #e8673c;
+      --ok: #4f9d8f;
+      --warn: #e0a43a;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); font: 13px/1.45 Inter, system-ui, sans-serif; }
+    #app { position: fixed; inset: 0; }
+    #app canvas { display: block; }
+    #labels { position: fixed; inset: 0; pointer-events: none; }
+    .tag {
+      font: 600 10px Inter, sans-serif; color: var(--ink); white-space: nowrap;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 99px;
+      padding: 2px 8px; display: flex; gap: 6px; align-items: center; transform: translateY(-6px);
+    }
+    .tag i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+    .tag.sel { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .tag.story { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 9px; padding: 1px 6px; }
+
+    .brand { position: fixed; left: 28px; top: 24px; pointer-events: none; max-width: 300px; }
+    .eyebrow { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+    .brand h1 { font: italic 400 54px/0.95 'Instrument Serif', serif; margin: 6px 0 10px; }
+    .brand h1 span { color: var(--accent); }
+    .brand p { margin: 0; color: var(--muted); font-size: 12px; }
+    .howto { position: fixed; left: 28px; bottom: 22px; color: var(--muted); font-size: 11px; max-width: 420px; pointer-events: none; }
+    .howto b { color: var(--ink); font-weight: 600; }
+
+    .panel {
+      position: fixed; right: 18px; top: 18px; bottom: 18px; width: 292px;
+      background: var(--panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--line); border-radius: 16px; padding: 16px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .panel h3 { margin: 0 0 6px; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+    .clock { display: flex; justify-content: space-between; align-items: baseline; }
+    .clock b { font: 500 28px 'JetBrains Mono', monospace; letter-spacing: -.02em; }
+    .live { font-size: 10px; color: var(--ok); display: flex; align-items: center; gap: 5px; }
+    .live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); animation: pulse 1.6s infinite; }
+    @keyframes pulse { 50% { opacity: .3; } }
+    .seg { display: flex; border: 1px solid var(--ink); border-radius: 8px; overflow: hidden; }
+    .seg button { flex: 1; border: 0; background: transparent; font: 500 11px Inter, sans-serif; color: var(--ink); padding: 6px 0; cursor: pointer; }
+    .seg button + button { border-left: 1px solid var(--ink); }
+    .seg button.on { background: var(--ink); color: #fff; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .stat { border: 1px solid var(--line); border-radius: 10px; padding: 7px 8px; }
+    .stat b { display: block; font: 500 17px 'JetBrains Mono', monospace; }
+    .stat span { font-size: 10px; color: var(--muted); }
+    ul { list-style: none; margin: 0; padding: 0; }
+    .stand { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); cursor: pointer; }
+    .stand:first-child { border-top: 0; }
+    .stand .id { font: 600 12px 'JetBrains Mono', monospace; }
+    .stand .fl { font-weight: 600; }
+    .stand .st { font-size: 11px; color: var(--muted); }
+    .chip { font-size: 10px; padding: 2px 7px; border-radius: 99px; background: #e8e1d4; color: var(--muted); white-space: nowrap; }
+    .chip.busy { background: #fbe1d5; color: #b8492a; }
+    .chip.ok { background: #d9ece7; color: #2f7466; }
+    .bar { height: 4px; border-radius: 4px; background: #e8e1d4; overflow: hidden; margin-top: 4px; }
+    .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+    .card { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+    .card .num { font: italic 400 30px/1 'Instrument Serif', serif; }
+    .card .route { color: var(--muted); font-size: 11px; margin: 2px 0 8px; }
+    .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 11px; }
+    .kv span { color: var(--muted); }
+    .empty { color: var(--muted); font-size: 11px; }
+    .log li { font-size: 11px; padding: 3px 0; display: flex; gap: 8px; color: var(--ink); }
+    .log li time { font-family: 'JetBrains Mono', monospace; color: var(--muted); }
+    .toggles { display: flex; gap: 6px; flex-wrap: wrap; }
+    .toggles button { border: 1px solid var(--ink); background: transparent; border-radius: 8px; padding: 5px 10px; font: 500 11px Inter, sans-serif; cursor: pointer; color: var(--ink); }
+    .toggles button.on { background: var(--ink); color: #fff; }
+    .langbtn { border: 1px solid var(--ink); background: transparent; color: var(--ink); border-radius: 6px; padding: 2px 7px; font: 600 10px Inter, sans-serif; cursor: pointer; }
+
+    body.night { --panel: rgba(28, 34, 50, 0.82); --line: #3a4359; --ink: #f1ece3; --muted: #a7a2b4; }
+    body.night .brand h1, body.night .howto b { color: #f1ece3; }
+    body.night .seg button.on, body.night .toggles button.on { background: #f1ece3; color: #1c2232; }
+    body.night .chip, body.night .bar { background: #333c52; }
+
+    @media (max-width: 820px) {
+      .brand { left: 16px; top: 14px; }
+      .brand h1 { font-size: 38px; }
+      .brand p, .howto { display: none; }
+      .panel { top: auto; left: 12px; right: 12px; bottom: 12px; width: auto; max-height: 42vh; }
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="labels"></div>
+
+  <div class="brand">
+    <div class="eyebrow">Diorama · Live operations</div>
+    <h1>Mini<br />Airport<span>.</span></h1>
+    <p data-i18n="brandP"></p>
+  </div>
+  <div class="howto" data-i18n-html="howto"></div>
+
+  <aside class="panel">
+    <div>
+      <div class="clock"><b id="clock">14:00</b><span style="display:flex;gap:8px;align-items:center"><span class="live">LIVE</span><button id="lang" class="langbtn">EN</button></span></div>
+      <div class="seg" id="speed" style="margin-top:8px">
+        <button data-v="0">❚❚</button><button data-v="1" class="on">1×</button><button data-v="2">2×</button><button data-v="4">4×</button>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="sArr">0</b><span data-i18n="landings">着陸</span></div>
+      <div class="stat"><b id="sDep">0</b><span data-i18n="takeoffs">離陸</span></div>
+      <div class="stat"><b id="sOnTime">—</b><span data-i18n="onTime">定時率</span></div>
+    </div>
+    <p id="paxLine" class="empty" style="margin:-6px 0 0"></p>
+    <div><h3 data-i18n="storyTitle">ストーリー</h3><ul id="story"></ul></div>
+    <div><h3 data-i18n="stands">スポット</h3><ul id="stands"></ul></div>
+    <div><h3 data-i18n="selected">選択中の便</h3><div id="flight"><p class="empty">飛行機をクリックすると、ここに便の詳細が表示されます。</p></div></div>
+    <div>
+      <h3 data-i18n="tod">時間帯</h3>
+      <div class="seg" id="tod"><button data-v="day" class="on" data-i18n="day">昼</button><button data-v="dusk" data-i18n="dusk">夕方</button><button data-v="night" data-i18n="night">夜</button></div>
+    </div>
+    <div>
+      <h3 data-i18n="terminal">ターミナル</h3>
+      <div class="seg" id="view" style="margin-bottom:8px"><button data-v="auto" class="on" data-i18n="auto">自動</button><button data-v="exterior" data-i18n="exterior">外観</button><button data-v="f2" data-i18n="f2">2F 出発</button><button data-v="f1" data-i18n="f1">1F 到着</button></div>
+      <h3 data-i18n="display">表示</h3>
+      <div class="toggles"><button id="tLabels" class="on" data-i18n="labels">ラベル</button><button id="tFollow" data-i18n="follow">追跡</button><button id="tReset" data-i18n="reset">全体を見る</button></div>
+    </div>
+    <div><h3 data-i18n="logTitle">ログ</h3><ol class="log" id="log" style="margin:0;padding:0;list-style:none"></ol></div>
+  </aside>
+
+  <script type="module" src="./src/airport.js"></script>
+</body>
+</html>
