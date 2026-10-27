@@ -88,7 +88,22 @@
     body.night .seg button.on, body.night .toggles button.on { background: #f1ece3; color: #1c2232; }
     body.night .chip, body.night .bar { background: #333c52; }
 
+    .cabin {
+      position: fixed; left: 24px; bottom: 56px; width: min(460px, calc(100vw - 360px)); height: 270px;
+      border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column;
+      background: transparent; box-shadow: 0 10px 30px rgba(28, 34, 50, .18); pointer-events: none;
+    }
+    .cabin[hidden] { display: none; }
+    .cabin header {
+      pointer-events: auto; display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      background: var(--panel); backdrop-filter: blur(8px); padding: 6px 10px; font: 600 11px Inter, sans-serif;
+      border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden;
+    }
+    .cabin header span { overflow: hidden; text-overflow: ellipsis; }
+    .cabin header button { border: 0; background: transparent; font-size: 16px; line-height: 1; cursor: pointer; color: var(--ink); }
+    #cabinViewport { flex: 1; }
     @media (max-width: 820px) {
+      .cabin { left: 12px; right: 12px; width: auto; top: 76px; bottom: auto; height: 190px; }
       .brand { left: 16px; top: 14px; }
       .brand h1 { font-size: 38px; }
       .brand p, .howto { display: none; }
@@ -114,6 +129,11 @@
     <p data-i18n="brandP"></p>
   </div>
   <div class="howto" data-i18n-html="howto"></div>
+
+  <section id="cabinFrame" class="cabin" hidden>
+    <header><span id="cabinTitle">機内</span><button id="cabinClose" aria-label="close">×</button></header>
+    <div id="cabinViewport"></div>
+  </section>
 
   <aside class="panel">
     <div>

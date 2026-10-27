@@ -15,6 +15,7 @@ One runway, six stands and a two-storey terminal (departures on 2F, arrivals on 
 - **Live operations** — landings, jet bridges, fuelling, baggage trains, pushbacks and take-offs; one aircraft on the runway at a time
 - **Per-flight passengers** — check-in → security → lounge → gate → jet bridge → seat; and aircraft → arrivals corridor → escalator → baggage claim → pick-up curb
 - **Bag tracking** — every checked bag goes from the desk scale through the sorting hall onto its stand's baggage train and into the hold; inbound bags come off onto the carousel and only their owner picks them up
+- **Cabin view** — click an aircraft (or follow someone boarding) to open a person-scale cut-open cabin: passengers walk to their own seats, stow bags and later file off row by row
 - **Story cast** — Hana's family trip, Kenji running late, Sora's missing backpack, Midori's reunion, Captain Tanaka, Yu the marshaller. Click anyone to follow them
 - **日本語 / English** UI
 

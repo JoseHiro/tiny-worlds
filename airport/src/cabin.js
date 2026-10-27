@@ -150,7 +150,21 @@ export function seatedCrowd(spots) {
     hair.setColorAt(i, hairs[(i * 3) % hairs.length]);
   });
   for (const im of [bodies, heads, hair]) { im.castShadow = true; g.add(im); }
-  g.userData = { kind: 'crowd' };
+  // per-seat on/off (an empty seat gets a zero-scale matrix)
+  const on = spots.map(() => true);
+  const zero = new THREE.Matrix4().makeScale(0, 0, 0);
+  g.userData = {
+    kind: 'crowd',
+    set(i, show) {
+      if (on[i] === show) return;
+      on[i] = show;
+      const p = spots[i];
+      bodies.setMatrixAt(i, show ? m4.makeTranslation(p.x - 0.02, 0.56, p.z) : zero);
+      heads.setMatrixAt(i, show ? m4.makeTranslation(p.x - 0.02, 0.98, p.z) : zero);
+      hair.setMatrixAt(i, show ? m4.makeTranslation(p.x - 0.05, 1.0, p.z) : zero);
+      for (const im of [bodies, heads, hair]) im.instanceMatrix.needsUpdate = true;
+    },
+  };
   return g;
 }
 
@@ -239,7 +253,8 @@ export function cabinKit({ livery = { body: PALETTE.white, tail: PALETTE.orange,
   for (let r = 1; r <= CABIN.rows; r++) for (const l of LETTERS) all.push({ row: r, letter: l, pos: seatPos(r, l) });
   let s = 7;
   const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-  const filled = all.filter(() => rnd() < load);
+  // load = 1 → every seat has a filler that can be switched on/off by index (cabin view)
+  const filled = load >= 1 ? all : all.filter(() => rnd() < load);
   const free = all.filter((x) => !filled.includes(x));
   const crowd = seatedCrowd(filled.map((x) => x.pos));
   g.add(crowd);
@@ -320,6 +335,6 @@ export function cabinKit({ livery = { body: PALETTE.white, tail: PALETTE.orange,
       for (const sg of signs) sg.userData.on = !actors.length || seated;
     },
   };
-  outer.userData = { ...g.userData, cabin: g };
+  outer.userData = { ...g.userData, cabin: g, seats: all, crowd: crowd.userData, setFiller: (i, on) => crowd.userData.set(i, on) };
   return outer;
 }

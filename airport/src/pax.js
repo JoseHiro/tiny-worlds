@@ -185,6 +185,7 @@ export class PaxSystem {
     steps.push({ to: V(b.docked.x + 0.9, 1.42, b.docked.z), act: 'aboard', then: (a) => {
       a.stage = 'aboard';
       a.flight = stand.flight;
+      this.world.cabins?.board(stand.flight, a); // gets a seat; the cabin view walks them to it
       const f = stand.flight;
       if (f) f.boarded = (f.boarded ?? 0) + 1;
       this.stats.boarded++;
@@ -280,6 +281,7 @@ export class PaxSystem {
       x.type = type;
       x.flight = flight;
       x.from = flight?.from;
+      if (flight) W.cabins?.deplane(flight, x); // their seat empties in the cabin view
       opt.init?.(x);
     }, opt.speed);
   }
@@ -292,6 +294,7 @@ export class PaxSystem {
       for (const s of this.world.stands) {
         const f = s.flight;
         if (!f || f.state !== 'parked' || s.bridge.extend < 0.99 || f.t > TURN.deboard + 2) continue;
+        this.world.cabins?.get(f); // the seat map decides how many tracked passengers are aboard
         f.paxIn ??= 5 + Math.floor(Math.random() * 5);
         f.deplaned ??= 0;
         if (f.deplaned < f.paxIn) {

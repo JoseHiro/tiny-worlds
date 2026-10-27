@@ -12,6 +12,7 @@ import { PaxSystem } from './pax.js';
 import { BagSystem } from './bags.js';
 import * as T from './i18n.js';
 import { Story } from './story.js';
+import { CabinBook, CabinView } from './cabinview.js';
 import { World, TURN, fmtClock } from './sim.js';
 import * as L from './layout.js';
 
@@ -68,6 +69,17 @@ const world = new World(scene, scenery);
 const pax = new PaxSystem(scene, world, terminal);
 const bags = new BagSystem(scene, world, terminal);
 const story = new Story(scene, world, pax);
+const cabins = new CabinBook(world);
+const cabinView = new CabinView(renderer, $('cabinFrame'), $('cabinViewport'), world, cabins);
+let cabinClosed = null; // the flight whose cabin window the user closed
+$('cabinClose').addEventListener('click', () => { cabinClosed = cabinView.flight; cabinView.show(null); });
+
+// which flight's cabin to show: the selected aircraft, or the flight of the person being followed
+function cabinFlight() {
+  if (selected) return selected;
+  if (person && ['boarding', 'aboard', 'deplane', 'corridor'].includes(person.activity)) return person.flight ?? person.stand?.flight ?? null;
+  return null;
+}
 
 // Terminal view: 'auto' opens the roof when the camera comes close.
 let viewPick = 'auto';
@@ -309,6 +321,7 @@ function personCard(a) {
     <div class="kv">
       <span>${T.t('doing')}</span><b>${acts[a.activity] ?? '—'}</b>
       ${a.stand ? `<span>${T.t('gateLabel')}</span><b>${a.stand.id}</b>` : ''}
+      ${a.seat ? `<span>${T.t('seat')}</span><b>${a.seat}</b>` : ''}
       ${f ? `<span>${T.t('flightLabel')}</span><b>${f.number} · ${T.city(f.from)} → ${T.city(f.to)}</b>` : ''}
     </div>${castEntry?.last ? `<p class="empty" style="margin:8px 0 0">${castEntry.last[T.getLang()]}</p>` : ''}</div>`;
 }
@@ -342,6 +355,7 @@ function flightCard(f) {
       <span>${T.t('std')}</span><b>${f.std != null ? fmtClock(f.std) : '—'}</b>
       <span>${T.t('speedAlt')}</span><b>${kt} kt · ${ft} ft</b>
       <span>${T.t('paxOffOn')}</span><b>${f.deplaned ?? 0}${ppl} / ${f.boarded ?? 0}${ppl}</b>
+      <span>${T.t('seats')}</span><b>${cabins.seatedCount(f)} / ${cabinView.seatsTotal}</b>
       <span>${T.t('bagsOffOn')}</span><b>${f.bagsUnloaded ?? 0}${pcs} / ${f.bagsLoaded ?? 0}${pcs}</b>
     </div>${svc}</div>`;
 }
@@ -400,6 +414,12 @@ renderer.setAnimationLoop(() => {
   pax.update(world.time, rdt * speed);
   bags.update(world.time, rdt * speed);
   story.update(rdt * speed);
+  cabins.update();
+  const cf = cabinFlight();
+  if (cf !== cabinClosed) cabinClosed = null;
+  cabinView.focus = person;
+  cabinView.show(cabinClosed ? null : cf);
+  cabinView.update(world.time, rdt * speed);
   updateView();
 
   if (person) {
@@ -421,6 +441,11 @@ renderer.setAnimationLoop(() => {
     uiTimer = 0.25;
   }
   composer.render();
+  cabinView.render();
+  if (cabinView.flight) {
+    const f = cabinView.flight;
+    $('cabinTitle').textContent = `${T.t('cabin')} · ${f.number} · ${T.city(f.from)} → ${T.city(f.to)} · ${T.status(f.status)} · ${T.t('seats')} ${cabins.seatedCount(f)}/${cabinView.seatsTotal}`;
+  }
   labels.render(scene, camera);
 });
 
@@ -432,8 +457,13 @@ function snapshot(w = 1440, h = 900) {
   camera.setViewOffset(w, h, 155, 0, w, h);
   camera.updateProjectionMatrix();
   composer.render();
+  cabinView.render();
+  if (cabinView.flight) {
+    const f = cabinView.flight;
+    $('cabinTitle').textContent = `${T.t('cabin')} · ${f.number} · ${T.city(f.from)} → ${T.city(f.to)} · ${T.status(f.status)} · ${T.t('seats')} ${cabins.seatedCount(f)}/${cabinView.seatsTotal}`;
+  }
   const url = renderer.domElement.toDataURL('image/jpeg', 0.85);
   resize();
   return url;
 }
-window.__airport = { world, terminal, pax, bags, story, selectPerson, scenery, camera, controls, renderer, scene, flyTo, select, snapshot, setTod: (k) => { todKey = k; }, setView: (k) => { viewPick = k; } };
+window.__airport = { cabins, cabinView, world, terminal, pax, bags, story, selectPerson, scenery, camera, controls, renderer, scene, flyTo, select, snapshot, setTod: (k) => { todKey = k; }, setView: (k) => { viewPick = k; } };

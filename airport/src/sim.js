@@ -60,7 +60,8 @@ class Flight {
     this.to = b;
     this.root = new THREE.Group();
     this.pitchGroup = new THREE.Group();
-    this.model = P.airplane(P.LIVERIES[LIVERY_KEYS[this.id % LIVERY_KEYS.length]]);
+    this.liveryKey = LIVERY_KEYS[this.id % LIVERY_KEYS.length];
+    this.model = P.airplane(P.LIVERIES[this.liveryKey]);
     this.root.add(this.pitchGroup);
     this.pitchGroup.add(this.model);
     this.root.userData.flight = this;

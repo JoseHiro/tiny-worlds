@@ -24,6 +24,7 @@ const D = {
       tookOff: (p) => `${p.n} 離陸（${p.to}行き）`,
     },
     langBtn: 'EN',
+    seat: '座席', seats: '座席', cabin: '機内',
     storyTitle: 'ストーリー', storyIdle: '出番待ち', watch: '見る', doing: '今していること', gateLabel: 'ゲート', flightLabel: '便',
     acts: {
       arrive: '車寄せに到着', checkin: 'チェックインへ', desk: 'チェックイン中', security: '保安検査へ', xray: 'X線検査', cleared: '保安検査を通過',
@@ -57,6 +58,7 @@ const D = {
       tookOff: (p) => `${p.n} departed for ${p.to}`,
     },
     langBtn: '日本語',
+    seat: 'Seat', seats: 'Seats', cabin: 'Cabin',
     storyTitle: 'Story', storyIdle: 'waiting for their scene', watch: 'Watch', doing: 'Doing', gateLabel: 'Gate', flightLabel: 'Flight',
     acts: {
       arrive: 'Dropped off', checkin: 'To check-in', desk: 'Checking in', security: 'To security', xray: 'Bags through the X-ray', cleared: 'Through security',
