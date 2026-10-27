@@ -5,7 +5,7 @@ import { PALETTE, mat, mesh, rbox, box, cyl } from './parts.js';
 import { bakeStatic } from './merge.js';
 import { glowMat } from './scenery.js';
 import { checkInHall, hangingSign, planter, bench } from './interior.js';
-import { securityHall, lounge, gateLounge, baggageHall, claimHall, arrivalsLobby, escalator, travelator, glassPartition, textPanel } from './rooms.js';
+import { securityHall, lounge, gateLounge, baggageHall, claimHall, arrivalsLobby, immigrationHall, escalator, travelator, glassPartition, textPanel } from './rooms.js';
 import * as L from './layout.js';
 
 const { x0, x1, z0, z1 } = L.TERMINAL;
@@ -184,7 +184,8 @@ export function buildTerminal(scene) {
     lounges: L.ROOMS.lounges.map((r) => place(T.rooms2, lounge(), r)),
     sorting: place(T.rooms1, baggageHall({ ambient: false }), L.ROOMS.sorting),
     claim: place(T.rooms1, claimHall({ ambient: false }), L.ROOMS.claim),
-    lobby: place(T.rooms1, arrivalsLobby(), L.ROOMS.lobby),
+    lobby: place(T.rooms1, arrivalsLobby({ ambient: false }), L.ROOMS.lobby),
+    immigration: place(T.rooms1, immigrationHall({ ambient: false }), L.ROOMS.immigration),
   };
   for (const g of Object.values(T)) scene.add(g);
 

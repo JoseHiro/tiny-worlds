@@ -51,6 +51,7 @@ export const ROOMS = {
   sorting: { x: -46, z: S, y: RY1 },
   claim: { x: 22, z: S, y: RY1 },
   lobby: { x: 40, z: S, y: RY1 },
+  immigration: { x: 40, z: (BANDS.gates[0] + BANDS.gates[1]) / 2, y: RY1 }, // 1F, under the gates
 };
 // arrivals corridor east end → escalator down (toward +X) into the 1F back-of-house hall
 export const ESCALATOR = { topX: 46.5, z: (BANDS.corridor[0] + BANDS.corridor[1]) / 2 };
@@ -71,6 +72,7 @@ export const DEPOT = {
 export const DECK = { y: FLOOR.f2, z0: 41.8, z1: 46.0, x0: -61, x1: 61, rampLen: 30 };
 export const CURB = { z: 48.6, lane: [47.4, 49.8], sidewalk: [46.4, 47.4] };
 export const ROAD = { west: 53, east: 55.6, z0: 51.4, z1: 57.2 };
+export const RANK_X = 54, BUS_X = 24; // taxi rank and bus stop on the arrivals curb
 export const DOORS = { f2: [-57.5, -50.5, -42.5, -35.5], f1: [26.2, 33, 39, 46] }; // f2 = check-in hall entrances
 export const PARKING = { x0: 30, x1: 104, z0: 59.4, z1: 67.6 };
 export const FUEL_FARM = { x0: -106, x1: -84, z0: 59.4, z1: 67.6 };

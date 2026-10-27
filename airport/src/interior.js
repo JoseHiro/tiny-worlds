@@ -442,8 +442,8 @@ export function routine(parent, role, steps, { crowd = [], offset = 0, speed = 1
     if (a.arrivedIdx === a.i) return; // each stop fires once (restart already arrives at step 0)
     a.arrivedIdx = a.i;
     bag(st.bag);
+    st.then?.(a); // first, so markers see what the stop changed (e.g. the flight boarded)
     if (st.act) { a.activity = st.act; a.onAct?.(st.act, a); } // story / UI markers
-    st.then?.(a);
     if (st.wait || st.until) {
       a.waiting = st.wait || 0;
       a.until = st.until ?? null;

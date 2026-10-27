@@ -26,6 +26,11 @@ const CAST = [
       gate: (c) => L2(`ゲート${c.stand}へ。窓から飛行機を見つけて大はしゃぎ`, `At gate ${c.stand}, nose pressed to the window`),
       boarding: () => L2('搭乗開始！家族で並びます', 'Boarding! The family lines up'),
       aboard: (c) => L2(`${c.flight} で那覇へ出発！`, `Off to Naha on ${c.flight}!`),
+      // …and home again
+      deplane: (c) => L2(`ハナの一家が ${c.flight} で沖縄から帰ってきました。ハナの手にはお土産の袋`, `Hana's family is back from Okinawa on ${c.flight}. Hana carries a bag of souvenirs`),
+      waitBag: () => L2('スーツケースが出てくるのを待っています', 'Waiting for their suitcase'),
+      reunion: () => L2('おばあちゃんが「おかえり ハナ！」のボードで出迎え', 'Grandma is there with a sign: "Welcome home, Hana!"'),
+      curb: () => L2('家族そろって車で家へ', 'The whole family drives home together'),
     },
   },
   {
@@ -37,6 +42,11 @@ const CAST = [
       gate: () => L2('ゲートまで全力疾走', 'Sprinting down the concourse'),
       boarding: () => L2('間に合った！ 飛行機はブリッジを外さずに待っていました', 'Made it! The aircraft waited for him'),
       aboard: (c) => L2(`最後の1人として ${c.flight} に搭乗。ドアが閉まります`, `Last one aboard ${c.flight}. Doors closing`),
+      familyWaits: () => L2('ケンジさんの家族が到着ロビーへ。でも帰りの便は遅れています', "Kenji's family arrives in the hall — but his flight home is late"),
+      stillWaiting: () => L2('「パパまだかな…」', '"Is Daddy here yet…?"'),
+      deplane: (c) => L2(`遅れていた ${c.flight} がやっと到着`, `The delayed ${c.flight} finally lands`),
+      reunion: () => L2('やっと再会。「おかえり、パパ！」', 'Together at last. "Welcome home, Daddy!"'),
+      curb: () => L2('ケンジさんは家族と車で帰ります', 'Kenji heads home with his family'),
     },
   },
   {
@@ -44,10 +54,14 @@ const CAST = [
     lines: {
       deplane: (c) => L2(`ソラが台北から ${c.flight} で到着`, `Sora arrives from Taipei on ${c.flight}`),
       waitBag: () => L2('ターンテーブルで自分の荷物を待っています', 'Waiting at the carousel for the backpack'),
+      immigration: () => L2('入国審査の列に並んでいます', 'Queueing at immigration'),
+      passport: () => L2('パスポートにスタンプ。ようこそ日本へ', 'A stamp in the passport. Welcome to Japan'),
       lostBag: () => L2('…荷物が出てこない', "…the bag isn't coming out"),
       service: () => L2('手荷物サービスで相談。次の便で届くそうです', 'At baggage service: it will come on the next flight'),
       delivery: () => L2('ソファで次の便を待っています', 'Waiting for the next flight to land'),
       bagDelivered: () => L2('荷物が届きました！', 'The bag has arrived!'),
+      waitBus: () => L2('空港バスで街へ向かいます', 'Waiting for the airport bus into town'),
+      waitTaxi: () => L2('タクシー乗り場へ', 'To the taxi rank'),
       curb: () => L2('ソラは笑顔で街へ', 'Sora heads into town, smiling'),
     },
   },
@@ -56,7 +70,8 @@ const CAST = [
     lines: {
       deplane: (c) => L2(`ミドリさんが ${c.from} から到着。孫に会いに来ました`, `Midori arrives from ${c.from} to see her grandchild`),
       gotBag: () => L2('荷物を受け取りました', 'She has her suitcase'),
-      reunion: () => L2('到着ロビーで「ミドリさん」のボードを発見。再会！', 'In the arrivals hall: a board with her name. Reunion!'),
+      immigration: () => L2('到着通路を抜けて1Fへ', 'Down to the arrivals floor'),
+      reunion: () => L2('到着ロビーで「おばあちゃん！」のボードを持った孫が駆け寄ってきた。再会！', 'In the arrivals hall her grandchild runs up with a sign: "Grandma!" Reunion!'),
       curb: () => L2('みんなで車に乗って帰ります', 'Everyone heads home together'),
     },
   },
@@ -131,6 +146,8 @@ export class Story {
     actor.storyId = c.id;
     actor.onAct = (act, a) => {
       if (c.id === 'hana' && act === 'boarding' && a.stand?.flight) a.stand.flight.to = NAHA;
+      // the flight they leave on will come back with them (sim.js schedules the return)
+      if ((c.id === 'hana' || c.id === 'kenji') && act === 'aboard' && a.flight && a.kind === 'departure') { a.flight.storyReturn = c.id; c.away = true; }
       if (lead) this.say(c, act, this.ctx(a));
     };
   }
@@ -182,8 +199,8 @@ export class Story {
         if (c.id === 'sora') f.from = TAIPEI;
         f.deplaned = (f.deplaned ?? 0) + 1;
         const a = P.spawnArrival(stand, c.id === 'sora'
-          ? { type: 'backpacker', lost: true, delivery: true, init: (x) => { x.stand = stand; this.listen(c, x); } }
-          : { type: 'senior', meet: true, init: (x) => { x.stand = stand; this.listen(c, x); } });
+          ? { type: 'backpacker', lost: true, delivery: true, greeter: false, init: (x) => { x.stand = stand; this.listen(c, x); } }
+          : { type: 'senior', greeter: { type: 'child', board: 'おばあちゃん！' }, init: (x) => { x.stand = stand; this.listen(c, x); } });
         if (a) this.tag(c, a, c.name);
         return this.begin(c, [a]);
       }
@@ -231,10 +248,12 @@ export class Story {
       if (c.id === 'yu') continue;
       if (c.state === 'active' && c.members.every((m) => m.done)) {
         this.untag(c);
-        c.state = 'waiting';
-        c.cooldown = 40 + Math.random() * 30;
         c.members = [];
+        if (c.away) { c.state = 'away'; c.away = false; c.last = L2('旅行中…帰りの便を待っています', 'Away — waiting for the flight home'); }
+        else { c.state = 'waiting'; c.cooldown = 40 + Math.random() * 30; c.ph = c.lead = c.greeters = null; c.saidWaiting = false; }
       }
+      if (c.state === 'away') this.homecoming(c);
+      if (c.ph && c.lead) { c.ph.activity = c.lead.activity; c.ph.done = c.lead.done; c.ph.meetSide = c.lead.meetSide; }
       if (c.state === 'waiting') {
         c.cooldown -= dt;
         if (c.cooldown <= 0 && !this.start(c)) c.cooldown = 3;
@@ -251,3 +270,53 @@ export class Story {
     for (const c of this.cast) for (const t of c.tags) t.el.textContent = `★ ${t.name[getLang()]}`;
   }
 }
+
+// ---------- the way home (methods added to Story) ----------
+
+Story.prototype.homecoming = function (c) {
+  const W = this.world, P = this.pax;
+  // Kenji's family comes to the hall at the time his flight was due; it is running late
+  if (c.id === 'kenji' && !c.ph) {
+    const r = W.returns.find((x) => x.opts.returnStory === 'kenji') ?? null;
+    const f = W.flights.find((x) => x.returnStory === 'kenji');
+    if ((r && W.time >= r.due - 90) || f) {
+      c.ph = { activity: null, done: false, meetSide: 1 }; // stands in for Kenji until he lands
+      const ticket = P.ticket('car');
+      c.greeters = [['woman', 'おかえり パパ', 0], ['child', 'パパ！', 0.7]].map(([type, board, offset]) => {
+        const g = P.spawnGreeter(c.ph, ticket, { type, board, offset });
+        this.tag(c, g, type === 'woman' ? L2('ケンジさんの家族', "Kenji's family") : L2('ケンジさんの子', "Kenji's kid"));
+        return g;
+      });
+      c.waitT = W.time;
+      this.say(c, 'familyWaits');
+    }
+  }
+  if (c.id === 'kenji' && c.ph && !c.saidWaiting && W.time - c.waitT > 60) { c.saidWaiting = true; this.say(c, 'stillWaiting'); }
+
+  const f = W.flights.find((x) => x.returnStory === c.id && x.state === 'parked' && x.stand.bridge.extend > 0.99 && !x.storyDone);
+  if (!f) return;
+  f.storyDone = true;
+  const stand = f.stand;
+  if (c.id === 'hana') {
+    const child = P.spawnArrival(stand, { type: 'child', greeter: { type: 'senior', board: 'おかえり ハナ！' }, init: (x) => {
+      x.stand = stand;
+      this.listen(c, x);
+      const gift = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.2, 0.08), new THREE.MeshStandardMaterial({ color: 0xe8673c }));
+      gift.position.set(0.05, 0.3, -0.3);
+      x.p.add(gift);
+      x.cleanup = () => gift.removeFromParent();
+    } });
+    const parents = ['woman', 'business'].map((type, i) => P.spawnArrival(stand, { type, ticket: child.ticket, rideOffset: 1.3 + i * 0.8, init: (x) => { x.stand = stand; this.listen(c, x, false); } }));
+    f.deplaned = (f.deplaned ?? 0) + 3;
+    this.tag(c, child, c.name);
+    parents.forEach((p, i) => this.tag(c, p, i ? L2('ハナのパパ', "Hana's Dad") : L2('ハナのママ', "Hana's Mum")));
+    this.begin(c, [child, ...parents]);
+  } else if (c.id === 'kenji') {
+    const a = P.spawnArrival(stand, { type: 'business', greeterActor: c.greeters?.[0], init: (x) => { x.stand = stand; this.listen(c, x); } });
+    f.deplaned = (f.deplaned ?? 0) + 1;
+    this.tag(c, a, c.name);
+    c.lead = a;
+    this.begin(c, [a, ...(c.greeters ?? [])]);
+    c.ph = c.ph ?? { activity: null, done: false, meetSide: 1 };
+  }
+};

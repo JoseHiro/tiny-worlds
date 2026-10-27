@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import * as P from './parts.js';
 import { routine } from './interior.js';
+import { welcomeBoard } from './rooms.js';
 import { TURN } from './sim.js';
 import * as L from './layout.js';
 
@@ -16,6 +17,11 @@ const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const F2 = L.FLOOR.f2 + 0.02; // 2F walking height (rooms sit 0.02 above the slab)
 const F1 = L.FLOOR.f1 + 0.04;
 const LOOK = { px: 0, nx: Math.PI, pz: -Math.PI / 2, nz: Math.PI / 2 };
+const INTL = new Set(['ICN', 'TPE', 'PVG', 'HKG']);
+const NAMES = {
+  ja: ['サクラ', 'ユウキ', 'ハルト', 'アオイ', 'リク', 'メイ', 'ソウタ', 'ユイ', 'タケシ', 'ナオミ'],
+  en: ['Emma', 'Liam', 'Mina', 'Jun', 'Wei', 'Ji-ho', 'Lucas', 'Chloe', 'Arjun', 'Lena'],
+};
 
 export class PaxSystem {
   constructor(scene, world, terminal) {
@@ -44,6 +50,7 @@ export class PaxSystem {
   }
 
   release(a, type) {
+    a.cleanup?.();
     a.p.visible = false;
     a.p.removeFromParent();
     if (!this.pool.has(type)) this.pool.set(type, []);
@@ -152,8 +159,9 @@ export class PaxSystem {
     const lounge = useSecond ? R.lounges[1] : l0, la = lounge.userData.anchors;
     go(this.at(l0, la0.entryW));
     if (useSecond) go(this.at(l0, la0.exitE));
-    if (!fast) steps.push({ to: lift(this.at(lounge, pick(la.waitSpots))), until: () => !!stand.flight, act: 'lounge', mode: Math.random() < 0.3 ? 'hold' : 'idle', look: pick([LOOK.nz, LOOK.px, LOOK.nx]) });
-    go(this.at(lounge, la.toNorth), { act: 'toGate' });
+    const spotKey = `lounge${useSecond ? 1 : 0}`;
+    if (!fast) steps.push({ to: (a) => { a.spot = this.claim(spotKey, la.waitSpots.length); return lift(this.at(lounge, la.waitSpots[a.spot])); }, until: () => !!stand.flight, act: 'lounge', mode: Math.random() < 0.3 ? 'hold' : 'idle', look: pick([LOOK.nz, LOOK.px, LOOK.nx]) });
+    go(this.at(lounge, la.toNorth), { act: 'toGate', then: (a) => { if (a.spot !== undefined) this.unclaim(spotKey, a.spot); } });
     go(this.at(lounge, la.exitN));
     // concourse → gate room
     const cz = (L.BANDS.concourse[0] + L.BANDS.concourse[1]) / 2;
@@ -204,7 +212,7 @@ export class PaxSystem {
   // ---------- arrivals ----------
 
   // options: type, lost (no bag on this flight), delivery (wait at the service desk for the
-  // next flight to bring it), meet (go to the arrivals lobby and meet the "ミドリさん" sign), init
+  // next flight to bring it), greeter ({ type, board } or true / false: someone meets them), init
   spawnArrival(stand, opt = {}) {
     const R = this.rooms;
     const W = this.world;
@@ -224,12 +232,23 @@ export class PaxSystem {
     go(top - 0.2, L.ESCALATOR.z, F2, { act: 'escalator' });
     go(top + 5.4, L.ESCALATOR.z, F1, { speed: 0.9 });
     go(top + 6.2, L.ESCALATOR.z, F1);
-    // 1F back-of-house → baggage claim
+    // 1F: immigration (international flights queue at the booths, domestic walk past)
+    const imm = R.immigration, ia = imm.userData.anchors;
+    const iat = (p) => this.at(imm, p).setY(F1);
+    const intl = !!flight && INTL.has(flight.from[1]);
+    const japanese = !intl || Math.random() < 0.5;
+    go(52.6, L.ESCALATOR.z, F1);
+    go(52.6, imm.position.z, F1);
+    steps.push({ to: iat(ia.entryE), act: intl ? 'immigration' : 'domestic' });
+    const booth = (japanese ? 0 : 2) + Math.floor(Math.random() * 2);
+    for (const st of ia.steps(intl, booth)) steps.push({ ...st, to: iat(st.to) });
+    // → baggage claim
     const claim = R.claim, a = claim.userData.anchors;
     const at = (p) => this.at(claim, p).setY(F1);
     const lz = (L.BANDS.concourse[0] + L.BANDS.concourse[1]) / 2;
-    go(50.6, L.ESCALATOR.z, F1);
-    go(50.6, lz, F1);
+    const out = steps.at(-1).to;
+    go(out.x - 1.4, out.z, F1);
+    go(out.x - 1.4, lz, F1);
     go(at(a.entryN).x, lz, F1);
     steps.push({ to: at(a.entryN), act: 'toClaim' });
     steps.push({ to: at(a.aisle) });
@@ -258,32 +277,127 @@ export class PaxSystem {
       steps.push({ to: (x) => at(a.belt[x.spot].at), wait: 1.4, mode: 'lift', bag: true, act: 'gotBag', then: () => { if (bag?.state === 'belt') bags.claim(bag); } });
       steps.push({ to: (x) => at(a.belt[x.spot].at.clone().setZ(1.9)), then: (x) => this.unclaim('belt', x.spot) });
     }
-    steps.push({ to: at(a.toExit) });
-    steps.push({ to: at(a.exitS), act: 'exit' });
-    if (opt.meet) { // round to the arrivals lobby, where someone holds up a name board
-      const lobby = R.lobby, lat = (x, z) => this.at(lobby, V(x, z)).setY(F1);
-      go(at(a.exitS).x, L.TERMINAL.z1 + 0.8, 0);
-      steps.push({ to: lat(-2, 6.0).setY(0) });
-      steps.push({ to: lat(-2, 3.0) });
-      steps.push({ to: lat(0.9, -0.5) });
-      steps.push({ to: lat(0.9, -0.5), wait: 6, mode: 'hold', look: LOOK.nx, act: 'reunion' });
-      steps.push({ to: lat(4, 3.0) });
-      steps.push({ to: lat(4, 6.0).setY(0) });
+    // out through the arrivals doors into the hall
+    steps.push({ to: at(V(3.0, 1.9)) });
+    steps.push({ to: at(V(3.4, 0.0)) });
+    steps.push({ to: at(V(7.9, 0.0)), act: 'exit' });
+    const lobby = R.lobby, la = lobby.userData.anchors;
+    const lat = (p) => this.at(lobby, p).setY(F1);
+    steps.push({ to: lat(la.doorIn) });
+    steps.push({ to: lat(la.aisleIn), act: 'arrivalsHall' });
+    // opt.greeterActor: someone already waiting in the hall (a story greeter who came early)
+    const greeterOpt = opt.ticket ? false : opt.greeterActor ? true : opt.greeter ?? (Math.random() < 0.3);
+    let ticket = opt.ticket ?? null; // travelling with someone who has the ride sorted
+    if (ticket) {
+      steps.push({ to: lat(la.aisleEnd) });
+    } else if (greeterOpt) {
+      // someone is waiting: meet at the end of the aisle, then off to the pick-up curb together
+      // (step out of the aisle to wait, so the people behind can get past)
+      ticket = opt.greeterActor?.rideTicket ?? this.ticket('car');
+      steps.push({ to: lat(la.aisleEnd) });
+      steps.push({ to: (x) => lat(la.aisleEnd.clone().add(V(1.6, x.meetSide * 1.1))), until: (x) => x.greeter?.atMeet, look: 0, act: 'meeting', then: (x) => { x.atMeet = true; } });
+      steps.push({ to: (x) => lat(la.aisleEnd.clone().add(V(1.6, x.meetSide * 1.1))), wait: 3, mode: 'hold', look: 0, act: 'reunion' });
+    } else {
+      steps.push({ to: lat(la.aisleEnd) });
+      ticket = this.ticket(Math.random() < 0.5 ? 'taxi' : 'bus');
     }
-    const out = 20 + Math.random() * 36;
-    const last = steps.at(-1).to;
-    go(typeof last === 'function' ? at(a.exitS).x : last.x, L.CURB.sidewalk[0] - 0.6, 0);
-    go(out, L.CURB.sidewalk[0] - 0.6, 0, { act: 'curb' });
-    go(out + 0.4, L.CURB.sidewalk[0] + 0.3, 0);
+    const exit = la.exits[ticket.kind === 'taxi' ? 1 : 0];
+    steps.push({ to: lat(la.toExits[ticket.kind === 'taxi' ? 1 : 0]) });
+    steps.push({ to: lat(exit), then: () => { ticket.open = true; } });
+    this.curbSteps(ticket, opt.rideOffset ?? 0).forEach((st) => steps.push(st));
+
     this.stats.arriving++;
-    return this.run(type, steps, () => { this.stats.arriving--; }, (x) => {
+    const actor = this.run(type, steps, () => { this.stats.arriving--; }, (x) => {
       x.kind = 'arrival';
       x.type = type;
       x.flight = flight;
       x.from = flight?.from;
+      x.ticket = ticket;
+      x.meetSide = Math.random() < 0.5 ? -1 : 1;
+      x.name = pick(intl && !japanese ? NAMES.en : NAMES.ja);
       if (flight) W.cabins?.deplane(flight, x); // their seat empties in the cabin view
+      if (opt.greeterActor) x.greeter = opt.greeterActor;
       opt.init?.(x);
     }, opt.speed);
+    if (greeterOpt && !opt.greeterActor) this.spawnGreeter(actor, ticket, typeof opt.greeter === 'object' ? opt.greeter : {});
+    return actor;
+  }
+
+  // ---------- greeters & pick-up ----------
+
+  // a pick-up: 'car' (its own stop on the curb), 'taxi' (the rank), 'bus' (the bus stop)
+  ticket(kind) {
+    const t = { kind, x: kind === 'car' ? 16 + Math.random() * 40 : kind === 'taxi' ? L.RANK_X : L.BUS_X, open: false, board: false };
+    this.world.pickups.push(t);
+    return t;
+  }
+
+  // walk from the lobby exit to where the ride stops, wait for it, get in
+  curbSteps(ticket, offset) {
+    const sw = L.CURB.sidewalk[0] - 0.5, lane = L.CURB.lane[0] + 0.3;
+    const x = ticket.x + offset + (ticket.kind === 'bus' ? Math.random() * 2 - 1 : 0);
+    return [
+      { to: V(x, sw - 0.6) },
+      { to: V(x, sw), until: () => ticket.board, act: ticket.kind === 'car' ? 'waitCar' : ticket.kind === 'taxi' ? 'waitTaxi' : 'waitBus', look: Math.PI / 2 },
+      { to: V(x, lane), act: 'curb' },
+    ];
+  }
+
+  // someone from the city comes to meet an arriving passenger
+  // pax may be a stand-in object ({ activity, done, meetSide }) when the greeter comes before
+  // the passenger exists (a delayed flight); offset spreads a second greeter at the meeting
+  spawnGreeter(pax, ticket, { type, board, offset = 0 } = {}) {
+    const R = this.rooms, lobby = R.lobby, la = lobby.userData.anchors;
+    const lat = (p) => this.at(lobby, p).setY(F1);
+    const gtype = type ?? pick(['woman', 'business', 'child', 'senior', 'passenger']);
+    const slot = this.claim('greet', la.slots.length);
+    const s = la.slots[slot];
+    const side = Math.sign(s.at.z);
+    const startX = 20 + Math.random() * 30;
+    const steps = [
+      { to: V(startX, L.CURB.sidewalk[0] - 0.4), bag: false },
+      { to: lat(la.exits[0]) },
+      { to: lat(la.toExits[0]) },
+      // reach the spot from a walkway just behind the waiting line (and, on the north side,
+      // round the end of the railings) so nobody walks through people already waiting
+      ...(side < 0 ? [{ to: lat(V(-1.0, 0)) }] : []),
+      { to: lat(V(-1.0, side * 2.8)) },
+      { to: lat(V(s.at.x, side * 2.8)) },
+      { to: lat(s.at), until: () => pax.done || pax.activity === 'meeting', mode: 'hold', look: s.look, act: 'greeting' },
+      { to: lat(V(s.at.x, side * 2.8)) },
+      { to: lat(V(-1.0, side * 2.8)) },
+      { to: () => lat(la.aisleEnd.clone().add(V(2.3 + offset, pax.meetSide * 1.1 + offset * 0.4))), look: Math.PI, then: (g) => { g.atMeet = true; this.unclaim('greet', slot); } },
+      { to: () => lat(la.aisleEnd.clone().add(V(2.3 + offset, pax.meetSide * 1.1 + offset * 0.4))), wait: 3, mode: 'hold', look: Math.PI },
+      { to: lat(la.toExits[0]).add(V(0.6, 0)) },
+      { to: lat(la.exits[0]).add(V(0.6, 0)) },
+      ...this.curbSteps(ticket, 0.7 + offset),
+    ];
+    const g = this.run(gtype, steps, null, (x) => {
+      x.kind = 'greeter';
+      x.type = gtype;
+      x.meets = pax;
+      pax.greeter = x;
+    }, 1.1);
+    const text = board ?? pax.name ?? 'Welcome';
+    g.board = welcomeBoard(text);
+    g.p.add(g.board);
+    g.cleanup = () => g.board.removeFromParent();
+    g.rideTicket = ticket;
+    return g;
+  }
+
+  // a car / taxi / bus has stopped at x on the arrivals curb
+  vehicleArrived(kind, x) {
+    const P = this.world.pickups;
+    let hit = null;
+    if (kind === 'bus') {
+      for (const t of P) if (t.kind === 'bus' && t.open) { t.board = true; hit = t; }
+    } else {
+      hit = P.find((t) => t.kind === kind && t.open && !t.board && Math.abs(t.x - x) < 2.5);
+      if (hit) hit.board = true;
+    }
+    this.world.pickups = P.filter((t) => !t.board);
+    return !!hit;
   }
 
   update(t, dt) {

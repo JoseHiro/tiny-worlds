@@ -329,7 +329,7 @@ function personCard(a) {
 function storyRows() {
   return story.cast.map((c) => {
     const lead = c.members.find((m) => !m.done);
-    const line = c.state === 'active' && c.last ? c.last[T.getLang()] : T.t('storyIdle');
+    const line = (c.state === 'active' || c.state === 'away') && c.last ? c.last[T.getLang()] : T.t('storyIdle');
     return `<li class="stand" data-cast="${c.id}">
       <span class="id">★</span>
       <div><div class="fl">${c.name[T.getLang()]} <span class="st">${c.role[T.getLang()]}</span></div><div class="st">${line}</div></div>

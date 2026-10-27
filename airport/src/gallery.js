@@ -104,7 +104,9 @@ const ITEMS = [
   { group: 'r7', tag: 'R8 · Desk', name: '手荷物サービスカウンター', note: '赤 · 後ろに引き取り手のない荷物の棚', build: () => R.baggageServiceDesk() },
 
   // ---- R9 到着ロビー ----
-  { group: 'r9', tag: 'R9 · Room kit', name: '到着ロビー（部屋キット）', note: '到着口の自動ドア · 出迎えの柵と看板を持つ人 · 再会 · 案内所 · タクシー・駐車場へ', wide: true, build: R.arrivalsLobby, view: [1, 1.15, 1.1], zoom: 0.64 },
+  { group: 'r9', tag: '1F · Room kit', name: '入国審査（部屋キット）', note: '国際線は列 → ブース（日本人／外国人）→ 西の出口 · 国内線はガラスの仕切りの向こうを素通り', wide: true, build: R.immigrationHall, view: [1, 1.15, 1.1], zoom: 0.64 },
+  { group: 'r9', tag: '1F · Booth', name: '入国審査ブース', note: '紺のカウンター＋ガラス · 審査官は内側に座る · 頭上に「日本人／外国人」', build: () => { const g = new THREE.Group(); const b = R.immigrationBooth(); g.add(b); const o = P.person('officer', { mode: 'type' }); o.position.copy(b.userData.officer); g.add(o); g.userData.update = (t) => o.userData.update(t); return g; } },
+  { group: 'r9', tag: 'R9 · Room kit', name: '到着ロビー（部屋キット）', note: '西の壁に到着口の自動ドア · 柵で挟んだ通路 · 外側で出迎えの人が待つ · 案内所 · 南の出口から迎車レーンへ', wide: true, build: R.arrivalsLobby, view: [1, 1.15, 1.1], zoom: 0.64 },
   { group: 'r9', tag: 'R9 · Door', name: '到着口（自動ドア）', note: '幅2.4 · ガラス戸が左右に開く · 黄色の看板', build: () => R.arrivalDoors() },
   { group: 'r9', tag: 'R9 · Prop', name: '柵・出迎えボード', note: '金属の柵 · 手に持つ看板（名前入り）', build: () => { const g = new THREE.Group(); g.add(R.railing(2.4)); const p = P.person('woman', { mode: 'hold' }); p.position.z = 0.6; p.rotation.y = -Math.PI / 2; p.add(R.welcomeBoard('SORA!')); g.add(p); g.userData.update = (t) => p.userData.update(t); return g; } },
   { group: 'r9', tag: 'R9 · Desk', name: '案内所', note: '半円のカウンター · スカイの「i」', build: () => R.infoDesk() },
@@ -159,7 +161,7 @@ function luggageSet() {
   return g;
 }
 
-const GROUPS = { all: 'すべて', outside: '機体・車両・人', r1: 'R1 チェックイン', r2: 'R2 保安検査', r3: 'R3 ラウンジ', r4: 'R4 ゲート', r5: 'R5 仕分け', r6: 'R6 到着通路', r7: 'R7/R8 手荷物受取', r9: 'R9 到着ロビー', cabin: '機内' };
+const GROUPS = { all: 'すべて', outside: '機体・車両・人', r1: 'R1 チェックイン', r2: 'R2 保安検査', r3: 'R3 ラウンジ', r4: 'R4 ゲート', r5: 'R5 仕分け', r6: 'R6 到着通路', r7: 'R7/R8 手荷物受取', r9: '入国・到着ロビー', cabin: '機内' };
 
 function crowd() {
   const g = new THREE.Group();

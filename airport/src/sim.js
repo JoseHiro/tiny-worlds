@@ -48,19 +48,21 @@ let flightSeq = 0;
 // ---------- flights ----------
 
 class Flight {
-  constructor(world, stand) {
+  // opts (a return flight): number, from, to, liveryKey, returnStory
+  constructor(world, stand, opts = {}) {
     this.world = world;
     this.stand = stand;
     this.id = ++flightSeq;
-    this.number = `MA ${100 + ((this.id * 137) % 880)}`;
+    this.number = opts.number ?? `MA ${100 + ((this.id * 137) % 880)}`;
     const a = pick(CITIES);
     let b = pick(CITIES);
     while (b === a) b = pick(CITIES);
-    this.from = a;
-    this.to = b;
+    this.from = opts.from ?? a;
+    this.to = opts.to ?? b;
+    this.returnStory = opts.returnStory ?? null;
     this.root = new THREE.Group();
     this.pitchGroup = new THREE.Group();
-    this.liveryKey = LIVERY_KEYS[this.id % LIVERY_KEYS.length];
+    this.liveryKey = opts.liveryKey ?? LIVERY_KEYS[this.id % LIVERY_KEYS.length];
     this.model = P.airplane(P.LIVERIES[this.liveryKey]);
     this.root.add(this.pitchGroup);
     this.pitchGroup.add(this.model);
@@ -492,16 +494,16 @@ class RoadUser {
     world.scene.add(model);
   }
 
-  start(route) {
+  // stopX: where to pull over (departures: by the check-in doors on the deck; arrivals:
+  // wherever a passenger is waiting — given by the caller). null = drive straight through.
+  start(route, stopX = route.name === 'departures' ? -57 + Math.random() * 22 : null) {
     this.route = route;
     this.s = 0;
     this.v = this.maxSpeed * 0.8;
     this.active = true;
     this.stopped = 0;
     this.obj.visible = true;
-    // pull over: departures on the elevated deck by the check-in doors, arrivals at the 1F curb
-    this.stopX = route.name === 'departures' ? -57 + Math.random() * 22
-      : route.name === 'arrivals' ? (this.kind === 'bus' ? 50 : 18 + Math.random() * 38) : null;
+    this.stopX = stopX;
     route.users.push(this);
   }
 
@@ -536,11 +538,9 @@ class RoadUser {
         if (this.stopped > 0.3 && !this.dropped) {
           this.dropped = true;
           const n = this.kind === 'bus' ? 3 : 1 + (Math.random() < 0.35 ? 1 : 0);
-          for (let i = 0; i < n; i++) {
-            const x = p.x + (i - (n - 1) / 2) * 0.9;
-            if (r.name === 'departures') this.world.dropOff(x);
-            else this.world.pickUp(x);
-          }
+          if (r.name === 'departures') for (let i = 0; i < n; i++) this.world.dropOff(p.x + (i - (n - 1) / 2) * 0.9);
+          else if (this.world.pax) this.world.pax.vehicleArrived(this.kind, p.x); // the waiting passengers get in
+          else this.world.pickUp(p.x);
         }
         if (this.stopped > (this.kind === 'bus' ? 5 : 2.6)) this.stopX = null;
       }
@@ -577,6 +577,7 @@ export class World {
     this.stats = { arrivals: 0, departures: 0, onTime: 0, pushbacks: 0 };
     this.runwayOwner = null;
     this.spawnTimer = 14;
+    this.returns = []; // flights out and due back: { due, opts }
     this.onFlightAdded = () => {};
     this.onFlightRemoved = () => {};
 
@@ -622,15 +623,15 @@ export class World {
     return w;
   }
 
-  addFlight(stand) {
-    const f = new Flight(this, stand);
+  addFlight(stand, opts) {
+    const f = new Flight(this, stand, opts);
     this.flights.push(f);
     this.onFlightAdded(f);
     return f;
   }
 
-  spawnArrival(stand, x = L.TOUCHDOWN_X - 140) {
-    const f = this.addFlight(stand);
+  spawnArrival(stand, x = L.TOUCHDOWN_X - 140, opts = {}) {
+    const f = this.addFlight(stand, opts);
     stand.flight = f;
     this.runwayOwner = f;
     f.alt = (L.TOUCHDOWN_X - x) * 0.19;
@@ -694,6 +695,9 @@ export class World {
     this.roadPool = [];
     for (let i = 0; i < 22; i++) this.roadPool.push(new RoadUser(this, P.car({ color: CAR_COLORS[i % CAR_COLORS.length] }), 'car'));
     for (let i = 0; i < 2; i++) this.roadPool.push(new RoadUser(this, P.apronBus({ accent: P.PALETTE.teal }), 'bus'));
+    for (let i = 0; i < 4; i++) this.roadPool.push(new RoadUser(this, P.car({ color: P.PALETTE.yellow, taxi: true }), 'taxi'));
+    this.pickups = []; // passengers waiting at the arrivals curb (pax.js tickets)
+    this.busTimer = 0;
     // pre-populate the roads so the first frame already has traffic
     for (const r of this.roads) {
       for (let k = 0; k < 3; k++) {
@@ -759,17 +763,29 @@ export class World {
   }
 
   updateRoads(dt) {
+    this.busTimer -= dt;
     for (const r of this.roads) {
       r.timer -= dt;
       const entryClear = !r.users.some((u) => u.s < 6);
       if (r.timer <= 0 && entryClear) {
-        const wantBus = r.name === 'arrivals' && Math.random() < 0.18;
-        const u = this.roadPool.find((x) => !x.active && x.kind === (wantBus ? 'bus' : 'car')) ?? this.roadPool.find((x) => !x.active && x.kind === 'car');
-        if (u) u.start(r);
-        r.timer = 2.2 + Math.random() * 3.5;
+        let kind = 'car', stopX;
+        if (r.name === 'arrivals') { // send what the waiting passengers need
+          const open = this.pickups.filter((t) => t.open && !t.sent);
+          const car = open.find((t) => t.kind === 'car');
+          const taxi = open.find((t) => t.kind === 'taxi');
+          const bus = open.some((t) => t.kind === 'bus') && this.busTimer <= 0;
+          if (car) { car.sent = true; stopX = car.x; }
+          else if (taxi && this.roadPool.some((x) => !x.active && x.kind === 'taxi')) { taxi.sent = true; kind = 'taxi'; stopX = taxi.x; }
+          else if (bus) { kind = 'bus'; stopX = L.BUS_X; this.busTimer = 25; for (const t of open) if (t.kind === 'bus') t.sent = true; }
+        }
+        const u = this.roadPool.find((x) => !x.active && x.kind === kind) ?? this.roadPool.find((x) => !x.active && x.kind === 'car');
+        if (u) u.start(r, r.name === 'departures' ? undefined : stopX ?? null);
+        r.timer = (r.name === 'arrivals' ? 1.5 : 2.2) + Math.random() * 3;
       }
       for (const u of [...r.users]) u.update(dt);
     }
+    // tickets whose vehicle drove past without them (e.g. someone else got in) go back in the queue
+    for (const t of this.pickups) if (t.sent && !t.board && !this.roadUsers().some((u) => Math.abs((u.stopX ?? -999) - t.x) < 2.5)) t.sent = false;
     this.strollTimer -= dt;
     if (this.strollTimer <= 0) {
       this.stroll();
@@ -833,7 +849,9 @@ export class World {
     if (this.runwayOwner || this.flights.some((f) => f.state === 'approach')) return false;
     const free = this.stands.filter((s) => !s.flight);
     if (!free.length) return false;
-    this.spawnArrival(pick(free));
+    const due = this.returns.find((r) => r.due <= this.time); // a return flight takes the next slot
+    if (due) this.returns.splice(this.returns.indexOf(due), 1);
+    this.spawnArrival(pick(free), undefined, due?.opts);
     return true;
   }
 
@@ -851,6 +869,12 @@ export class World {
 
     for (const f of this.flights) f.update(dt);
     for (const f of this.flights.filter((x) => x.state === 'gone')) {
+      // every departure comes back later as the next-numbered flight, same aircraft
+      const n = Number(f.number.replace(/\D/g, ''));
+      this.returns.push({
+        due: this.time + 150 + Math.random() * 60 + (f.storyReturn === 'kenji' ? 90 : 0), // Kenji's flight home runs late
+        opts: { number: `MA ${n % 2 ? n + 1 : n - 1}`, from: f.to, to: f.from, liveryKey: f.liveryKey, returnStory: f.storyReturn ?? null },
+      });
       this.flights.splice(this.flights.indexOf(f), 1);
       this.onFlightRemoved(f);
       f.dispose();

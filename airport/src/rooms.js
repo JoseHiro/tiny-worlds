@@ -486,7 +486,11 @@ export function lounge() {
   const room = k.done();
   room.userData.anchors = {
     entryW: V(-7.9, 1.0), exitE: V(7.9, 1.0), toNorth: V(0, 0.4), exitN: V(0, -5.9),
-    waitSpots: [[-6, 3.6], [-5, 3.95], [-4, 3.6], [-3, 4.0], [1.6, 1.6], [2.6, 2.4], [4.2, 1.6], [5.4, 2.6], [6.2, 1.4], [1.4, 3.6], [4.6, 3.6]].map(([x, z]) => V(x, z)),
+    // standing spots in the open parts of the room (south of the café tables, around the benches)
+    waitSpots: [
+      ...[-6.4, -5.6, -4.8, -4.0, -3.2, -2.4].flatMap((x) => [[x, 3.4], [x, 4.4]]),
+      ...[1.4, 2.2, 3.0, 3.8, 4.6, 5.4, 6.2].flatMap((x) => [[x, 1.5], [x, 2.6], [x, 3.7]]),
+    ].map(([x, z]) => V(x, z)),
   };
   return room;
 }
@@ -1053,31 +1057,109 @@ export function infoDesk() {
   return g;
 }
 
-export function arrivalsLobby() {
+// Arrivals hall. Passengers come in through the doors on the west wall and walk an aisle
+// between two railings; greeters wait outside the railings; exits to the curb are south.
+export function arrivalsLobby({ ambient = true } = {}) {
   const W = 15, D = 11;
-  const k = makeKit(W, D, { accent: PALETTE.cream, glassSide: 's', openings: [{ side: 'n', at: -2, width: 2.4 }, { side: 's', at: -2, width: 3 }, { side: 's', at: 4, width: 3 }] });
-  k.put(arrivalDoors(), -2, -D / 2 + 0.2);
-  // meeting area: a U of railings in front of the doors, greeters behind it
-  k.put(railing(6), -2, -1.6);
-  const left = k.put(railing(3), -5, -3.1, Math.PI / 2);
-  const right = k.put(railing(3), 1, -3.1, Math.PI / 2);
-  const greet = [['woman', -4.0, 'SORA!'], ['child', -2.8, 'おかえり'], ['business', -1.2, 'Mr. Tanaka'], ['senior', 0.2, 'ミドリさん'], ['passenger', -5.6, 'Welcome']];
-  greet.forEach(([type, x, text], i) => {
-    const p = k.who(type, x, i === 4 ? -2.6 : -1.0, LOOK.nz, 'hold', { noBag: true });
-    if (i === 4) p.rotation.y = LOOK.px;
-    p.add(welcomeBoard(text));
-  });
-  // a reunion just past the railing, people streaming out to the curb
-  k.who('senior', 2.4, -2.2, LOOK.px, 'idle', { noBag: true });
-  k.who('child', 2.9, -2.2, LOOK.nx, 'hold', { noBag: true });
-  for (let i = 0; i < 4; i++) k.walker(['passenger', 'backpacker', 'woman', 'business'][i], [V(-2, -4.8), V(-2, -3.6), V(1.6, -3.6), V(3.4, 0.8), V(4, 5.6)], { speed: 1.0, offset: i / 4 });
+  const k = makeKit(W, D, { accent: PALETTE.cream, glassSide: 's', openings: [{ side: 'w', at: 0, width: 2.4 }, { side: 's', at: -2, width: 3 }, { side: 's', at: 4, width: 3 }] });
+  k.put(arrivalDoors(), -7.3, 0, Math.PI / 2);
+  for (const z of [-1.5, 1.5]) k.put(railing(5), -4.5, z);
+  // waiting spots outside the railings, facing the aisle
+  const slots = [];
+  for (let x = -6.4; x <= -2.4; x += 0.8) for (const s of [-1, 1]) slots.push({ at: V(x, s * 2.15), look: s < 0 ? LOOK.pz : LOOK.nz });
+  if (ambient) {
+    const greet = [['woman', 'SORA!'], ['child', 'おかえり'], ['business', 'Mr. Tanaka'], ['senior', 'ミドリさん'], ['passenger', 'Welcome']];
+    greet.forEach(([type, text], i) => {
+      const sl = slots[i * 2 + (i % 2)];
+      const p = k.who(type, sl.at.x, sl.at.z, sl.look, 'hold', { noBag: true });
+      p.add(welcomeBoard(text));
+    });
+    k.who('senior', -1.2, 0.5, LOOK.px, 'idle', { noBag: true }); // a reunion at the end of the aisle
+    k.who('child', -0.7, 0.5, LOOK.nx, 'hold', { noBag: true });
+    for (let i = 0; i < 4; i++) k.walker(['passenger', 'backpacker', 'woman', 'business'][i], [V(-7.9, 0), V(-1.6, 0), V(i % 2 ? 4 : -2, 3.0), V(i % 2 ? 4 : -2, 5.9)], { speed: 1.0, offset: i / 4 });
+  }
   k.put(infoDesk(), 5.2, -2.6);
   k.who('agent', 5.2, -2.9, LOOK.pz, 'type');
-  for (const x of [-5.2, -2.2]) k.put(bench({ seats: 4 }), x, 2.6);
-  k.who('senior', -5.4, 2.65, LOOK.pz, 'sit');
-  k.who('woman', -2.0, 2.65, LOOK.pz, 'sit');
+  k.put(bench({ seats: 4 }), 2.2, 1.6);
+  k.who('senior', 1.7, 1.65, LOOK.pz, 'sit');
   k.put(hangingSign({ text: 'タクシー・バス', sub: 'Taxi · Bus', arrow: '↓', width: 2.6 }), 4, 3.6);
-  k.put(hangingSign({ text: '駐車場', sub: 'Parking', arrow: '↙', width: 2.0 }), -2, 3.6);
+  k.put(hangingSign({ text: '駐車場・お迎え', sub: 'Parking · Pick-up', arrow: '↓', width: 2.6 }), -2, 3.6);
   for (const [x, z] of [[-6.8, -4.6], [6.8, -4.6], [6.8, 4.6]]) k.put(planter({ size: 1.1 }), x, z);
-  return k.done();
+  const room = k.done();
+  room.userData.anchors = { doorIn: V(-7.9, 0), aisleIn: V(-6.6, 0), aisleEnd: V(-1.6, 0), slots, exits: [V(-2, 5.9), V(4, 5.9)], toExits: [V(-2, 3.0), V(4, 3.0)] };
+  return room;
+}
+
+// ======================================================================
+// 1F 入国審査（ゲート下ホール）— accent: navy
+// ======================================================================
+
+// One passport-control booth. Officer sits on −X; the passenger stands on +X.
+export function immigrationBooth({ label = '日本人' } = {}) {
+  const g = new THREE.Group();
+  g.add(box(0.22, 0.95, 0.9, mat(PALETTE.navy), 0.32, 0.475, 0)); // counter
+  g.add(box(0.3, 0.05, 0.94, mat(PALETTE.white), 0.32, 0.97, 0));
+  for (const s of [-1, 1]) g.add(box(0.85, 0.95, 0.06, mat(PALETTE.navy), -0.05, 0.475, s * 0.45));
+  g.add(mesh(new THREE.BoxGeometry(0.03, 0.55, 0.88), glass(), 0.4, 1.28, 0)); // glass screen
+  g.add(rbox(0.3, 0.2, 0.04, 0.02, mat(PALETTE.ink), 0.15, 1.1, -0.2).rotateY(Math.PI / 2));
+  g.add(rbox(0.36, 0.08, 0.36, 0.03, mat(PALETTE.ink), -0.25, 0.3, 0)); // stool
+  g.add(cyl(0.03, 0.03, 0.3, metal(), -0.25, 0.15, 0, 6));
+  const sign = textPanel({ w: 0.9, h: 0.3, bg: label === '日本人' ? PALETTE.navy : PALETTE.teal, fg: '#fff', lines: [[label, 0.6, 700]], glow: 0.4, align: 'center' });
+  sign.position.set(0.1, 2.0, 0);
+  sign.rotation.y = Math.PI / 2;
+  g.add(sign, cyl(0.02, 0.02, 0.6, metal(), 0.1, 2.45, 0, 4));
+  g.userData = { kind: 'booth', officer: V(-0.22, 0), front: V(0.85, 0) };
+  return g;
+}
+
+export function immigrationHall({ ambient = true } = {}) {
+  const W = 15, D = 11;
+  const k = makeKit(W, D, { accent: PALETTE.navy, glassSide: 'none', openings: [{ side: 'e', at: 0, width: 2.4 }, { side: 'w', at: -1.6, width: 6 }] });
+  // domestic passengers walk straight through behind a glass wall on the north side
+  const part = glassPartition(13.8);
+  part.position.set(-0.4, 0, -3.5);
+  k.g.add(part);
+  // international: a queue, then four booths (two for Japanese passports, two for visitors)
+  const maze = queueMaze({ lanes: 3, length: 5, gap: 0.95 });
+  k.put(maze, 6.0, 1.6, Math.PI);
+  const Y = new THREE.Vector3(0, 1, 0);
+  const queue = maze.userData.path.map((p) => p.clone().applyAxisAngle(Y, Math.PI).add(maze.position));
+  const booths = [-2.6, -1.0, 0.6, 2.2].map((z, i) => {
+    const b = k.put(immigrationBooth({ label: i < 2 ? '日本人' : '外国人' }), -1.6, z);
+    k.who('officer', -1.6 + b.userData.officer.x, z, LOOK.px, 'type');
+    return { z, front: V(-1.6 + b.userData.front.x, z), lane: V(-1.6 + b.userData.front.x, z + 0.8), past: V(-3.4, z + 0.8), japanese: i < 2 };
+  });
+  k.put(hangingSign({ text: '入国審査', sub: 'Immigration', arrow: '←', width: 2.4 }), 3.6, -2.5);
+  k.put(hangingSign({ text: '国内線 到着', sub: 'Domestic Arrivals', arrow: '←', width: 2.6 }), 3.2, -4.4);
+  k.put(textPanel({ w: 2.0, h: 0.5, bg: PALETTE.navy, fg: '#fff', lines: [['パスポートをご用意ください', 0.42, 600], ['Passports ready, please', 0.3, 500]] }), 6.8, 3.6, -Math.PI / 2, 0.9);
+  k.put(planter(), -6.8, 4.6);
+
+  const anchors = {
+    entryE: V(7.9, 0), queue, booths,
+    exitIntl: V(-7.9, 0.4),
+    domestic: [V(7.2, -4.3), V(-7.9, -4.3)],
+  };
+  // a passenger's walk through the hall (local), shared with the airport's passengers
+  anchors.steps = (international, booth) => {
+    if (!international) return anchors.domestic.map((p) => ({ to: p }));
+    const b = booths[booth];
+    return [
+      ...queue.map((p) => ({ to: p })),
+      { to: V(b.front.x + 0.6, b.front.z) },
+      { to: b.front, wait: 3.5, look: LOOK.nx, mode: 'hold', act: 'passport' },
+      { to: b.lane }, { to: b.past },
+      { to: V(-5.2, 0.4) }, { to: anchors.exitIntl },
+    ];
+  };
+  if (ambient) {
+    ['backpacker', 'business', 'woman', 'passenger', 'senior', 'child'].forEach((type, i) => {
+      k.flow(type, [{ to: anchors.entryE }, ...anchors.steps(true, i % 4)], { offset: i * 4, speed: 1.0 });
+    });
+    ['woman', 'business', 'passenger'].forEach((type, i) => {
+      k.flow(type, [{ to: anchors.entryE }, ...anchors.steps(false)], { offset: i * 5, speed: 1.1 });
+    });
+  }
+  const room = k.done();
+  room.userData.anchors = anchors;
+  return room;
 }

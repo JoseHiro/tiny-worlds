@@ -33,9 +33,11 @@ const D = {
       gotBag: '荷物を受け取った', lostBag: '荷物が出てこない', service: '手荷物サービスで相談', delivery: '次の便で届く荷物を待っている',
       bagDelivered: '荷物が届いた', reunion: '出迎えの人と再会', exit: '到着ロビーから外へ', curb: '迎えの車へ',
       crewIn: 'ゲートへ向かう', briefing: '打ち合わせ', marshal: '誘導の準備', guide: '飛行機を誘導中',
+      immigration: '入国審査の列', domestic: '国内線の通路', passport: '入国審査中', arrivalsHall: '到着ロビー', meeting: '出迎えを探している',
+      greeting: '柵の前で出迎えを待つ', waitCar: '迎えの車を待つ', waitTaxi: 'タクシー待ち', waitBus: 'バス待ち',
     },
     types: { passenger: '旅行者', woman: '旅行者', backpacker: 'バックパッカー', business: 'ビジネス客', child: '子ども', senior: 'シニア', pilot: '機長', attendant: '客室乗務員', marshaller: 'マーシャラー' },
-    kinds: { departure: '出発の乗客', arrival: '到着の乗客', crew: '乗務員' },
+    kinds: { departure: '出発の乗客', arrival: '到着の乗客', crew: '乗務員', greeter: '出迎えの人' },
   },
   en: {
     brandP: 'An afternoon at a small airport: one runway, six stands and a two-storey terminal. Come closer and the roof opens to show the halls inside. Landings, fuelling, baggage, pushbacks and take-offs run on their own.',
@@ -67,9 +69,11 @@ const D = {
       gotBag: 'Got the bag', lostBag: "Bag didn't come out", service: 'At baggage service', delivery: 'Waiting for the bag on the next flight',
       bagDelivered: 'Bag delivered', reunion: 'Meeting family', exit: 'Leaving through arrivals', curb: 'To the pick-up car',
       crewIn: 'Heading to the gate', briefing: 'Briefing', marshal: 'Ready to marshal', guide: 'Guiding an aircraft in',
+      immigration: 'Queueing at immigration', domestic: 'Domestic arrivals walkway', passport: 'At passport control', arrivalsHall: 'Arrivals hall', meeting: 'Looking for their greeter',
+      greeting: 'Waiting at the railing', waitCar: 'Waiting for the car', waitTaxi: 'At the taxi rank', waitBus: 'Waiting for the bus',
     },
     types: { passenger: 'Traveller', woman: 'Traveller', backpacker: 'Backpacker', business: 'Business traveller', child: 'Child', senior: 'Senior', pilot: 'Captain', attendant: 'Cabin crew', marshaller: 'Marshaller' },
-    kinds: { departure: 'Departing passenger', arrival: 'Arriving passenger', crew: 'Crew' },
+    kinds: { departure: 'Departing passenger', arrival: 'Arriving passenger', crew: 'Crew', greeter: 'Greeter' },
   },
 };
 

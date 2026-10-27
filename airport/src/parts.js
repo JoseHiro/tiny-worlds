@@ -268,7 +268,7 @@ function lights(g, frontX, backX, y, zs) {
   }
 }
 
-export function car({ color = PALETTE.sky, followMe = false } = {}) {
+export function car({ color = PALETTE.sky, followMe = false, taxi = false } = {}) {
   const g = new THREE.Group();
   const ud = (g.userData = { kind: 'car', wheels: [], beacons: [] });
   const paint = mat(followMe ? PALETTE.yellow : color);
@@ -282,6 +282,10 @@ export function car({ color = PALETTE.sky, followMe = false } = {}) {
       ud.wheels.push(w);
       g.add(w);
     }
+  }
+  if (taxi) { // roof light + checker band
+    g.add(rbox(0.36, 0.14, 0.2, 0.04, mat(PALETTE.white, { emissive: 0xfff0c0, emissiveIntensity: 0.4 }), -0.14, 1.18, 0));
+    for (let i = 0; i < 6; i++) for (const s of [1, -1]) g.add(box(0.16, 0.06, 0.02, mat(i % 2 ? PALETTE.ink : PALETTE.white), -0.75 + i * 0.3, 0.6, s * 0.505));
   }
   if (followMe) {
     // checkered roof sign
@@ -481,6 +485,7 @@ const ROLES = {
   handler: { top: PALETTE.navy, vest: PALETTE.orange, legs: PALETTE.darkGrey, hat: 'baseball', capColor: PALETTE.navy },
   barista: { top: PALETTE.white, vest: PALETTE.brown, legs: PALETTE.ink, hat: 'baseball', capColor: PALETTE.brown },
   serviceAgent: { top: PALETTE.navy, legs: PALETTE.navy, hat: 'long', scarf: PALETTE.red },
+  officer: { top: PALETTE.navy, legs: PALETTE.ink, hat: 'cap', tie: PALETTE.sky }, // immigration
 };
 
 export const PASSENGER_TYPES = ['passenger', 'woman', 'backpacker', 'business', 'child', 'senior'];
