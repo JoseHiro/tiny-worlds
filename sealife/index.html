@@ -16,6 +16,9 @@
     h1 { font: italic 400 56px/1 'Instrument Serif', serif; margin: 6px 0 10px; }
     h1 span { color: var(--accent); }
     .lede { color: var(--muted); max-width: 640px; margin: 0; }
+    nav#tabs { max-width: 1400px; margin: 18px auto 0; padding: 0 32px; display: flex; flex-wrap: wrap; gap: 6px; }
+    nav#tabs button { margin: 0; border-color: var(--line); background: var(--card); }
+    nav#tabs button.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
     main { max-width: 1400px; margin: 0 auto; padding: 24px 32px 64px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
     .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; cursor: pointer; }
     .card:hover { border-color: var(--ink); }
@@ -32,7 +35,7 @@
     #detail p { color: var(--muted); margin: 0; }
     button { font: 500 12px Inter, sans-serif; color: var(--ink); background: transparent; border: 1px solid var(--ink); border-radius: 8px; padding: 7px 12px; cursor: pointer; margin-top: auto; }
     a { color: inherit; }
-    @media (max-width: 720px) { header, main { padding-left: 16px; padding-right: 16px; } #detail { grid-template-columns: 1fr; grid-template-rows: 1fr auto; } .card.wide .view { aspect-ratio: 4 / 3; } }
+    @media (max-width: 720px) { header, main, nav#tabs { padding-left: 16px; padding-right: 16px; } #detail { grid-template-columns: 1fr; grid-template-rows: 1fr auto; } .card.wide .view { aspect-ratio: 4 / 3; } }
   </style>
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
@@ -41,10 +44,11 @@
 <body>
   <canvas id="stage"></canvas>
   <header>
-    <div class="eyebrow">Tiny Worlds · Shared library v0.1</div>
+    <div class="eyebrow">Tiny Worlds · Shared library v0.2</div>
     <h1>Sea Life<span>.</span></h1>
-    <p class="lede">どの海の世界でも使う、海の生き物のカタログです。まずは種類ごとの代表5種で、形と泳ぎ方を決めています。カードをクリックすると拡大して回せます。<br><a href="../">Tiny Worlds</a> · <a href="https://github.com/JoseHiro/tiny-worlds/blob/main/sealife/DESIGN.md">設計書</a></p>
+    <p class="lede">どの海の世界でも使う、海の生き物のカタログです。45種と、すみかごとの水槽4つ。カードをクリックすると拡大して回せます。<br><a href="../">Tiny Worlds</a> · <a href="https://github.com/JoseHiro/tiny-worlds/blob/main/sealife/DESIGN.md">設計書</a></p>
   </header>
+  <nav id="tabs"></nav>
   <main id="grid"></main>
   <section id="detail">
     <div id="detailView"></div>

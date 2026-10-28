@@ -1,10 +1,11 @@
-// Sea-life catalog: one renderer, one small scene per card (scissor viewports), plus an aquarium.
+// Sea-life catalog: one renderer, one small scene per card (scissor viewports), plus aquariums.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { makeCreature, School, Cruise, clock } from './kit.js';
-import { SPECIES } from './species.js';
+import { makeCreature, School, Cruise, Wander, Burrows, clock, assemble, part, tube, seeded } from './kit.js';
+import { SPECIES, GROUPS } from './species.js';
 
 const BG = new THREE.Color('#d9eef0');
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
 function stageFor(build, { wide = false, view = [1, 0.45, 1.25] } = {}) {
   const scene = new THREE.Scene();
@@ -12,62 +13,243 @@ function stageFor(build, { wide = false, view = [1, 0.45, 1.25] } = {}) {
   const sun = new THREE.DirectionalLight('#fffaf0', 2.2);
   sun.position.set(3, 10, 4);
   scene.add(sun);
-  const { obj, radius, update } = build(scene);
-  const camera = new THREE.PerspectiveCamera(30, 4 / 3, 0.05, 400);
+  const { obj, radius, update, target = V(0, 0, 0) } = build(scene);
+  const camera = new THREE.PerspectiveCamera(30, 4 / 3, 0.02, 600);
   const dir = new THREE.Vector3(...view).normalize();
-  camera.position.copy(dir.multiplyScalar(radius / Math.sin(THREE.MathUtils.degToRad(15)) * (wide ? 0.42 : 0.75)));
-  camera.lookAt(0, 0, 0);
-  return { scene, camera, obj, update, radius };
+  camera.position.copy(dir.multiplyScalar(radius / Math.sin(THREE.MathUtils.degToRad(15)) * (wide ? 0.42 : 0.75))).add(target);
+  camera.lookAt(target);
+  return { scene, camera, obj, update, radius, target };
 }
 
 // one creature swimming on the spot, slowly turning so you see every side
-function single(key) {
+function single(spec) {
   return (scene) => {
-    const spec = SPECIES[key]();
     const mesh = makeCreature(spec);
     const pivot = new THREE.Group();
+    const c = spec.geometry.boundingSphere.center;
+    mesh.position.set(-c.x, spec.upright ? 0 : -c.y, -c.z);
     pivot.add(mesh);
     scene.add(pivot);
     const r = spec.geometry.boundingSphere.radius;
-    return { obj: mesh, radius: r * 1.1, update: (t, dt, spin) => { if (spin) pivot.rotation.y += dt * 0.35; mesh.position.y = Math.sin(t * 1.3) * r * 0.04; } };
+    if (spec.upright) {
+      const sand = new THREE.Mesh(new THREE.CircleGeometry(r * 1.3, 32).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#efe3c4', roughness: 1 }));
+      sand.position.y = -0.002;
+      pivot.add(sand);
+    }
+    const target = V(0, spec.upright ? c.y * 0.8 : 0, 0);
+    return { obj: mesh, radius: r * 1.1, target, update: (t, dt, spin) => { if (spin) pivot.rotation.y += dt * 0.35; if (!spec.upright) pivot.position.y = Math.sin(t * 1.3) * r * 0.04; } };
   };
 }
 
-// all five together: a school of tangs, cruising rays, sharks, a turtle, and the whale shark passing
-function aquarium(scene) {
-  scene.fog = new THREE.Fog(BG, 22, 70);
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(30, 48).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#efe3c4', roughness: 1 }));
-  floor.position.y = -6;
-  scene.add(floor);
+// ---------- aquarium scenery ----------
+
+const stdMat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.95, flatShading: true, ...extra });
+function sandFloor(scene, r, color = '#efe3c4') {
+  const m = new THREE.Mesh(new THREE.CircleGeometry(r, 64).rotateX(-Math.PI / 2), stdMat(color, { flatShading: false }));
+  scene.add(m);
+  return m;
+}
+function rock(scene, [x, z], s, color = '#8d8577') {
+  const m = new THREE.Mesh(new THREE.DodecahedronGeometry(s, 0).scale(1.2, 0.7, 1), stdMat(color));
+  m.position.set(x, s * 0.35, z);
+  m.rotation.y = x * 3.1;
+  scene.add(m);
+  return m;
+}
+// simple corals as a backdrop (the Naha reef has its own)
+function coral(scene, kind, [x, z], s = 1) {
+  const g = new THREE.Group();
+  if (kind === 'branch') {
+    const rnd = seeded(Math.round(x * 100 + z * 7) + 999);
+    const parts = [];
+    for (let i = 0; i < 9; i++) {
+      const a = rnd() * 6.28, lean = 0.2 + rnd() * 0.35, h = 0.35 + rnd() * 0.35;
+      parts.push(part(tube([[0, 0, 0], [Math.cos(a) * lean * 0.3, h * 0.6, Math.sin(a) * lean * 0.3], [Math.cos(a) * lean, h, Math.sin(a) * lean]], 0.05, 0.03, 5), '#e48aa0'));
+    }
+    g.add(new THREE.Mesh(assemble(parts), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 })));
+  } else if (kind === 'brain') {
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 8, 0, 6.28, 0, Math.PI / 2), stdMat('#c9a35f')));
+  } else if (kind === 'table') {
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.6, 0.08, 14), stdMat('#9fb07a'));
+    top.position.y = 0.45;
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.16, 0.45, 8), stdMat('#8d9b6c'));
+    stem.position.y = 0.22;
+    g.add(top, stem);
+  }
+  g.position.set(x, 0, z);
+  g.scale.setScalar(s);
+  scene.add(g);
+  return g;
+}
+// seagrass: blades that sway, drawn with the swim shader as an instanced "creature"
+function seagrass(scene, center, r, n, seed = 2) {
+  const blade = { geometry: assemble([part(new THREE.PlaneGeometry(0.035, 0.45, 1, 4).translate(0, 0.225, 0), '#5f9a4a')]), swim: { mode: 'sway', amp: 0.08, freq: 0.9, waves: 0.3, z0: 0, len: 0.45 } };
+  const m = makeCreature(blade, { count: n });
+  const rnd = seeded(seed), d = new THREE.Object3D();
+  for (let i = 0; i < n; i++) {
+    const a = rnd() * 6.28, rr = Math.sqrt(rnd()) * r;
+    d.position.set(center.x + Math.cos(a) * rr, 0, center.z + Math.sin(a) * rr);
+    d.rotation.set(0, rnd() * 6.28, 0);
+    d.scale.setScalar(0.7 + rnd() * 0.7);
+    d.updateMatrix();
+    m.setMatrixAt(i, d.matrix);
+  }
+  scene.add(m);
+  return m;
+}
+
+// helpers to drop creatures into an aquarium
+function kit(scene) {
   const updates = [];
-  const tangs = makeCreature(SPECIES.blueTang(), { count: 60 });
-  scene.add(tangs);
-  const school = new School(tangs, { center: new THREE.Vector3(-2, -2, 0), size: new THREE.Vector3(9, 3, 7), speed: 1.3, radius: 1.0 });
-  updates.push((t, dt) => school.update(dt));
-  const add = (key, opts) => {
-    const m = makeCreature(SPECIES[key]());
-    scene.add(m);
-    const c = new Cruise(m, { center: new THREE.Vector3(0, 0, 0), ...opts });
-    updates.push((t, dt) => c.update(dt));
-    return m;
+  const add = (key, opts = {}) => { const m = makeCreature(SPECIES[key](), opts); scene.add(m); return m; };
+  return {
+    updates, add,
+    school: (key, n, opts) => { const m = add(key, { count: n }); const s = new School(m, opts); updates.push((t, dt) => s.update(dt)); return s; },
+    cruise: (key, opts) => { const m = add(key); const c = new Cruise(m, { center: V(0, 0, 0), ...opts }); updates.push((t, dt) => c.update(dt)); return m; },
+    wander: (key, opts) => {
+      const spec = SPECIES[key]();
+      const m = makeCreature(spec);
+      scene.add(m);
+      const w = new Wander(m, { sideways: !!spec.sideways, ...opts });
+      updates.push((t, dt) => w.update(dt));
+      return m;
+    },
+    put: (key, [x, y, z], ry = 0, s = 1) => { const m = add(key); m.position.set(x, y, z); m.rotation.y = ry; m.scale.setScalar(s); return m; },
+    run: (t, dt) => updates.forEach((f) => f(t, dt)),
   };
-  add('manta', { rx: 12, rz: 7, y: 0.5, speed: 2.2, eight: true });
-  const shark = add('blacktipShark', { rx: 9, rz: 5, y: -3, speed: 2.4, phase: 2 });
-  add('blacktipShark', { rx: 10, rz: 6, y: -3.6, speed: 2.1, phase: 4.5 });
-  add('greenTurtle', { rx: 6, rz: 4, y: -1.0, speed: 0.9, phase: 1, bob: 0.6 });
-  add('whaleShark', { rx: 20, rz: 12, y: 2.8, speed: 1.4, phase: 3.6, bob: 0.2 });
-  school.threats.push(shark); // the tangs scatter when the shark comes by
-  return { obj: scene, radius: 16, update: (t, dt) => updates.forEach((f) => f(t, dt)) };
 }
 
-const ITEMS = [
-  { name: '水槽（代表5種）', en: 'Aquarium · the five reference species', note: 'ナンヨウハギ60匹の群れ（ツマグロが来ると散る）· マンタは8の字 · ツマグロ2匹 · アオウミガメ · ジンベエザメが外側をゆっくり', wide: true, build: aquarium, view: [1, 0.55, 1.2] },
-  { name: 'ナンヨウハギ', en: 'Blue tang', note: '0.45 · 青い体に黒い模様、黄色い尾 · くねり泳ぎ（速い）· 群れ · サンゴ礁', build: single('blueTang') },
-  { name: 'マンタ', en: 'Manta ray', note: '幅3.4 · 背は黒、腹は白、肩に白い模様、頭びれ · 羽ばたき（ゆっくり）· 外洋〜礁の縁', build: single('manta'), view: [0.8, 0.9, 1.1] },
-  { name: 'ツマグロ', en: 'Blacktip reef shark', note: '1.6 · 灰色、ひれの先が黒 · くねり泳ぎ · 浅瀬を巡回', build: single('blacktipShark') },
-  { name: 'ジンベエザメ', en: 'Whale shark', note: '8.5 · 紺灰色に白い斑点、背に3本の隆起線、横長の口 · ゆっくりくねる · 外洋（まれな見せ場）', build: single('whaleShark') },
-  { name: 'アオウミガメ', en: 'Green sea turtle', note: '1.2 · 甲羅の模様（中央5枚＋左右4枚）· 前ひれで羽ばたく · 浅瀬〜礁', build: single('greenTurtle'), view: [0.9, 0.7, 1.1] },
-];
+// the five reference species together
+function aquariumReference(scene) {
+  scene.fog = new THREE.Fog(BG, 22, 70);
+  sandFloor(scene, 30).position.y = -6;
+  const k = kit(scene);
+  const tangs = k.school('blueTang', 60, { center: V(-2, -2, 0), size: V(9, 3, 7), speed: 1.3, radius: 1.0 });
+  k.cruise('manta', { rx: 12, rz: 7, y: 0.5, speed: 2.2, eight: true });
+  const shark = k.cruise('blacktipShark', { rx: 9, rz: 5, y: -3, speed: 2.4, phase: 2 });
+  k.cruise('blacktipShark', { rx: 10, rz: 6, y: -3.6, speed: 2.1, phase: 4.5 });
+  k.cruise('greenTurtle', { rx: 6, rz: 4, y: -1.0, speed: 0.9, phase: 1, bob: 0.6 });
+  k.cruise('whaleShark', { rx: 20, rz: 12, y: 2.8, speed: 1.4, phase: 3.6, bob: 0.2 });
+  tangs.threats.push(shark); // the tangs scatter when the shark comes by
+  return { obj: scene, radius: 16, update: k.run };
+}
+
+// the coral reef: homes, pairs, small schools, and the things on the bottom
+function aquariumReef(scene) {
+  scene.fog = new THREE.Fog(BG, 14, 40);
+  sandFloor(scene, 14);
+  const k = kit(scene);
+  [[-3.2, -1.5, 0.9], [3.6, 1.6, 0.8], [0.5, -3.2, 0.7], [-4.5, 2.4, 0.6], [4.6, -2.6, 0.75]].forEach(([x, z, s]) => rock(scene, [x, z], s));
+  coral(scene, 'branch', [2, -1], 1.1); coral(scene, 'branch', [-1, 2.8], 0.9); coral(scene, 'brain', [-0.6, -1.4]); coral(scene, 'brain', [3, 2.9], 0.8);
+  coral(scene, 'table', [-3.4, 1.2]); coral(scene, 'table', [1.4, 3.6], 0.8); coral(scene, 'branch', [-2.4, -3.4], 0.8);
+  const shark = k.cruise('whitetipShark', { rx: 6.5, rz: 4.5, y: 1.3, speed: 1.2, phase: 1 });
+  // a clownfish family at home in the anemone
+  k.put('anemone', [-1.7, 0, 0.9]);
+  for (let i = 0; i < 3; i++) k.wander('clownfish', { home: V(-1.7, 0.32, 0.9), radius: 0.22, y: [-0.06, 0.12], speed: 0.22, pause: [0.2, 1.2] });
+  // chromis over the branch coral, scattering when the shark passes
+  k.school('damselGreen', 36, { center: V(2, 0.9, -1), size: V(1.4, 0.7, 1.4), speed: 0.35, radius: 0.35 }).threats.push(shark);
+  k.school('damselBlue', 10, { center: V(-1, 0.85, 2.8), size: V(1.0, 0.5, 1.0), speed: 0.3, radius: 0.3 });
+  k.school('blueTang', 16, { center: V(0.5, 1.6, 0.5), size: V(5, 1.2, 4), speed: 0.9, radius: 0.8 }).threats.push(shark);
+  for (let i = 0; i < 2; i++) k.wander('butterflyfish', { home: V(-0.6, 0.7, -1.4), radius: 0.8, y: [-0.1, 0.25], speed: 0.4, pause: [0.5, 2] });
+  for (let i = 0; i < 2; i++) k.wander('moorishIdol', { home: V(1.4, 1.2, 3.2), radius: 1.2, y: [-0.2, 0.3], speed: 0.35, pause: [0.5, 2] });
+  k.wander('parrotfish', { home: V(-0.6, 0.7, -1.4), radius: 2.2, y: [0, 0.6], speed: 0.5, pause: [1, 3] });
+  k.wander('boxfish', { home: V(2.6, 1.0, 1.8), radius: 1.2, y: [0, 0.4], speed: 0.2, pause: [1, 3] });
+  k.wander('grouper', { home: V(3.4, 0.55, 0.6), radius: 0.8, y: [0, 0.1], speed: 0.25, pause: [3, 7] });
+  // the porcupinefish puffs up when the shark comes near
+  const puffer = k.wander('porcupinefish', {
+    home: V(0.8, 1.0, -2.4), radius: 1.4, y: [0, 0.5], speed: 0.3, pause: [1, 3], threats: [shark], flee: 2.4,
+    onAlarm: (on, dt) => puffer.scale.setScalar(THREE.MathUtils.lerp(puffer.scale.x, on ? 1.7 : 1, Math.min(1, dt * (on ? 6 : 1)))),
+  });
+  // a moray in a hole in the rock: pulls back in when the shark comes by
+  const moray = k.add('moray');
+  const holeAt = V(3.6, 0.45, 1.6), out = V(-0.55, 0.15, -0.8).normalize();
+  moray.rotation.set(0, Math.atan2(-out.z, out.x), 0.2);
+  let mOut = 1;
+  k.updates.push((t, dt) => {
+    const want = moray.position.distanceTo(shark.position) < 3 ? 0 : 1;
+    mOut += (want - mOut) * Math.min(1, dt * (want ? 0.6 : 5));
+    moray.position.copy(holeAt).addScaledVector(out, -0.45 + mOut * 0.25 + Math.sin(t * 0.7) * 0.02);
+  });
+  k.cruise('hawksbill', { rx: 4.5, rz: 3, y: 2.1, speed: 0.6, phase: 4, bob: 0.3 });
+  for (let i = 0; i < 3; i++) k.wander('squid', { home: V(-3.2 + i * 0.5, 1.9, -2.2), radius: 0.3, y: [0, 0.2], speed: 0.15, pause: [0.5, 2] });
+  // the bottom
+  k.put('giantClam', [0.2, 0, 1.4], 0.4);
+  [[-0.1, -2.5], [4.0, -1.6], [-4.1, 3.2]].forEach(([x, z], i) => k.put('urchin', [x, 0, z], i));
+  k.put('seaStar', [1.1, 0, -0.2], 0.5);
+  k.put('seaCucumber', [-2.4, 0, -0.4], 1.2);
+  k.wander('nudibranch', { home: V(0.6, 0, -3.1), radius: 0.5, speed: 0.04, pause: [1, 4] });
+  k.wander('octopus', { home: V(-3.5, 0, -1.0), radius: 1.0, speed: 0.15, pause: [2, 6] });
+  return { obj: scene, radius: 6.2, target: V(0, 0.6, 0), update: k.run };
+}
+
+// the sandy lagoon: garden eels, rays on the sand, seagrass, jellies, crabs
+function aquariumLagoon(scene) {
+  scene.fog = new THREE.Fog(BG, 14, 40);
+  sandFloor(scene, 14, '#f2e8cf');
+  const k = kit(scene);
+  seagrass(scene, V(3.2, 0, 1.5), 2.4, 260);
+  // the rays and the passing blacktip make the garden eels duck
+  const ray = k.wander('stingrayBlue', { home: V(-2.0, 0.08, 0), radius: 2.2, y: [0, 0], speed: 0.35, pause: [3, 8] });
+  const shark = k.cruise('blacktipShark', { rx: 6, rz: 3.5, y: 0.9, speed: 1.6, phase: 2.5 });
+  k.wander('stingrayRed', { home: V(1.2, 0.1, -2.8), radius: 1.6, y: [0, 0], speed: 0.3, pause: [6, 12] });
+  const eels = k.add('gardenEel', { count: 46 });
+  const spots = [], rnd = seeded(77);
+  for (let i = 0; i < 46; i++) { const a = rnd() * 6.28, r = Math.sqrt(rnd()) * 1.6; spots.push(V(-2.4 + Math.cos(a) * r, 0, -0.2 + Math.sin(a) * r * 0.8)); }
+  const burrows = new Burrows(eels, { spots, depth: 0.55, threats: [ray, shark], reach: 1.1 });
+  k.updates.push((t, dt) => burrows.update(dt));
+  k.cruise('dugong', { center: V(3.2, 0, 1.5), rx: 3.5, rz: 2.2, y: 1.0, speed: 0.6, bob: 0.3, phase: 1 });
+  k.wander('greenTurtle', { home: V(2.6, 0.7, -0.6), radius: 1.6, y: [0, 0.8], speed: 0.3, pause: [1, 4] });
+  k.put('seahorse', [4.0, 0.3, 0.6], 1.2);
+  k.wander('boxfish', { home: V(1.5, 0.8, 1.0), radius: 1.0, y: [0, 0.4], speed: 0.2, pause: [1, 3] });
+  for (let i = 0; i < 4; i++) k.wander('spottedJelly', { home: V(-0.5 + i * 0.9, 2.2, 2.5 - i * 0.4), radius: 0.8, y: [-0.4, 0.4], speed: 0.06, pause: [0, 1] });
+  for (let i = 0; i < 3; i++) k.wander('moonJelly', { home: V(-3.5 + i * 0.8, 2.8, -2.6), radius: 0.8, y: [-0.4, 0.4], speed: 0.05, pause: [0, 1] });
+  for (let i = 0; i < 3; i++) k.wander('hermitCrab', { home: V(-0.4 + i * 0.4, 0, 3.4), radius: 0.6, speed: 0.07, pause: [1, 4] });
+  for (let i = 0; i < 2; i++) k.wander('crab', { home: V(4.4, 0, -2.6), radius: 0.8, speed: 0.12, pause: [1, 3] });
+  [[0.4, 1.2], [-4.2, 2.6], [2.0, -1.4]].forEach(([x, z], i) => k.put('seaStar', [x, 0, z], i * 2));
+  [[-0.6, -2.6], [0.9, 2.4]].forEach(([x, z], i) => k.put('seaCucumber', [x, 0, z], i * 1.5));
+  return { obj: scene, radius: 6.2, target: V(0, 0.6, 0), update: k.run };
+}
+
+// the open ocean beyond the drop-off: a fish tornado, a bait ball, dolphins, the whale shark with its remoras
+function aquariumOcean(scene) {
+  const deep = new THREE.Color('#b9dfe8');
+  scene.fog = new THREE.Fog(deep, 30, 95);
+  scene.background = deep;
+  const SURF = 7;
+  const surface = new THREE.Mesh(new THREE.CircleGeometry(60, 48).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#7fd0de', transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+  surface.position.y = SURF;
+  scene.add(surface);
+  const k = kit(scene);
+  const tuna = [0, 1, 2, 3].map((i) => k.cruise('tuna', { center: V(7, 0, 0), rx: 3.2, rz: 2.6, y: 0, speed: 3.2, phase: i * 0.35, offset: [0, (i % 2) * 0.6 - 0.3, i * 0.3] }));
+  k.school('sardine', 220, { center: V(7, 0, 0), size: V(3, 3, 3), speed: 1.2, radius: 0.32, ball: 1.4 }).threats.push(...tuna);
+  k.school('trevally', 110, { center: V(-7, -0.5, 0), size: V(6, 6, 6), speed: 1.6, radius: 0.8, swirl: 1.4, ring: 1.6 });
+  for (let i = 0; i < 4; i++) k.cruise('dolphin', { rx: 17, rz: 9, y: SURF - 1.4, speed: 4, phase: 0.6 + i * 0.07, jump: 3, jumps: 3, bob: 0.2, offset: [0, (i % 2) * -0.6, i * 0.9 - 1.3] });
+  for (let i = 0; i < 3; i++) k.cruise('eagleRay', { rx: 9, rz: 6, y: 2.6, speed: 1.4, phase: 2 + i * 0.12, bob: 0.3, offset: [0, i * 0.3, i * 0.7 - 0.7] });
+  for (let i = 0; i < 3; i++) k.cruise('hammerhead', { rx: 14, rz: 8, y: -4, speed: 1.5, phase: 4 + i * 0.22, bob: 0.2, offset: [0, i * 0.9, i * 1.6 - 1.6] });
+  const ws = k.cruise('whaleShark', { rx: 13, rz: 10, y: 3.4, speed: 1.3, phase: 1.3, bob: 0.2 });
+  for (const [x, z] of [[1.6, 0.45], [0.8, -0.5]]) { const r = makeCreature(SPECIES.remora()); r.position.set(x, -0.62, z); ws.add(r); }
+  k.cruise('manta', { rx: 8, rz: 11, y: -1.5, speed: 1.6, phase: 3, eight: true });
+  k.cruise('humpback', { rx: 34, rz: 22, y: 0, speed: 2.2, phase: 0.4, bob: 1 });
+  for (let i = 0; i < 4; i++) k.cruise('gull', { center: V(-4, 0, 3), rx: 6 + i, rz: 4 + i * 0.5, y: SURF + 3 + i * 0.4, speed: 3, phase: i * 1.6, bob: 0.4 });
+  for (let i = 0; i < 3; i++) k.cruise('flyingFish', { center: V(2, 0, -6), rx: 8, rz: 3, y: SURF - 0.4, speed: 4.5, phase: i * 0.2, jump: 1.2, jumps: 4, bob: 0, offset: [0, 0, i * 0.4] });
+  for (let i = 0; i < 6; i++) k.wander('moonJelly', { home: V(-2 + (i % 3) * 1.6, 4 + (i % 2), -4 + i * 0.4), radius: 1, y: [-0.5, 0.5], speed: 0.06, pause: [0, 1] });
+  return { obj: scene, radius: 15, target: V(0, 1.5, 0), update: k.run };
+}
+
+const AQUARIUMS = [
+  { name: '水槽：代表5種', en: 'Aquarium · the five reference species', note: 'ナンヨウハギ60匹の群れ（ツマグロが来ると散る）· マンタは8の字 · ツマグロ2匹 · アオウミガメ · ジンベエザメが外側をゆっくり', build: aquariumReference, view: [1, 0.55, 1.2] },
+  { name: '水槽：サンゴ礁', en: 'Aquarium · coral reef', note: 'イソギンチャクのクマノミ一家 · 枝サンゴの上のデバスズメダイ · ネムリブカが来ると群れが散り、ハリセンボンがふくらみ、ウツボが穴に引っ込む · タイマイ · アオリイカ · 底のシャコガイ、ガンガゼ、ウミウシ、タコ', build: aquariumReef, view: [1, 0.75, 1.1] },
+  { name: '水槽：砂地と浅瀬', en: 'Aquarium · sandy lagoon', note: 'チンアナゴの原っぱ（エイやツマグロが来ると引っ込む）· 砂に伏せるアカエイとヤッコエイ · 海草とジュゴン · タコクラゲとミズクラゲ · ヤドカリとカニ', build: aquariumLagoon, view: [1, 0.75, 1.1] },
+  { name: '水槽：外洋', en: 'Aquarium · open ocean', note: 'ギンガメアジの竜巻 · イワシのベイトボールをマグロが襲う · イルカのジャンプ · マダラトビエイとシュモクザメの群れ · コバンザメを連れたジンベエザメ · ザトウクジラ · 水面のカモメとトビウオ', build: aquariumOcean, view: [1, 0.35, 1.25] },
+].map((a) => ({ ...a, wide: true, group: 'aquarium' }));
+
+const ITEMS = [...AQUARIUMS];
+for (const g of GROUPS) for (const key of g.keys) {
+  const spec = SPECIES[key]();
+  ITEMS.push({ key, group: g.id, name: spec.name.ja, en: spec.name.en, note: spec.note, build: single(spec), view: spec.upright ? [1, 0.8, 1.2] : key === 'manta' ? [0.8, 0.9, 1.1] : [1, 0.45, 1.25] });
+}
+
+// ---------- page ----------
 
 const canvas = document.getElementById('stage');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -75,16 +257,34 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.NeutralToneMapping;
 
 const grid = document.getElementById('grid');
+const tabs = document.getElementById('tabs');
+const TABS = [{ id: 'all', ja: 'すべて', n: ITEMS.length }, { id: 'aquarium', ja: '水槽', n: AQUARIUMS.length }, ...GROUPS.map((g) => ({ ...g, n: g.keys.length }))];
+for (const t of TABS) {
+  const b = document.createElement('button');
+  b.textContent = `${t.ja} ${t.n}`;
+  b.dataset.tab = t.id;
+  b.addEventListener('click', () => show(t.id));
+  tabs.appendChild(b);
+}
 const stages = ITEMS.map((item) => {
   const card = document.createElement('div');
   card.className = 'card' + (item.wide ? ' wide' : '');
+  card.dataset.group = item.group;
   card.innerHTML = `<div class="view"></div><div class="meta"><b>${item.name}</b> <span>${item.en}</span><small>${item.note}</small></div>`;
   grid.appendChild(card);
-  const st = { item, view: card.querySelector('.view'), ...stageFor(item.build, item) };
-  st.scene.background = item.wide ? BG : null;
+  const st = { item, card, view: card.querySelector('.view'), ...stageFor(item.build, item) };
+  if (!st.scene.background && item.wide) st.scene.background = BG;
   card.addEventListener('click', () => openDetail(st));
   return st;
 });
+function show(id) {
+  for (const s of stages) s.card.style.display = id === 'all' || s.item.group === id ? '' : 'none';
+  for (const b of tabs.children) b.classList.toggle('on', b.dataset.tab === id);
+  try { localStorage.setItem('sealife.tab', id); } catch {}
+}
+let first = 'all';
+try { first = localStorage.getItem('sealife.tab') || 'all'; } catch {}
+show(TABS.some((t) => t.id === first) ? first : 'all');
 
 // detail view with orbit controls
 const detailEl = document.getElementById('detail');
@@ -94,6 +294,7 @@ function openDetail(st) {
   detail = st;
   detailCam = st.camera.clone();
   controls = new OrbitControls(detailCam, detailView);
+  controls.target.copy(st.target);
   controls.enableDamping = true;
   controls.autoRotate = !st.item.wide;
   controls.autoRotateSpeed = 0.8;
@@ -135,6 +336,7 @@ renderer.setAnimationLoop(() => {
 // debug: render a card's scene at a fixed size (the preview pane is narrow)
 window.__sealife = {
   stages,
+  find: (key) => stages.findIndex((s) => s.item.key === key || s.item.name === key),
   shot(i, w = 1200, h = 760, advance = 0) {
     const st = stages[i];
     for (let k = 0; k < advance * 30; k++) { clock.uTime.value += 1 / 30; st.update(clock.uTime.value, 1 / 30, true); }

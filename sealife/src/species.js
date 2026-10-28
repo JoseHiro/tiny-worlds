@@ -23,6 +23,7 @@ export function blueTang() {
   ];
   return {
     id: 'blueTang', name: L2('ナンヨウハギ', 'Blue tang'), size: L, habitat: ['reef'], water: ['tropical'],
+    note: '0.45 · 青い体に黒い模様、黄色い尾 · くねり泳ぎ（速い）· 小さな群れでサンゴの上',
     geometry: assemble(parts),
     swim: { mode: 'bend', amp: 0.05, freq: 9, waves: 0.6, nose: 0.225, len: L },
   };
@@ -56,6 +57,7 @@ export function manta() {
   ];
   return {
     id: 'manta', name: L2('マンタ', 'Manta ray'), size: span, habitat: ['ocean', 'reef'], water: ['tropical', 'temperate'],
+    note: '幅3.4 · 背は黒、腹は白、肩に白い模様、頭びれ · 羽ばたき（ゆっくり）· 外洋〜礁の縁を大きく旋回',
     geometry: assemble(parts),
     swim: { mode: 'flap', amp: 0.55, freq: 1.3, waves: 0.8, z0: 0.35, len: half - 0.35 },
   };
@@ -84,6 +86,7 @@ export function blacktipShark() {
   ];
   return {
     id: 'blacktip', name: L2('ツマグロ', 'Blacktip reef shark'), size: L, habitat: ['lagoon', 'reef'], water: ['tropical'],
+    note: '1.6 · 灰色、ひれの先が黒 · くねり泳ぎ · 浅瀬のラグーンを巡回',
     geometry: assemble(parts),
     swim: { mode: 'bend', amp: 0.16, freq: 2.4, waves: 0.7, nose: 0.8, len: L },
   };
@@ -130,6 +133,7 @@ export function whaleShark() {
   }
   return {
     id: 'whaleShark', name: L2('ジンベエザメ', 'Whale shark'), size: L, habitat: ['ocean'], water: ['tropical'],
+    note: '8.5 · 紺灰色に白い斑点、背に3本の隆起線、横長の口 · ゆっくりくねる · 外洋（まれな見せ場）',
     geometry: assemble(parts),
     swim: { mode: 'bend', amp: 0.55, freq: 0.75, waves: 0.5, nose: L / 2, len: L },
   };
@@ -160,9 +164,25 @@ export function greenTurtle() {
   for (const sd of [1, -1]) for (let i = 0; i < 4; i++) { const x = 0.27 - i * 0.18; parts.push(part(ellipsoid(0.09, 0.012, 0.08, 8), '#7f9050', { pos: [x, onShell(x, 0.2) - 0.006, sd * 0.2], rot: [sd * 0.45, 0, 0] })); }
   return {
     id: 'greenTurtle', name: L2('アオウミガメ', 'Green sea turtle'), size: 1.2, habitat: ['lagoon', 'reef'], water: ['tropical', 'temperate'],
+    note: '1.2 · 甲羅の模様（中央5枚＋左右4枚）· 前ひれで羽ばたく · 浅瀬で海草を食べる',
     geometry: assemble(parts),
     swim: { mode: 'flap', amp: 0.28, freq: 1.3, waves: 0.4, z0: 0.34, len: 0.5 },
   };
 }
 
-export const SPECIES = { blueTang, manta, blacktipShark, whaleShark, greenTurtle };
+import { RAYS_SHARKS } from './rays-sharks.js';
+import { FISH } from './fish.js';
+import { OTHERS } from './others.js';
+
+export const REFERENCE = { blueTang, manta, blacktipShark, whaleShark, greenTurtle };
+export const SPECIES = { ...REFERENCE, ...RAYS_SHARKS, ...FISH, ...OTHERS };
+
+// catalog groups, in DESIGN.md §2 order
+export const GROUPS = [
+  { id: 'rays', ja: 'エイ', en: 'Rays', keys: ['manta', 'eagleRay', 'stingrayRed', 'stingrayBlue'] },
+  { id: 'sharks', ja: 'サメ', en: 'Sharks', keys: ['whaleShark', 'blacktipShark', 'whitetipShark', 'hammerhead', 'greatWhite', 'remora'] },
+  { id: 'fish', ja: '魚', en: 'Fish', keys: ['clownfish', 'blueTang', 'butterflyfish', 'moorishIdol', 'parrotfish', 'damselGreen', 'damselBlue', 'porcupinefish', 'grouper', 'moray', 'gardenEel', 'seahorse', 'boxfish', 'trevally', 'sardine', 'tuna'] },
+  { id: 'big', ja: '大きな生き物', en: 'Big animals', keys: ['greenTurtle', 'hawksbill', 'dolphin', 'dugong', 'humpback'] },
+  { id: 'small', ja: '小さな生き物', en: 'Small creatures', keys: ['octopus', 'squid', 'moonJelly', 'spottedJelly', 'nudibranch', 'seaStar', 'seaCucumber', 'urchin', 'giantClam', 'hermitCrab', 'crab', 'anemone'] },
+  { id: 'surface', ja: '海の上', en: 'Above the sea', keys: ['gull', 'flyingFish'] },
+];
