@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { person } from '../../airport/src/parts.js';
 import { createWorld, v3 } from '../../koto/src/world.js';
-import { SAGRADA_SCALE, basilica, towers, gloryWorks, nativityFacade, setNight } from './sagrada.js';
+import { SAGRADA_SCALE, basilica, towers, gloryWorks, nativityFacade, passionFacade, setNight } from './sagrada.js';
 
 const S = SAGRADA_SCALE;
 const VIEWS = {
@@ -15,6 +15,7 @@ const VIEWS = {
   near: ['生誕の塔を見上げる', v3(42, 3, 30), v3(24, 60, 0)],
   nativity: ['生誕のファサード', v3(62, 6, 4), v3(26, 22, 0)],
   portal: ['愛の門', v3(40, 2.4, 2), v3(27, 12, 0)],
+  passionF: ['受難のファサード', v3(-82, 12, -12), v3(-26, 24, 0)],
 };
 const world = createWorld({ views: VIEWS, shadow: 120, target: [0, 0, 0], look: 'day' });
 const { scene, camera, life, steps } = world;
@@ -35,6 +36,7 @@ const pond = ground(46, 30, 128, 6, 0x5f8a9a); pond.material.roughness = 0.08; p
 const b = new THREE.Group(); b.scale.setScalar(S); scene.add(b);
 b.add(basilica());
 b.add(nativityFacade());
+b.add(passionFacade());
 const t = towers(); b.add(t);
 const works = gloryWorks(); b.add(works); life.push(works);
 // people for scale, on the plaza

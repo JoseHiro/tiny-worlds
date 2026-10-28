@@ -197,7 +197,7 @@ export function basilica() {
   cl(px - 6, nx + 6, az - 8, az - 8); cl(px - 6, px - 6, az - 8, gz - 4); cl(nx + 6, nx + 6, az - 8, gz - 4);
   // the transept fronts (placeholders until the façades are modelled): the Nativity in old dark stone, the Passion pale
   block(nx - 4, nx + 1, -th - 6, th + 6, 30, O); // (behind the Nativity façade, which is modelled on its own)
-  block(px - 3, px + 3, -th - 6, th + 6, 34, STONE.pale);
+  block(px - 1, px + 4, -th - 6, th + 6, 30, STONE.pale); // (behind the Passion façade, modelled on its own)
   bakeStatic(g);
   g.userData = { kind: 'basilica' };
   return g;
@@ -209,7 +209,7 @@ export function towers() {
   // Nativity (north-east): Barnabas, Simon, Jude, Matthias — the outer pair taller (≈107 m), the inner ≈98.5 m
   [[-18.5, 107, 'マティア'], [-7, 98.5, 'ユダ'], [7, 98.5, 'シモン'], [18.5, 107, 'バルナバ']].forEach(([z, h, name]) => { const t = apostleTower({ h, r: 3.6, stone: NATIVITY }); t.position.set(nx + 1.5, 0, z); t.userData.name = name; g.add(t); });
   // Passion (west / south-west): James the Less, Bartholomew, Thomas, Philip — elliptical plan, paler stone
-  [[-17.5, 112, 'ヤコブ（小）'], [-6, 107, 'バルトロマイ'], [6, 107, 'トマス'], [17.5, 112, 'フィリポ']].forEach(([z, h, name]) => { const t = apostleTower({ h, r: 3.6, stone: STONE.new, plan: 'ellipse' }); t.position.set(px - 1.5, 0, z); t.userData.name = name; g.add(t); });
+  [[-18.5, 112, 'ヤコブ（小）'], [-7, 107, 'バルトロマイ'], [7, 107, 'トマス'], [18.5, 112, 'フィリポ']].forEach(([z, h, name]) => { const t = apostleTower({ h, r: 3.6, stone: STONE.new, plan: 'ellipse' }); t.position.set(px - 1.5, 0, z); t.userData.name = name; g.add(t); });
   // the four evangelists around the crossing, Mary over the apse, Jesus in the middle
   [[-1, 1, 'man'], [1, 1, 'lion'], [-1, -1, 'bull'], [1, -1, 'eagle']].forEach(([sx, sz, symbol]) => { const t = evangelistTower({ symbol }); t.position.set(sx * 11, 0, sz * 11); g.add(t); });
   const mary = maryTower(); mary.position.set(0, 0, -24); g.add(mary);
@@ -348,4 +348,90 @@ const BRONZE = (() => {
   x.fillStyle = '#2a3a30'; x.fillRect(62, 0, 4, 256);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   return new THREE.MeshStandardMaterial({ map: t, roughness: 0.5, metalness: 0.45 });
+})();
+
+// ---------- the Passion façade (west, −X): austere and bony, in pale stone ----------
+// A plain wall with bronze doors of text; in front, a porch whose roof rests on six inclined columns like strained
+// muscles or bones; above it a pyramid of eighteen bone-shaped columns under a cross crowned with thorns. Angular,
+// faceted figures (after Subirachs) climb the façade in an S: the Last Supper and the arrest below, the way to
+// Calvary in the middle, the Crucifixion high in the centre; and on the bridge between the two middle towers, the
+// golden Ascension. Beside the door, the magic square whose rows add up to 33.
+export function passionFacade() {
+  const g = new THREE.Group();
+  const X = PLAN.passionX - 3.4; // the face of the wall (the porch reaches out toward −X)
+  const pale = STONE.pale, stone = STONE.new, bone = mat(0xe6dcc8, { roughness: 0.8 }), dark = mat(0x2a2620, { roughness: 1 });
+  // the wall: smooth, with a slight batter, and the three doorways
+  g.add(box(4, 34, 46, pale, X + 2, 17, 0));
+  for (const [z, w, h] of [[0, 7, 13], [12.75, 3.6, 9], [-12.75, 3.6, 9]]) {
+    g.add(box(0.2, h, w, dark, X - 0.05, h / 2, z));
+    const d = mesh(new THREE.PlaneGeometry(w * 0.9, h * 0.92), TEXTDOOR, X - 0.2, h * 0.46, z); d.rotation.y = -Math.PI / 2; g.add(d);
+  }
+  // the six inclined columns: thick at the top where they take the roof, jointed like bones, leaning back to the wall
+  const P0 = X - 7.5, roofY = 19;
+  const colZ = [-15.5, -9.3, -3.1, 3.1, 9.3, 15.5];
+  for (const z of colZ) {
+    const a = new THREE.Vector3(P0, 0, z * 1.08), b = new THREE.Vector3(X - 2.2, roofY, z * 0.92);
+    const c = new THREE.CatmullRomCurve3([a, a.clone().lerp(b, 0.45).add(new THREE.Vector3(-0.8, 0, 0)), b]);
+    const prof = (t) => 0.75 + 0.55 * t + 0.25 * Math.sin(t * Math.PI * 3) ** 2; // swelling and pinched
+    const geo = new THREE.TubeGeometry(c, 24, 1, 10), pp = geo.attributes.position;
+    // scale each ring of the tube around its centre by the profile (thicker at the top, knotty)
+    const ctr = new THREE.Vector3();
+    for (let i = 0; i < pp.count; i++) { const ring = Math.floor(i / 11), t = ring / 24; c.getPointAt(Math.min(1, t), ctr); const v = new THREE.Vector3().fromBufferAttribute(pp, i).sub(ctr).multiplyScalar(prof(t)).add(ctr); pp.setXYZ(i, v.x, v.y, v.z); }
+    geo.computeVertexNormals();
+    g.add(mesh(geo, bone));
+    for (const t of [0.33, 0.66]) { c.getPointAt(t, ctr); g.add(mesh(new THREE.SphereGeometry(prof(t) * 1.15, 10, 8), bone, ctr.x, ctr.y, ctr.z)); } // the joints
+  }
+  // the porch roof (a thick lintel with a rounded front), its underside darker
+  g.add(box(9, 3.2, 40, stone, X - 4.5, roofY + 1.6, 0));
+  const lip = cyl(1.6, 1.6, 40, bone, X - 9, roofY + 1.6, 0, 12); lip.rotation.x = Math.PI / 2; g.add(lip);
+  // the pyramid of eighteen bones (6 + 5 + 4 + 3) on the roof, rising to the cross
+  const bones = [];
+  [[6, 0], [5, 1], [4, 2], [3, 3]].forEach(([n, row]) => {
+    for (let k = 0; k < n; k++) {
+      const z = (k - (n - 1) / 2) * 5.2, x = X - 5.8 + row * 1.2, h = 9 + row * 4.5 - Math.abs(z) * 0.4, y0 = roofY + 3.2 + row * 1.0;
+      bones.push(new THREE.CylinderGeometry(0.55, 0.7, h, 8).translate(x, y0 + h / 2, z));
+      for (const yy of [y0 + h, y0 + h * 0.5]) bones.push(new THREE.SphereGeometry(0.85, 8, 6).translate(x, yy, z)); // knuckles
+    }
+  });
+  g.add(mesh(mergeGeometries(bones.map((b) => (b.index ? b.toNonIndexed() : b))), bone));
+  const crossY = roofY + 3.2 + 3 + 9 + 13.5 + 1.5;
+  g.add(box(0.9, 7, 0.9, stone, X - 2.4, crossY + 3.5, 0)); g.add(box(0.9, 0.9, 4.5, stone, X - 2.4, crossY + 5, 0));
+  g.add(mesh(new THREE.TorusGeometry(1.1, 0.35, 6, 14).rotateY(Math.PI / 2), mat(0x6a5a40, { roughness: 1, flatShading: true }), X - 2.9, crossY + 5, 0)); // the crown of thorns
+  // the faceted figures, in an S: low left→right, middle right→left, the Crucifixion high in the centre
+  const figM = mat(0xb0a690, { roughness: 0.85, flatShading: true }), figs = [];
+  const figure = (x, y, z, s = 1, lean = 0) => {
+    figs.push(new THREE.BoxGeometry(0.9 * s, 2.0 * s, 0.7 * s).applyMatrix4(new THREE.Matrix4().makeRotationZ(lean).setPosition(x, y + s, z)));
+    figs.push(new THREE.OctahedronGeometry(0.42 * s, 0).translate(x, y + 2.4 * s, z)); // a faceted head
+  };
+  for (let k = 0; k < 9; k++) figure(X - 1.3, 0.3, -14 + k * 3.4, 1.45, (k % 3 - 1) * 0.15); // the Last Supper, the kiss of Judas, the arrest
+  for (let k = 0; k < 7; k++) figure(X - 1.3, roofY + 4, 13 - k * 4.2, 1.5, (k % 2 ? 0.2 : -0.2)); // the way to Calvary
+  // the Crucifixion, high in the centre, and the Ascension on the bridge between the middle towers
+  g.add(box(0.6, 7, 0.6, stone, X - 1.0, 41, 0)); g.add(box(0.6, 0.6, 4, stone, X - 1.0, 43, 0));
+  figure(X - 1.4, 37.8, 0, 1.6);
+  const bridgeY = 62;
+  g.add(box(3, 2, 14, stone, PLAN.passionX - 1.5, bridgeY, 0));
+  const gold = mat(0xd9b860, { metalness: 0.6, roughness: 0.3 });
+  g.add(mesh(new THREE.CapsuleGeometry(0.8, 3.2, 4, 8), gold, PLAN.passionX - 1.5, bridgeY + 3.6, 0)); g.add(mesh(new THREE.OctahedronGeometry(0.7, 0), gold, PLAN.passionX - 1.5, bridgeY + 6.3, 0));
+  g.add(mesh(mergeGeometries(figs.map((b) => (b.index ? b.toNonIndexed() : b))), figM));
+  // the magic square beside the main door
+  const ms = mesh(new THREE.PlaneGeometry(1.6, 1.6), MAGIC, X - 0.12, 4.2, 5.2); ms.rotation.y = -Math.PI / 2; g.add(ms);
+  bakeStatic(g);
+  g.userData = { kind: 'facade', facade: 'passion' };
+  return g;
+}
+const TEXTDOOR = (() => { // bronze doors covered in lines of text (the Gospel of the Passion)
+  const c = document.createElement('canvas'); c.width = 128; c.height = 256; const x = c.getContext('2d');
+  x.fillStyle = '#6a5a40'; x.fillRect(0, 0, 128, 256);
+  for (let r = 0; r < 60; r++) for (let k = 0; k < 6; k++) { x.fillStyle = (r * 7 + k * 3) % 11 === 0 ? '#e8d8a0' : '#3a3024'; x.fillRect(4 + k * 20, 4 + r * 4.2, 6 + ((r * k) % 10), 2); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.MeshStandardMaterial({ map: t, roughness: 0.45, metalness: 0.5 });
+})();
+const MAGIC = (() => { // Subirachs' magic square: every row, column and diagonal adds up to 33
+  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+  x.fillStyle = '#d6ccb8'; x.fillRect(0, 0, 128, 128); x.strokeStyle = '#6a5a40'; x.lineWidth = 2;
+  const sq = [[1, 14, 14, 4], [11, 7, 6, 9], [8, 10, 10, 5], [13, 2, 3, 15]];
+  x.font = 'bold 20px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#3a3024';
+  sq.forEach((row, r) => row.forEach((n, k) => { x.strokeRect(4 + k * 30, 4 + r * 30, 30, 30); x.fillText(n, 19 + k * 30, 20 + r * 30); }));
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.MeshStandardMaterial({ map: t, roughness: 0.8 });
 })();
