@@ -314,14 +314,16 @@ export class Cruise {
 
 // A creature that potters about a home spot: swims (or walks) to a random point nearby, pauses, picks another.
 // threats within `flee` make it dash away (or, with onAlarm, do its own thing — a pufferfish puffs up).
+// ground: (x, z) => y keeps a walker on an uneven seabed.
 export class Wander {
-  constructor(obj, { home, radius = 1, y = [0, 0], speed = 0.3, turn = 2.5, pause = [0.3, 1.5], threats = [], flee = 0, sideways = false, onAlarm = null } = {}) {
-    Object.assign(this, { obj, home: home.clone(), radius, y, speed, turn, pause, threats, flee, sideways, onAlarm });
+  constructor(obj, { home, radius = 1, y = [0, 0], speed = 0.3, turn = 2.5, pause = [0.3, 1.5], threats = [], flee = 0, sideways = false, onAlarm = null, ground = null } = {}) {
+    Object.assign(this, { obj, home: home.clone(), radius, y, speed, turn, pause, threats, flee, sideways, onAlarm, ground });
     this.yaw = Math.random() * Math.PI * 2;
     this.wait = Math.random() * pause[1];
     this.alarm = 0;
     this.target = this.pick();
     obj.position.copy(this.pick());
+    if (ground) obj.position.y = ground(obj.position.x, obj.position.z);
   }
   pick() {
     const a = Math.random() * Math.PI * 2, r = this.radius * Math.sqrt(Math.random());
@@ -359,6 +361,7 @@ export class Wander {
     pos.x += Math.cos(this.yaw) * go;
     pos.z -= Math.sin(this.yaw) * go;
     pos.y += THREE.MathUtils.clamp(to.y, -speed * dt * 0.5, speed * dt * 0.5);
+    if (this.ground) pos.y = this.ground(pos.x, pos.z); // walkers follow an uneven floor
     o.rotation.set(0, this.yaw + (this.sideways ? Math.PI / 2 : 0), 0);
   }
 }

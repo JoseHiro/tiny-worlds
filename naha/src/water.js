@@ -34,16 +34,27 @@ export const CAUSTICS = /* glsl */ `
 export const shared = {
   uTime: { value: 0 },
   uCaustic: { value: 1.0 },
+  uCutAlpha: { value: 0.86 }, // the water's cut faces; lower = see in, like aquarium glass
 };
 
 // Give a standard material the caustic light pattern wherever it is under water.
 export function withCaustics(material) {
-  material.onBeforeCompile = (sh) => {
+  material.onBeforeCompile = causticsInject;
+  material.needsUpdate = true;
+  return material;
+}
+// the same, as a shader injection other materials can chain (the sea-life swim shader takes these as `extras`)
+export function causticsInject(sh) {
     sh.uniforms.uTime = shared.uTime;
     sh.uniforms.uCaustic = shared.uCaustic;
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;')
-      .replace('#include <project_vertex>', '#include <project_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      .replace('#include <project_vertex>', `#include <project_vertex>
+        #ifdef USE_INSTANCING
+          vWPos = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;
+        #else
+          vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
+        #endif`);
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>\nvarying vec3 vWPos;\nuniform float uTime;\nuniform float uCaustic;\n${CAUSTICS}`)
       .replace('#include <dithering_fragment>', `#include <dithering_fragment>
@@ -54,9 +65,6 @@ export function withCaustics(material) {
           gl_FragColor.rgb += vec3(0.85, 1.0, 0.98) * c * 0.55 * uCaustic * fade * smoothstep(0.0, 0.15, dep);
           gl_FragColor.rgb *= mix(vec3(1.0), vec3(0.78, 0.95, 0.97), clamp(dep * 0.12, 0.0, 0.6)); // blue-green cast with depth
         }`);
-  };
-  material.needsUpdate = true;
-  return material;
 }
 
 // ---------- ripple simulation (ping-pong render targets) ----------
@@ -207,6 +215,7 @@ export function waterCutMaterial() {
   return new THREE.ShaderMaterial({
     uniforms: {
       uTime: shared.uTime,
+      uAlpha: shared.uCutAlpha,
       cShallow: { value: new THREE.Color('#7fe3d6') },
       cDeep: { value: new THREE.Color('#13557f') },
     },
@@ -215,7 +224,7 @@ export function waterCutMaterial() {
     depthWrite: false,
     vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
     fragmentShader: /* glsl */ `
-      uniform float uTime; uniform vec3 cShallow, cDeep; varying vec3 vW;
+      uniform float uTime, uAlpha; uniform vec3 cShallow, cDeep; varying vec3 vW;
       void main() {
         float d = -vW.y;
         vec3 col = mix(cShallow, cDeep, smoothstep(0.0, 9.0, d));
@@ -223,7 +232,7 @@ export function waterCutMaterial() {
         float rays = pow(max(0.0, sin(vW.x * 0.9 + vW.z * 0.9 + sin(uTime * 0.4) * 2.0)), 6.0) * exp(-d * 0.35) * 0.25;
         col += vec3(0.8, 1.0, 1.0) * rays;
         col = mix(col, vec3(1.0), smoothstep(0.12, 0.0, d) * 0.6); // bright line at the surface
-        gl_FragColor = vec4(col, 0.86);
+        gl_FragColor = vec4(col, uAlpha);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,

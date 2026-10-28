@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { BLOCK, seabed, bedTexture, cutFaces, bedHeight } from './terrain.js';
 import { Ripples, waterSurface, waterCutMaterial, earthCutMaterial, withCaustics, shared } from './water.js';
 import { person, PALETTE, mat } from '../../airport/src/parts.js';
+import { populate } from './sealife.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -12,6 +13,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.localClippingEnabled = true; // sea life is clipped to the block
 $('app').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -61,6 +63,7 @@ const branch = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.06, 0.1, 0.9
 const table = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.9, 0.25, 0.18, 10), withCaustics(new THREE.MeshStandardMaterial({ roughness: 0.8 })), 70);
 const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), eul = new THREE.Euler();
 let nb = 0, nbr = 0, nt = 0;
+const coralSpots = []; // coral heads, where the chromis gather
 for (let k = 0; k < 520 && (nb < 260 || nbr < 600 || nt < 70); k++) {
   const x = -42 + rnd() * 84, z = -19 + rnd() * 15;
   const h = bedHeight(x, z);
@@ -72,6 +75,7 @@ for (let k = 0; k < 520 && (nb < 260 || nbr < 600 || nt < 70); k++) {
     blob.setMatrixAt(nb, m4.compose(new THREE.Vector3(x, h + s * 0.3, z), q.identity(), sc.set(s, s * 0.7, s)));
     blob.setColorAt(nb++, c);
   } else if (kind < 0.85 && nbr < 594) {
+    coralSpots.push([x, z]);
     for (let j = 0; j < 6; j++) { // a little bush of branches
       eul.set((rnd() - 0.5) * 0.9, rnd() * 6, (rnd() - 0.5) * 0.9);
       q.setFromEuler(eul);
@@ -85,19 +89,6 @@ for (let k = 0; k < 520 && (nb < 260 || nbr < 600 || nt < 70); k++) {
 }
 blob.count = nb; branch.count = nbr; table.count = nt;
 for (const im of [blob, branch, table]) { im.castShadow = true; im.receiveShadow = true; props.add(im); }
-
-// fish: three small schools circling over the reef
-const FISH = 150;
-const fishGeo = new THREE.ConeGeometry(0.09, 0.32, 6).rotateZ(-Math.PI / 2);
-const fish = new THREE.InstancedMesh(fishGeo, withCaustics(new THREE.MeshStandardMaterial({ roughness: 0.4 })), FISH);
-const schools = [
-  { cx: -18, cz: -10, r: 4.5, y: -1.0, color: '#f2c94c', speed: 0.5 },
-  { cx: 6, cz: -13, r: 6, y: -1.3, color: '#4aa8ff', speed: -0.35 },
-  { cx: 26, cz: -9, r: 3.5, y: -0.9, color: '#ff8a5c', speed: 0.6 },
-];
-const fishData = Array.from({ length: FISH }, (_, i) => ({ s: schools[i % 3], a: rnd() * 6.28, dr: (rnd() - 0.5) * 2, dy: (rnd() - 0.5) * 0.5, ph: rnd() * 6 }));
-fishData.forEach((f, i) => fish.setColorAt(i, new THREE.Color(f.s.color)));
-props.add(fish);
 
 // beach: palms, parasols, loungers, people
 function palm(x, z, lean) {
@@ -161,6 +152,10 @@ ring.rotation.x = Math.PI / 2;
 ring.position.set(-4, 0.05, 9);
 props.add(ring);
 
+// ---------- sea life (the shared library in ../sealife) ----------
+
+const sea = populate(scene, { swimmer, coralSpots });
+
 // ---------- interaction: click the water to make ripples ----------
 
 const ray = new THREE.Raycaster();
@@ -173,6 +168,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   const hit = ray.ray.intersectPlane(plane, new THREE.Vector3());
   if (!hit || Math.abs(hit.x) > BLOCK.w / 2 || Math.abs(hit.z) > BLOCK.d / 2) return;
   ripples.drop((hit.x + BLOCK.w / 2) / BLOCK.w, (BLOCK.d / 2 - hit.z) / BLOCK.d, 0.025, 0.9);
+  sea.startle(hit.setY(-0.5)); // fish nearby scatter, garden eels duck
 });
 
 // ---------- tuning panel ----------
@@ -205,6 +201,31 @@ $('look').addEventListener('click', (e) => {
   $('look').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
   applyLook();
 });
+
+// ---------- where to look: camera presets, and what is passing ----------
+
+const VIEWS = {
+  all: { pos: [62, 52, 74], target: [0, -2.5, -1] },
+  lagoon: { pos: [-27.5, 3.2, 7], target: [-30.5, -0.9, 1] }, // the garden eels and the rays
+  reef: { pos: [-16.2, 2.2, -6], target: [-18, -1.1, -10.2] }, // a clownfish family's anemone
+  outside: { pos: [-4, 3, 2], target: [0, -4, -27] },
+  cut: { pos: [0, -3, -68], target: [0, -4, -26], glass: 0.32 }, // through the ocean-side cut face, like aquarium glass
+};
+let fly = null;
+function goView(k) {
+  const v = VIEWS[k];
+  fly = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: new THREE.Vector3(...v.pos), t1: new THREE.Vector3(...v.target), a0: shared.uCutAlpha.value, a1: v.glass ?? 0.86 };
+  $('views').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === k));
+}
+$('views').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) goView(b.dataset.v); });
+let uiT = 0;
+const c = sea.counts;
+$('seaCount').textContent = `浅瀬 ${c.lagoon} · サンゴ礁 ${c.reef} · 外洋 ${c.outside} · 空 ${c.surface}`;
+function showEvents() {
+  const now = sea.happening();
+  $('event').textContent = now.length ? now.join(' · ') : '外洋を通るもの：イルカの群れ（ときどき）、ジンベエザメ（まれ）';
+  $('event').classList.toggle('live', now.length > 0);
+}
 
 // ---------- loop ----------
 
@@ -239,20 +260,17 @@ renderer.setAnimationLoop(() => {
   swimmer.position.y = -0.75 + bob;
   ring.position.y = 0.05 + bob;
   for (const p of beachPeople) p.userData.update(t);
-  // fish
-  fishData.forEach((f, i) => {
-    const s = f.s;
-    const a = f.a + t * s.speed;
-    const r = s.r + f.dr;
-    const x = s.cx + Math.cos(a) * r, z = s.cz + Math.sin(a) * r * 0.6;
-    const y = s.y + f.dy + Math.sin(t * 2 + f.ph) * 0.08;
-    const dir = Math.sign(s.speed);
-    const heading = Math.atan2(-(Math.cos(a) * r * 0.6 * dir), -Math.sin(a) * r * dir);
-    q.setFromEuler(eul.set(0, heading, 0));
-    fish.setMatrixAt(i, m4.compose(sc.set(x, y, z), q, new THREE.Vector3(1, 1, 1)));
-  });
-  fish.instanceMatrix.needsUpdate = true;
+  sea.update(t, dt);
+  if ((uiT -= dt) <= 0) { uiT = 0.5; showEvents(); }
 
+  if (fly) {
+    fly.t = Math.min(1, fly.t + dt / 1.6);
+    const k = fly.t * fly.t * (3 - 2 * fly.t);
+    camera.position.lerpVectors(fly.p0, fly.p1, k);
+    controls.target.lerpVectors(fly.t0, fly.t1, k);
+    shared.uCutAlpha.value = THREE.MathUtils.lerp(fly.a0, fly.a1, k);
+    if (fly.t >= 1) fly = null;
+  }
   controls.update();
   draw();
 });
@@ -281,4 +299,4 @@ function snapshot(w = 1440, h = 900) {
   return url;
 }
 
-window.__naha = { renderer, scene, camera, controls, ripples, water, snapshot, setLook: (k) => { look = k; applyLook(); } };
+window.__naha = { renderer, scene, camera, controls, ripples, water, snapshot, sea, goView, VIEWS, setLook: (k) => { look = k; applyLook(); } };

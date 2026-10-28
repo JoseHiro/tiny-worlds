@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Naha — Water</title>
+  <title>Naha — Sea</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
@@ -25,6 +25,8 @@
     .seg button + button { border-left: 1px solid var(--ink); }
     .seg button.on { background: var(--ink); color: #fff; }
     .hint { font-size: 11px; color: var(--muted); }
+    .event { font-size: 11px; color: var(--muted); border-left: 2px solid var(--line); padding-left: 8px; }
+    .event.live { color: var(--ink); border-color: var(--accent); }
     a { color: inherit; }
     @media (max-width: 720px) { .brand h1 { font-size: 40px; } .brand p { display: none; } .panel { left: 12px; right: 12px; width: auto; } }
   </style>
@@ -35,11 +37,15 @@
 <body>
   <div id="app"></div>
   <div class="brand">
-    <div class="eyebrow">Tiny Worlds 02 · Water prototype</div>
+    <div class="eyebrow">Tiny Worlds 02 · Sea prototype</div>
     <h1>Naha<span>.</span></h1>
-    <p>那覇の海の、水だけの試作です。白い砂浜から浅瀬、サンゴ礁、外洋への崖まで。水面をクリックすると波紋が広がります。</p>
+    <p>那覇の海の試作です。白い砂浜から浅瀬、サンゴ礁、外洋への崖まで、すみかごとに海の生き物が暮らしています。水面をクリックすると波紋が広がり、近くの魚が驚きます。</p>
   </div>
   <aside class="panel">
+    <h3>見る場所</h3>
+    <div class="seg" id="views"><button data-v="all" class="on">全体</button><button data-v="lagoon">浅瀬</button><button data-v="reef">サンゴ礁</button><button data-v="outside">外洋</button><button data-v="cut">断面</button></div>
+    <div class="hint" id="seaCount"></div>
+    <div class="event" id="event"></div>
     <h3>水の調整</h3>
     <label>波の高さ <input id="wave" type="range" min="0" max="2.5" step="0.05" value="1" /></label>
     <label>透明度 <input id="clarity" type="range" min="0" max="1" step="0.02" value="0.6" /></label>
