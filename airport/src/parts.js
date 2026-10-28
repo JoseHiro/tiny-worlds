@@ -501,7 +501,39 @@ const ROLES = {
   swimKid: { top: PALETTE.orange, legs: PALETTE.skin, hat: 'baseball', capColor: PALETTE.yellow, scale: 0.72 },
   swimMum: { top: PALETTE.pink, legs: PALETTE.skin, hat: 'straw' },
   swimDad: { top: PALETTE.teal, legs: PALETTE.navy, hat: 'hair' },
+  // the old capital (koto): kimono — a long robe instead of trousers, an obi, hanging sleeves, small steps
+  kimonoWoman: { robe: 0xe9a3b4, pattern: 'sakura', obi: 0xc9a24a, otaiko: true, hat: 'updo', kanzashi: 0xd9482b, shoes: 0xc94a3a, stride: 0.3, pace: 0.8 },
+  kimonoWoman2: { robe: 0x6f8fb8, pattern: 'kiku', obi: 0xf2ede2, otaiko: true, hat: 'updo', kanzashi: 0xf2c94c, shoes: 0x2f4a6b, stride: 0.3, pace: 0.8 },
+  kimonoMan: { robe: 0x3a3f4a, pattern: 'plain', obi: 0x8e7a5a, haori: 0x1f2228, hat: 'hair', shoes: 0x2a2018, stride: 0.38, pace: 0.85 },
+  yukataGirl: { robe: 0xf2ede2, pattern: 'stripe', obi: 0xd9482b, otaiko: true, hat: 'updo', kanzashi: 0xe9a3b4, shoes: 0x8a6a4a, stride: 0.3, scale: 0.72 },
 };
+
+// robe patterns, drawn once each on a canvas and shared
+const robeTex = new Map();
+function robeMat(color, pattern) {
+  const key = color + pattern;
+  if (robeTex.has(key)) return robeTex.get(key);
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d');
+  g.fillStyle = '#' + new THREE.Color(color).getHexString(); g.fillRect(0, 0, 128, 128);
+  if (pattern === 'sakura' || pattern === 'kiku') { // little flowers scattered over the cloth
+    const petals = pattern === 'sakura' ? 5 : 12;
+    for (const [x, y, r, col] of [[24, 30, 11, '#fff4f6'], [86, 22, 8, '#f6c4cf'], [60, 72, 13, '#fff4f6'], [18, 100, 9, '#f2c94c'], [104, 98, 11, '#fff4f6'], [100, 58, 6, '#f6c4cf']]) {
+      g.fillStyle = col;
+      for (let k = 0; k < petals; k++) { const a = (k / petals) * Math.PI * 2; g.beginPath(); g.ellipse(x + Math.cos(a) * r * 0.55, y + Math.sin(a) * r * 0.55, r * 0.5, r * (pattern === 'kiku' ? 0.18 : 0.38), a, 0, 7); g.fill(); }
+      g.fillStyle = '#f2c94c'; g.beginPath(); g.arc(x, y, r * 0.2, 0, 7); g.fill();
+    }
+  } else if (pattern === 'stripe') { // yukata: indigo stripes and a few dots
+    g.fillStyle = '#2f4a6b';
+    for (let x = 0; x < 128; x += 16) g.fillRect(x, 0, 4, 128);
+    for (const [x, y] of [[40, 30], [90, 80], [60, 110]]) { g.beginPath(); g.arc(x, y, 6, 0, 7); g.fill(); }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 1);
+  const m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.75 });
+  robeTex.set(key, m);
+  return m;
+}
 
 export const PASSENGER_TYPES = ['passenger', 'woman', 'backpacker', 'business', 'child', 'senior'];
 
@@ -522,7 +554,15 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     body.add(hip);
   }
 
-  body.add(mesh(new THREE.CapsuleGeometry(0.17, 0.16, 6, 14), mat(cfg.top), 0, 0.55, 0));
+  if (cfg.robe) { // kimono: the robe hangs from the chest to the ankles; the legs move inside it
+    const rm = robeMat(cfg.robe, cfg.pattern ?? 'plain');
+    body.add(mesh(new THREE.CapsuleGeometry(0.17, 0.16, 6, 14), rm, 0, 0.55, 0));
+    body.add(mesh(new THREE.CylinderGeometry(0.175, 0.2, 0.5, 18), rm, 0, 0.3, 0));
+    body.add(cyl(0.18, 0.18, 0.15, mat(cfg.obi), 0, 0.5, 0, 18)); // the obi
+    if (cfg.otaiko) body.add(rbox(0.1, 0.18, 0.3, 0.03, mat(cfg.obi), -0.19, 0.52, 0)); // its bow at the back
+    if (cfg.haori) body.add(mesh(new THREE.CapsuleGeometry(0.182, 0.1, 6, 14), mat(cfg.haori), 0, 0.6, 0));
+    for (const zz of [1, -1]) { const col = box(0.02, 0.2, 0.05, mat(PALETTE.white), 0.168, 0.71, zz * 0.04); col.rotation.x = zz * 0.45; body.add(col); } // the crossed collar
+  } else body.add(mesh(new THREE.CapsuleGeometry(0.17, 0.16, 6, 14), mat(cfg.top), 0, 0.55, 0));
   if (cfg.vest) {
     body.add(mesh(new THREE.CapsuleGeometry(0.177, 0.1, 6, 14), mat(cfg.vest), 0, 0.57, 0));
     body.add(box(0.02, 0.03, 0.3, mat(0xeeeeee, { emissive: 0x888888, emissiveIntensity: 0.4 }), 0.172, 0.55, 0));
@@ -555,7 +595,8 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
   for (const s of [1, -1]) {
     const sh = new THREE.Group();
     sh.position.set(0, 0.72, s * 0.21);
-    sh.add(mesh(new THREE.CapsuleGeometry(0.055, 0.16, 4, 10), mat(cfg.top), 0, -0.13, 0));
+    sh.add(mesh(new THREE.CapsuleGeometry(0.055, 0.16, 4, 10), cfg.robe ? robeMat(cfg.robe, cfg.pattern ?? 'plain') : mat(cfg.top), 0, -0.13, 0));
+    if (cfg.robe) sh.add(box(0.2, 0.26, 0.04, cfg.haori ? mat(cfg.haori) : robeMat(cfg.robe, cfg.pattern ?? 'plain'), -0.03, -0.24, s * 0.03)); // the hanging sleeve (袂)
     sh.add(mesh(new THREE.SphereGeometry(0.055, 10, 8), mat(PALETTE.skin), 0, -0.28, 0));
     if (cfg.stripes) sh.add(mesh(new THREE.CylinderGeometry(0.058, 0.058, 0.025, 10), mat(PALETTE.yellow, { metalness: 0.5 }), 0, -0.2, 0));
     if (cfg.wands) {
@@ -612,6 +653,10 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     const fringe = dome(0.216, PALETTE.brown, 0.0, Math.PI * 0.3);
     fringe.rotation.z = -0.5;
     head.add(fringe);
+  } else if (cfg.hat === 'updo') { // hair put up for a kimono, with a hairpin
+    head.add(dome(0.214, PALETTE.ink, 0.0, Math.PI * 0.55));
+    head.add(mesh(new THREE.SphereGeometry(0.1, 12, 10), mat(PALETTE.ink), -0.1, 0.2, 0));
+    if (cfg.kanzashi) { head.add(mesh(new THREE.SphereGeometry(0.04, 8, 6), mat(cfg.kanzashi), -0.06, 0.24, 0.1)); head.add(box(0.015, 0.015, 0.16, mat(PALETTE.yellow, { metalness: 0.5 }), -0.08, 0.22, 0.06)); }
   } else if (cfg.hat === 'straw') { // a wide straw hat
     head.add(cyl(0.34, 0.34, 0.02, mat(0xe0c27a, { roughness: 0.9 }), 0, 0.12, 0, 20));
     head.add(dome(0.2, 0xe0c27a, 0.1));
@@ -684,8 +729,9 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
         arms[0].rotation.z = arms[1].rotation.z = 0;
       }
     } else if (m === 'walk') {
-      legs[0].rotation.z = Math.sin(phase) * 0.55;
-      legs[1].rotation.z = -Math.sin(phase) * 0.55;
+      const st = cfg.stride ?? 0.55; // kimono: small steps
+      legs[0].rotation.z = Math.sin(phase) * st;
+      legs[1].rotation.z = -Math.sin(phase) * st;
       arms[0].rotation.z = -Math.sin(phase) * 0.45;
       arms[1].rotation.z = Math.sin(phase) * 0.45;
       arms[0].rotation.x = arms[1].rotation.x = 0;
