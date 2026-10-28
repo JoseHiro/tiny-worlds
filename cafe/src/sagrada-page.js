@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { person } from '../../airport/src/parts.js';
 import { createWorld, v3 } from '../../koto/src/world.js';
-import { SAGRADA_SCALE, basilica, towers, gloryWorks, nativityFacade, passionFacade, setNight } from './sagrada.js';
+import { SAGRADA_SCALE, basilica, towers, gloryWorks, nativityFacade, passionFacade, setNight, nightLights } from './sagrada.js';
 
 const S = SAGRADA_SCALE;
 const VIEWS = {
@@ -39,11 +39,12 @@ b.add(nativityFacade());
 b.add(passionFacade());
 const t = towers(); b.add(t);
 const works = gloryWorks(); b.add(works); life.push(works);
+const flood = nightLights(scene);
 // people for scale, on the plaza
 for (let i = 0; i < 8; i++) { const p = person(['tourist', 'visitor', 'woman', 'kimonoWoman', 'senior', 'child'][i % 6], { mode: i % 3 ? 'idle' : 'look' }); p.position.set(96 + (i % 4) * 3, 0, 20 + Math.floor(i / 4) * 4); p.rotation.y = Math.PI; scene.add(p); life.push({ userData: { update: (tt) => p.userData.update(tt) } }); }
 
 // heights, for checking against the sources
 document.getElementById('towerLine').textContent = 'イエス 172.5 m · マリア 138 m · 福音書記者 135 m · 使徒 98.5〜112 m（14本）';
-steps.push(() => setNight(world.look === 'night' ? 1 : world.look === 'dusk' ? 0.4 : 0));
+steps.push(() => { const k = world.look === 'night' ? 1 : world.look === 'dusk' ? 0.35 : 0; setNight(k); flood.update(k); });
 world.start();
 window.__sagrada = { b, towers: t };

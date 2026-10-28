@@ -14,7 +14,7 @@ import { CAFE, M, setGlow, shell, cutaway, counter, espressoMachine, grinder, re
 import { cup, laptop, plate, phone, book, Steam } from './things.js';
 import { Weather, Rain, Wet, puddles, WindowDrops } from './rain.js';
 import { Ambience } from './sound.js';
-import { SAGRADA_SCALE, basilica, towers, gloryWorks, nativityFacade, passionFacade, setNight } from './sagrada.js';
+import { SAGRADA_SCALE, basilica, towers, gloryWorks, nativityFacade, passionFacade, setNight, nightLights } from './sagrada.js';
 
 const VIEWS = {
   terrace: ['テラスから', v3(138.0, 2.0, 7.4), v3(60, 20, 0.5)],
@@ -56,6 +56,7 @@ rim.position.set(72, 0, 2); scene.add(rim);
 const sf = new THREE.Group(); sf.scale.setScalar(SAGRADA_SCALE); scene.add(sf);
 sf.add(basilica(), towers(), nativityFacade(), passionFacade());
 const works = gloryWorks(); sf.add(works); life.push(works);
+const flood = nightLights(scene);
 
 // ---------- the plaza's trees, benches, lamps ----------
 const outside = new THREE.Group(); scene.add(outside);
@@ -65,11 +66,15 @@ for (const [x, z] of [[50, -44], [62, -44], [74, -44], [86, -44], [98, -44], [11
 for (const [x, z, w, d] of [[58, -28, 20, 1.2], [58, 30, 20, 1.2], [112, -30, 1.2, 24], [112, 30, 1.2, 24]]) out(box(w, 1.1, d, M(0x5f8a4a, { roughness: 1 })), x, z, 0, 0.55); // clipped hedges
 // the Eixample blocks round about: chamfered corners, balconies, shops below
 const blockTex = (() => { const c = document.createElement('canvas'); c.width = 128; c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#d9c8aa'; x.fillRect(0, 0, 128, 128); for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) { x.fillStyle = '#5a4a3a'; x.fillRect(k * 32 + 10, r * 32 + 6, 12, 18); x.fillStyle = '#2a2a2c'; x.fillRect(k * 32 + 6, r * 32 + 22, 20, 2); } const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const litTex = (() => { const c = document.createElement('canvas'); c.width = 128; c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, 128, 128); for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) if ((r * 5 + k * 3) % 4 !== 0) { x.fillStyle = (r + k) % 3 ? '#ffcf8a' : '#ffe6b8'; x.fillRect(k * 32 + 10, r * 32 + 6, 12, 18); } const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const blockMats = []; // their windows light up at night
 function eixample(w, d, h, x, z, tint) {
   const ch = 10, sh = new THREE.Shape([new THREE.Vector2(-w / 2 + ch, -d / 2), new THREE.Vector2(w / 2 - ch, -d / 2), new THREE.Vector2(w / 2, -d / 2 + ch), new THREE.Vector2(w / 2, d / 2 - ch), new THREE.Vector2(w / 2 - ch, d / 2), new THREE.Vector2(-w / 2 + ch, d / 2), new THREE.Vector2(-w / 2, d / 2 - ch), new THREE.Vector2(-w / 2, -d / 2 + ch)]);
   const geo = new THREE.ExtrudeGeometry(sh, { depth: h, bevelEnabled: false }).rotateX(-Math.PI / 2);
   const t = blockTex.clone(); t.needsUpdate = true; t.repeat.set(w / 6, h / 6);
-  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: t, color: tint, roughness: 0.95 })); m.position.set(x, 0, z); m.castShadow = true; m.receiveShadow = true; scene.add(m);
+  const lt = litTex.clone(); lt.needsUpdate = true; lt.repeat.copy(t.repeat);
+  const bm = new THREE.MeshStandardMaterial({ map: t, color: tint, roughness: 0.95, emissive: 0xffffff, emissiveMap: lt, emissiveIntensity: 0 }); blockMats.push(bm);
+  const m = new THREE.Mesh(geo, bm); m.position.set(x, 0, z); m.castShadow = true; m.receiveShadow = true; scene.add(m);
 }
 for (const [x, z, w, h, tint] of [[86, 86, 80, 21, 0xffffff], [86, -86, 80, 19, 0xf2e6d6], [0, 86, 56, 20, 0xf6ead8], [0, -86, 56, 22, 0xffffff], [-86, 0, 78, 20, 0xf2e6d6], [-86, 86, 78, 18, 0xffffff], [-86, -86, 78, 21, 0xf6ead8]]) eixample(w, x === -86 && z === 0 ? 84 : 46, h, x, z, tint);
 for (const [x, z] of [[58, -16], [88, -16], [58, 20], [90, 18], [100, -6]]) out(palm({ height: 9 + (x % 3), lean: 0.3, seed: x % 5 }), x, z);
@@ -196,7 +201,7 @@ steps.push((t, dt) => {
   world.hemi.intensity = L.hemi[0] * (0.6 + 0.4 * dim); world.sun.intensity = L.sun[0] * dim;
   sky.set(L.sky ?? '#dfe9f2').lerp(grey, look === 'night' ? 0.1 : weather.cloud * 0.5); scene.background.copy(sky);
   const dark = Math.min(1, { morning: 0.2, day: 0, dusk: 0.6, night: 1 }[look] + weather.cloud * 0.3);
-  setGlow(dark); setNight(look === 'night' ? 1 : look === 'dusk' ? 0.4 : 0); lamps.forEach((l) => (l.intensity = 3 + dark * 14));
+  setGlow(dark); const nk = look === 'night' ? 1 : look === 'dusk' ? 0.35 : 0; setNight(nk); flood.update(nk); blockMats.forEach((m) => (m.emissiveIntensity = nk * 0.9)); lamps.forEach((l) => (l.intensity = 3 + dark * 14));
   rain.update(t, dt, r); drops.update(dt, r); wet.update(weather.wet); pud.update(weather.wet);
   steam.update(t, dt); sound.update(dt, r);
   doorT = Math.max(0, doorT - dt); dr.userData.open = doorT > 0 ? 1 : 0;

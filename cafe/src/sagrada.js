@@ -37,7 +37,29 @@ const nativityTex = (() => {
 export const NATIVITY = new THREE.MeshStandardMaterial({ map: nativityTex, roughness: 0.95, flatShading: true });
 export const MOSAIC = new THREE.MeshStandardMaterial({ map: mosaic, roughness: 0.25, metalness: 0.25 });
 const STAR = new THREE.MeshStandardMaterial({ color: 0xf6f8ff, emissive: 0xdfe8ff, emissiveIntensity: 0.3, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.92 });
-export function setNight(k) { STAR.emissiveIntensity = 0.3 + k * 2.5; }
+// the night: the stone glows warm under floodlights, the white tops and the cross shine cool, the mosaic pinnacles
+// sparkle, the stained glass glows from inside, the cranes blink red. k: 0 (day) … 1 (night)
+const WINDOWS = [0x3a6ad0, 0x2fa58f, 0xe8902a, 0xd9482b].map((c) => new THREE.MeshStandardMaterial({ color: 0x3a4a5a, emissive: c, emissiveIntensity: 0.15, roughness: 0.3 }));
+const CRANE_LIGHT = new THREE.MeshStandardMaterial({ color: 0x8a1f1f, emissive: 0xff2a1a, emissiveIntensity: 0 });
+let night = 0;
+export function setNight(k) {
+  night = k;
+  STAR.emissiveIntensity = 0.3 + k * 2.5;
+  for (const [m, i] of [[STONE.old, 0.1], [STONE.new, 0.12], [STONE.pale, 0.12], [NATIVITY, 0.16]]) { m.emissive.set(0xffc48a); m.emissiveIntensity = i * k; }
+  STONE.white.emissive.set(0xeef2ff); STONE.white.emissiveIntensity = 0.5 * k;
+  STONE.glass.emissive.set(0xbfe0ff); STONE.glass.emissiveIntensity = 0.8 * k;
+  MOSAIC.emissive.set(0xffffff); MOSAIC.emissiveMap = MOSAIC.map; MOSAIC.emissiveIntensity = 0.55 * k; MOSAIC.needsUpdate = true;
+  WINDOWS.forEach((m) => (m.emissiveIntensity = 0.15 + 1.4 * k));
+}
+// floodlights from the streets onto the façades and up the towers (in the basilica's own metres; s scales them)
+export function nightLights(parent, s = SAGRADA_SCALE) {
+  const spots = [[[80, 3, 0], [32, 40, 0]], [[-80, 3, 0], [-32, 40, 0]], [[20, 4, 95], [0, 45, 45]], [[60, 3, -60], [0, 80, 0]]].map(([p, q]) => {
+    const l = new THREE.SpotLight(0xffd7a0, 0, 260 * s, 0.55, 0.6, 1.1);
+    l.position.set(...p).multiplyScalar(s); l.target.position.set(...q).multiplyScalar(s);
+    parent.add(l, l.target); return l;
+  });
+  return { update: (k) => spots.forEach((l) => (l.intensity = k * 2600 * s * s)) };
+}
 
 // a lathe around Y from [radius, height] pairs
 const lathe = (pts, seg = 20) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(Math.max(0.001, r), y)), seg);
@@ -172,9 +194,9 @@ export function basilica() {
   const roofT = new THREE.CylinderGeometry(7.6, 7.6, nx - px - 6, 4, 1, false, Math.PI / 4).rotateZ(Math.PI / 2).scale(1, 0.9, 1);
   g.add(mesh(roofT, S, 0, 46, 0));
   // tall windows along the sides (dark, with a hint of colour inside)
-  const win = [], winM = mat(0x3a4a5a, { roughness: 0.3, emissive: 0x6a5030, emissiveIntensity: 0.15 });
+  const win = []; // tall windows: stained glass, glowing at night (blue, green, orange, red)
   for (let z = th + 4; z < gz - 8; z += 7.5) for (const s of [1, -1]) { win.push(new THREE.BoxGeometry(0.4, 14, 3.6).translate(s * (nh + 0.05), 14, z)); win.push(new THREE.BoxGeometry(0.4, 10, 3.2).translate(s * 7.55, 38, z)); }
-  g.add(mesh(mergeGeometries(win), winM));
+  WINDOWS.forEach((m, c) => { const part = win.filter((_, i) => Math.floor(i / 2) % WINDOWS.length === c); if (part.length) g.add(mesh(mergeGeometries(part), m)); });
   // fruit pinnacles along the tops of the nave walls: baskets of coloured fruit on stone stems
   const fruitCols = [0xd9482b, 0xe8a030, 0x8fb04a, 0xc8283a, 0xf2c94c, 0x9a5ab8];
   const fr = fruitCols.map(() => []);
@@ -234,12 +256,12 @@ export function gloryWorks() {
     const c = new THREE.Group(); c.position.set(x, 0, z);
     c.add(box(2.2, h, 2.2, yellow, 0, h / 2, 0));
     const jib = new THREE.Group(); jib.position.y = h;
-    jib.add(box(48, 1.6, 1.6, yellow, 14, 0, 0)); jib.add(box(12, 3, 3, mat(0x7a7f86), -12, -1, 0)); jib.add(box(2, 6, 2, yellow, 0, 3, 0));
+    jib.add(box(48, 1.6, 1.6, yellow, 14, 0, 0)); jib.add(box(12, 3, 3, mat(0x7a7f86), -12, -1, 0)); jib.add(box(2, 6, 2, yellow, 0, 3, 0)); for (const x of [0, 37.5]) jib.add(mesh(new THREE.SphereGeometry(0.6, 8, 6), CRANE_LIGHT, x, x ? 1 : 6.4, 0)); // warning lights
     jib.add(cyl(0.05, 0.05, 30, mat(0x2a2a2c), 30, -15, 0, 4)); jib.add(box(2.5, 1.5, 2.5, mat(0x2a2a2c), 30, -30, 0));
     jib.userData.dynamic = true; jib.rotation.y = ph; c.add(jib); g.add(c); cranes.push(jib);
   }
   bakeStatic(g);
-  g.userData = { kind: 'gloryWorks', update: (t, dt = 0) => cranes.forEach((j, i) => { j.rotation.y += dt * (i ? -0.02 : 0.025); }) };
+  g.userData = { kind: 'gloryWorks', update: (t, dt = 0) => { cranes.forEach((j, i) => { j.rotation.y += dt * (i ? -0.02 : 0.025); }); CRANE_LIGHT.emissiveIntensity = Math.floor(t * 1.2) % 2 ? 0.2 + 2.5 * night : 0.05; } };
   return g;
 }
 
