@@ -3,7 +3,8 @@
 // #lang switch (two buttons, data-v="ja" / "en") flips everything in place; onLang(f) re-labels what code made.
 const KEY = 'tiny-worlds-lang';
 const stored = () => { try { return localStorage.getItem(KEY); } catch { return null; } };
-let lang = new URLSearchParams(location.search).get('lang') || stored() || 'ja';
+// (a page without the switch is only in Japanese so far: it keeps to Japanese whatever was picked elsewhere)
+let lang = document.getElementById('lang') ? new URLSearchParams(location.search).get('lang') || stored() || 'ja' : 'ja';
 if (lang !== 'en') lang = 'ja';
 const subs = [];
 
