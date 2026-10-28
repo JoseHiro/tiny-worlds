@@ -46,11 +46,11 @@ export function createWorld({ shadow = 62, target = [0, 0, 0], views, follow = n
 
   // ---------- ground ----------
   const soil = mat(0x8a6a4a, { roughness: 1 }), grass = new THREE.MeshStandardMaterial({ color: SEASONS.spring.grass, roughness: 1 });
-  // a block of earth from x0…x1, z0…z1, its top at top(z) (grass), its sides cut open (soil)
-  function slab(x0, x1, z0, z1, top = () => 0, seg = 1) {
-    const geo = new THREE.BoxGeometry(x1 - x0, 1, z1 - z0, 1, 1, seg);
+  // a block of earth from x0…x1, z0…z1, its top at top(z, x) (grass), its sides cut open (soil)
+  function slab(x0, x1, z0, z1, top = () => 0, seg = 1, segX = 1) {
+    const geo = new THREE.BoxGeometry(x1 - x0, 1, z1 - z0, segX, 1, seg);
     const p = geo.attributes.position;
-    for (let i = 0; i < p.count; i++) { const x = p.getX(i) + (x0 + x1) / 2, z = p.getZ(i) + (z0 + z1) / 2; p.setXYZ(i, x, p.getY(i) > 0 ? top(z) : -1.6, z); }
+    for (let i = 0; i < p.count; i++) { const x = p.getX(i) + (x0 + x1) / 2, z = p.getZ(i) + (z0 + z1) / 2; p.setXYZ(i, x, p.getY(i) > 0 ? top(z, x) : -1.6, z); }
     geo.computeVertexNormals();
     const m = new THREE.Mesh(geo, [soil, soil, grass, soil, soil, soil]);
     m.receiveShadow = true;

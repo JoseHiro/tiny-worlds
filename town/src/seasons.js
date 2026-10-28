@@ -174,7 +174,8 @@ export function fujidana({ w = 4, d = 3, h = 2.4 } = {}) {
 }
 // 竹林: a grove of tall culms with nodes, leaves high up, all swaying (instanced: 2 draw calls)
 const bambooMats = {};
-export function bamboo({ w = 8, d = 8, n = 90, h = 9, seed = 3 } = {}) {
+// avoid(x, z): true where no culm may stand (a path through the grove), in the grove's own coordinates
+export function bamboo({ w = 8, d = 8, n = 90, h = 9, seed = 3, avoid = null } = {}) {
   const geo = once(`bamboo:${h}`, () => {
     const culm = [part(new THREE.CylinderGeometry(0.06, 0.075, h, 7).translate(0, h / 2, 0), (p) => (Math.sin(p.y * 3) > 0.96 ? '#a8c27a' : '#7fa05a'))];
     for (let y = 0.5; y < h; y += 0.8) culm.push(part(new THREE.CylinderGeometry(0.075, 0.075, 0.04, 6, 1, true), '#c9d69a', { pos: [0, y, 0] })); // the nodes
@@ -190,11 +191,30 @@ export function bamboo({ w = 8, d = 8, n = 90, h = 9, seed = 3 } = {}) {
   const ph = new Float32Array(n);
   const ims = [new THREE.InstancedMesh(geo.culm, bambooMats.culm, n), new THREE.InstancedMesh(geo.leaves, bambooMats.leaves, n)];
   for (let i = 0; i < n; i++) {
-    o.position.set((r() - 0.5) * w, 0, (r() - 0.5) * d); o.rotation.set((r() - 0.5) * 0.06, r() * 6.28, (r() - 0.5) * 0.06); o.scale.setScalar(0.75 + r() * 0.4); o.updateMatrix();
+    let x, z, tries = 0;
+    do { x = (r() - 0.5) * w; z = (r() - 0.5) * d; } while (avoid && avoid(x, z) && ++tries < 30);
+    o.position.set(x, 0, z); o.rotation.set((r() - 0.5) * 0.06, r() * 6.28, (r() - 0.5) * 0.06); o.scale.setScalar(0.75 + r() * 0.4); o.updateMatrix();
     ims.forEach((im) => im.setMatrixAt(i, o.matrix)); ph[i] = r() * 6.28;
   }
   for (const im of ims) { im.geometry = im.geometry.clone(); im.geometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(ph, 1)); im.castShadow = true; g.add(im); }
   g.userData = { kind: 'nature', nature: 'bamboo', keep: true, count: n };
+  return g;
+}
+// 杉: a forest of tall cedars, stacked dark cones on a straight red-brown trunk (instanced: 2 draw calls, evergreen)
+// at: [[x, y, z, scale], …]
+const sugiMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, color: '#3a5f3e' });
+export function sugiForest(at, { seed = 7 } = {}) {
+  const geo = once('sugi', () => {
+    const trunk = assemble([part(new THREE.CylinderGeometry(0.12, 0.22, 9, 6).translate(0, 4.5, 0), '#7a4a34')]);
+    const crown = [];
+    for (let k = 0; k < 5; k++) crown.push(part(new THREE.ConeGeometry(1.5 - k * 0.24, 2.2, 8).translate(0, 3.6 + k * 1.25, 0), shades(0.6 + k * 0.06, 0.85 + k * 0.03)));
+    return { trunk, crown: assemble(crown) };
+  });
+  const r = seeded(seed), g = new THREE.Group(), o = new THREE.Object3D();
+  const ims = [new THREE.InstancedMesh(geo.trunk, barkMat, at.length), new THREE.InstancedMesh(geo.crown, sugiMat, at.length)];
+  at.forEach(([x, y, z, sc = 1], i) => { o.position.set(x, y, z); o.rotation.set(0, r() * 6.28, (r() - 0.5) * 0.04); o.scale.set(sc, sc * (0.9 + r() * 0.25), sc); o.updateMatrix(); ims.forEach((im) => im.setMatrixAt(i, o.matrix)); });
+  for (const im of ims) { im.castShadow = true; im.receiveShadow = true; g.add(im); }
+  g.userData = { kind: 'nature', nature: 'sugi', keep: true, count: at.length };
   return g;
 }
 // 苔と羊歯: a mossy mound with a few ferns (ground cover around stones and lanterns)
