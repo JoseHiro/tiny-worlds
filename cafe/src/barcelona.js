@@ -5,24 +5,26 @@ import * as THREE from 'three';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { bakeStatic } from '../../airport/src/merge.js';
 import { mat, mesh, box, cyl } from '../../airport/src/parts.js';
+import { L, onLang } from '../../koto/src/i18n.js';
 import { createWorld, v3, LOOKS } from '../../koto/src/world.js';
 import { Agent, FACE, yawTo } from '../../koto/src/people.js';
 import { sedan, keiCar, taxi, tourBus, CAR_COLORS, KEI_COLORS } from '../../town/src/vehicles.js';
 import { streetLight } from '../../town/src/gear.js';
 import { streetTree, palm } from '../../town/src/nature.js';
 import { CAFE, M, setGlow, shell, cutaway, counter, espressoMachine, grinder, register, pastryCase, menuBoard, wallShelf, windowBar, stool, chair, roundTable, pendant, candle, stringLights, plant, door, awning, bladeSign, aFrame, umbrellaStand } from './furniture.js';
-import { cup, laptop, plate, phone, book, Steam } from './things.js';
+import { cup, laptop, plate, phone, book, sketchbook, Steam } from './things.js';
+import { minaStory, holdWeather } from './mina.js';
 import { Weather, Rain, Wet, puddles, WindowDrops } from './rain.js';
 import { Ambience } from './sound.js';
 import { SAGRADA_SCALE, basilica, towers, gloryWorks, nativityFacade, passionFacade, setNight, nightLights } from './sagrada.js';
 
 const VIEWS = {
-  terrace: ['テラスから', v3(138.0, 2.0, 7.4), v3(60, 20, 0.5)],
-  cafe: ['カフェ', v3(126, 4.2, 18), v3(140, 1.4, 6)],
-  pond: ['池', v3(99, 3.2, 13), v3(40, 9, 1)],
-  plaza: ['広場', v3(118, 26, 56), v3(70, 0, 0)],
-  all: ['全体', v3(230, 150, 170), v3(50, 25, 0)],
-  facade: ['生誕のファサード', v3(62, 6, 4), v3(26, 24, 0)],
+  terrace: [['テラスから', 'From the terrace'], v3(138.0, 2.0, 7.4), v3(60, 20, 0.5)],
+  cafe: [['カフェ', 'Café'], v3(126, 4.2, 18), v3(140, 1.4, 6)],
+  pond: [['池', 'Pond'], v3(99, 3.2, 13), v3(40, 9, 1)],
+  plaza: [['広場', 'Plaza'], v3(118, 26, 56), v3(70, 0, 0)],
+  all: [['全体', 'Overview'], v3(230, 150, 170), v3(50, 25, 0)],
+  facade: [['生誕のファサード', 'Nativity façade'], v3(62, 6, 4), v3(26, 24, 0)],
 };
 const world = createWorld({ views: VIEWS, shadow: 150, target: [60, 0, 0], look: 'day' });
 const { scene, camera, life, people, steps } = world;
@@ -173,6 +175,42 @@ const kids = ['child', 'swimKid'].map((r, i) => agent(r, [{ jump: [88, -6 + i * 
 for (const [x, z, r] of BENCHES.slice(0, 3)) { const a = agent(r === 0 ? 'senior' : 'reader', [{ jump: [x + Math.sin(r) * 0.25, z - Math.cos(r) * 0.25] }, { until: rainy, do: 'sitRead', face: r - Math.PI / 2, lift: lift(0.44) }, { to: [x + 6, z] }, { hide: () => dry() }]); umb.push(a); }
 // the dog
 const dog = (() => { const g = new THREE.Group(), m = M(0xc9a87c), legs = []; const b = mesh(new THREE.SphereGeometry(0.22, 10, 8), m, 0, 0.4, 0); b.scale.set(1.8, 1, 1); g.add(b); g.add(mesh(new THREE.SphereGeometry(0.16, 10, 8), m, 0.4, 0.58, 0)); g.add(mesh(new THREE.SphereGeometry(0.07, 6, 5), M(0x2a2a2c), 0.56, 0.58, 0)); for (const s of [1, -1]) { const e = mesh(new THREE.SphereGeometry(0.08, 6, 5), M(0x8a6a4a), 0.36, 0.7, s * 0.1); e.scale.set(0.6, 1.4, 0.6); g.add(e); } const tail = mesh(new THREE.CapsuleGeometry(0.03, 0.2, 3, 6), m, -0.42, 0.55, 0); tail.rotation.z = 0.8; g.add(tail); for (const [x, z] of [[0.25, 0.12], [0.25, -0.12], [-0.25, 0.12], [-0.25, -0.12]]) { const l = mesh(new THREE.CapsuleGeometry(0.05, 0.22, 3, 6), m, x, 0.16, z); legs.push(l); g.add(l); } g.userData.update = (t) => { legs.forEach((l, i) => (l.rotation.z = Math.sin(t * 10 + i * Math.PI) * 0.4)); tail.rotation.x = Math.sin(t * 8) * 0.5; }; scene.add(g); return g; })();
+// ---------- the story, chapter 3 (DESIGN.md §12): Mina draws the basilica from the terrace, a passing shower sends
+// everyone inside, the square shines after the rain, and at night she fills the last page and shows the barista ----------
+const [MX, MZ] = TABLES[7], mBook = put(sketchbook({ page: 3 }), MX - 0.02, MZ - 0.05, TT); mBook.rotation.y = -Math.PI / 2; mBook.visible = false;
+const atTable = (m, dur, extra = {}) => ({ do: m, dur, face: FACE.west, lift: lift(0.38), ...extra });
+const BEHIND = [[MX + 1.8, 1.65, MZ + 0.7], [60, 26, -2]];
+minaStory(world, {
+  no: 3, heightAt, role: 'minaBare',
+  setup: () => { holdWeather(weather, 'clear'); world.setLook('day'); mBook.visible = false; mBook.userData.page(3); },
+  route: [
+    { jump: [124, 21], say: ['海を渡って、バルセロナ。昼下がりのガウディ広場。', 'Across the sea to Barcelona. Early afternoon on Plaça de Gaudí.'], shot: [[118, 3.2, 30], [80, 30, 0]] },
+    { to: [129, 13], shot: { track: [-4, 2.6, 4] } }, { to: [MX + 1.4, MZ] }, { to: [MX + 0.55, MZ] },
+    atTable('sitSip', 6, { call: () => (mBook.visible = true), say: ['「コルタードをひとつ」 池の向こうに、サグラダ・ファミリア。', '“A cortado, please.” Across the pond: the Sagrada Família.'], shot: BEHIND }),
+    atTable('sitWrite', 10, { say: ['塔を一本ずつ数えながら、鉛筆で描いていく。まだ完成しない聖堂を、まだ途中のスケッチブックに。', 'Counting the towers one by one, she draws in pencil: an unfinished basilica in an unfinished sketchbook.'], shot: [[MX + 1.5, 1.6, MZ + 0.9], [MX - 0.2, 0.6, MZ - 0.2]] }),
+    atTable('sitThink', 6, { call: () => holdWeather(weather, 'rain'), say: ['ふいに空が暗くなる。地中海の通り雨だ。', 'All of a sudden the sky darkens. A Mediterranean shower.'], shot: [[124, 4, 22], [136, 1, 6]] }),
+    { swap: 'minaWagasa' },
+    { to: [MX + 1.4, MZ], call: () => (mBook.visible = false), say: ['借りた赤い和傘をひらいて、テラスの人たちといっしょに店のなかへ。', 'She opens the borrowed red umbrella and hurries inside with everyone from the terrace.'] },
+    { to: DOOR_OUT, call: ring }, { to: DOOR_IN },
+    { swap: 'minaIn' },
+    { to: W(1.5, 3.6) },
+    { do: 'idle', dur: 8, face: FACE.west, say: ['窓ガラスを雨が流れる。広場の向こうで、聖堂がかすんでいる。', 'Rain runs down the glass. Across the square, the basilica fades into grey.'], shot: [[144.2, 1.9, 10.6], [120, 4, 5]] },
+    { do: 'idle', dur: 7, face: FACE.west, call: () => { holdWeather(weather, 'clear'); world.setLook('dusk'); }, say: ['やがて雨が上がる。石畳がひかって、夕方の空が池に映る。', 'At last the rain stops. The paving shines, and the evening sky lies in the pond.'] },
+    { to: DOOR_IN }, { to: DOOR_OUT, call: ring },
+    { swap: 'minaBare' },
+    { jump: [97, 9] }, { to: [90.5, 5] }, // (a cut: later, by the pond)
+    { do: 'look', dur: 8, face: FACE.west, say: ['池のほとりで。水に映った聖堂も、もう一枚。', 'By the pond: one more drawing, of the basilica in the water.'], shot: [[97, 2.6, 12], [40, 10, 0]] },
+    { jump: [130.5, 12], call: () => world.setLook('night'), say: ['夜。塔に灯りがともる。', 'Night. Lights come on in the towers.'], shot: [[118, 3.5, 30], [60, 35, 0]] },
+    { do: 'look', dur: 4, face: FACE.west },
+    { to: [MX + 1.4, MZ] }, { to: [MX + 0.55, MZ] },
+    atTable('sitWrite', 9, { call: () => { mBook.userData.page(4); mBook.visible = true; }, say: ['ライトアップされた塔の下で、最後のページに色を置く。', 'Under the floodlit towers, she adds colour to the last page.'], shot: BEHIND }),
+    { to: [MX + 1.4, MZ], call: () => (mBook.visible = false) }, { to: DOOR_OUT, call: ring }, { to: DOOR_IN }, { to: W(2.4, -1.7) },
+    { do: 'idle', dur: 6, face: FACE.east, say: ['「見て。今日いちにちの、雨の絵」 バリスタが目を細める。「Que bonic!」', '“Look — a whole day of rain, in pictures.” The barista smiles. “Que bonic!”'], shot: [[145.0, 2.1, 7.2], [148.2, 1.2, 11.0]] },
+    { do: 'idle', dur: 6, face: FACE.east, say: ['北の町の猫、借りた和傘、雨上がりの聖堂。スケッチブックが、やっと一冊ぶん埋まった。', 'A cat up north, a borrowed paper umbrella, a basilica after the rain. The sketchbook is finally full.'], end: true },
+    { do: 'idle', dur: 9999, face: FACE.east },
+  ],
+});
+
 // cars and the tourist bus along Carrer de la Marina
 const cars = [[sedan({ color: CAR_COLORS[1] }), 1, 34], [taxi({ color: 0xf2c94c }), -1, 39], [tourBus({ a: 0xc8283a, b: 0x2c3a57 }), 1, 34], [keiCar({ color: KEI_COLORS[4] }), -1, 39], [sedan({ color: CAR_COLORS[7] }), 1, 34]].map(([c, dir, x], i) => { c.userData.dir = dir; c.userData.z = -100 + i * 44; c.position.x = x; c.rotation.y = dir > 0 ? -Math.PI / 2 : Math.PI / 2; scene.add(c); return c; });
 
@@ -186,20 +224,22 @@ const pud = puddles(scene, [[110, 2, 2.2, 1.0], [133, 6, 0.8, 0.5], [92, -20, 1.
 
 // ---------- the panel and the loop ----------
 const $ = (id) => document.getElementById(id);
-const WJA = { clear: '晴れ', cloudy: 'くもり', drizzle: '小雨', rain: '本降り', after: '雨上がり' };
+const WJA = { clear: ['晴れ', 'clear'], cloudy: ['くもり', 'cloudy'], drizzle: ['小雨', 'drizzle'], rain: ['本降り', 'pouring'], after: ['雨上がり', 'after the rain'] };
 for (const b of $('weather').children) b.onclick = () => { weather.hold(b.dataset.v); [...$('weather').children].forEach((x) => x.classList.toggle('on', x === b)); };
 let drift = false, driftT = 0, driftI = 0;
 const DRIFT = [[[138.0, 2.0, 7.4], [60, 20, 0.5]], [[128, 3.5, 20], [140, 1.2, 8]], [[92, 2.2, 10], [26, 44, 0]], [[124, 2.2, -6], [133, 0.8, 3]], [[140, 2.2, 22], [60, 30, 0]]];
 $('drift').onclick = () => { drift = !drift; driftT = 0; $('drift').classList.toggle('on', drift); };
-$('sound').onclick = () => { const on = sound.toggle(); $('sound').textContent = on ? '音 · ON' : '音 · OFF'; $('sound').classList.toggle('on', on); };
+const soundLabel = () => { $('sound').textContent = L(sound.on ? ['音 · ON', 'Sound · ON'] : ['音 · OFF', 'Sound · OFF']); };
+$('sound').onclick = () => { $('sound').classList.toggle('on', sound.toggle()); soundLabel(); };
+onLang(soundLabel);
 const sky = new THREE.Color(), grey = new THREE.Color('#9aa3ad');
 let uiT = 0;
 steps.push((t, dt) => {
   weather.update(dt);
-  const r = weather.rain, look = world.look, L = LOOKS[look];
+  const r = weather.rain, look = world.look, LK = LOOKS[look];
   const dim = 1 - 0.5 * weather.cloud;
-  world.hemi.intensity = L.hemi[0] * (0.6 + 0.4 * dim); world.sun.intensity = L.sun[0] * dim;
-  sky.set(L.sky ?? '#dfe9f2').lerp(grey, look === 'night' ? 0.1 : weather.cloud * 0.5); scene.background.copy(sky);
+  world.hemi.intensity = LK.hemi[0] * (0.6 + 0.4 * dim); world.sun.intensity = LK.sun[0] * dim;
+  sky.set(LK.sky ?? '#dfe9f2').lerp(grey, look === 'night' ? 0.1 : weather.cloud * 0.5); scene.background.copy(sky);
   const dark = Math.min(1, { morning: 0.2, day: 0, dusk: 0.6, night: 1 }[look] + weather.cloud * 0.3);
   setGlow(dark); const nk = look === 'night' ? 1 : look === 'dusk' ? 0.35 : 0; setNight(nk); flood.update(nk); blockMats.forEach((m) => (m.emissiveIntensity = nk * 0.9)); lamps.forEach((l) => (l.intensity = 3 + dark * 14));
   rain.update(t, dt, r); drops.update(dt, r); wet.update(weather.wet); pud.update(weather.wet);
@@ -215,7 +255,7 @@ steps.push((t, dt) => {
   cutaway(shop, camera);
   flats.visible = camera.position.y < 9 || camera.position.x < 128;
   pond.visible = camera.position.distanceTo(pond.position) < 260;
-  if ((uiT -= dt) <= 0) { uiT = 0.5; $('weatherLine').textContent = `いまの天気：${WJA[weather.state]}${weather.mode === 'auto' ? '（自動で移り変わります）' : ''}`; }
+  if ((uiT -= dt) <= 0) { uiT = 0.5; $('weatherLine').textContent = L([`いまの天気：${WJA[weather.state][0]}${weather.mode === 'auto' ? '（自動で移り変わります）' : ''}`, `Now: ${WJA[weather.state][1]}${weather.mode === 'auto' ? ' (changes on its own)' : ''}`]); }
 });
 world.start();
 window.__cafe = { weather, rain, steam, shop, sound };

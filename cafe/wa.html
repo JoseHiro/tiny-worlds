@@ -27,6 +27,9 @@
     .scenes > * + * { border-left: 1px solid var(--ink); }
     .scenes a.on { background: var(--accent); color: #fff; }
     .weather { font-size: 11.5px; color: var(--muted); }
+    .story { font-size: 11.5px; border-left: 2px solid #c9714a; padding-left: 8px; }
+    .story a[hidden] { display: none; }
+    .story a { display: block; margin-top: 6px; color: #b5452b; font-weight: 600; text-decoration: none; }
     .hint { font-size: 11px; color: var(--muted); }
     a { color: inherit; }
     @media (max-width: 720px) { .brand h1 { font-size: 40px; } .brand p { display: none; } .panel { left: 12px; right: 12px; width: auto; } }
@@ -40,19 +43,22 @@
   <div class="brand">
     <div class="eyebrow">Tiny Worlds 04 · Cozy Café</div>
     <h1>Ametsuchi<span>.</span></h1>
-    <p>古い町家を直した喫茶。格子窓と暖簾、小上がりの畳、一枚板の机。奥のガラスの向こうは坪庭で、雨が苔と石灯籠をぬらし、つくばいに波紋が広がる。ほうじ茶ラテと抹茶、どら焼き。</p>
+    <p data-en="A tearoom in an old restored townhouse: lattice windows and a noren curtain, a raised tatami room, a single-slab table. Behind the glass is a tiny courtyard garden where rain wets the moss and the stone lantern, and rings spread on the water basin. Hojicha lattes, matcha and dorayaki.">古い町家を直した喫茶。格子窓と暖簾、小上がりの畳、一枚板の机。奥のガラスの向こうは坪庭で、雨が苔と石灯籠をぬらし、つくばいに波紋が広がる。ほうじ茶ラテと抹茶、どら焼き。</p>
   </div>
   <aside class="panel">
-    <div class="seg scenes"><a href="./nordic.html">北欧</a><a href="./wa.html" class="on">和</a><a href="./barcelona.html">バルセロナ</a></div>
-    <h3>見る場所</h3>
+    <div class="seg" id="lang"><button data-v="ja">日本語</button><button data-v="en">English</button></div>
+    <div class="seg scenes"><a href="./nordic.html" data-en="Nordic">北欧</a><a href="./wa.html" class="on" data-en="Japanese">和</a><a href="./barcelona.html" data-en="Barcelona">バルセロナ</a></div>
+    <h3 data-en="Views">見る場所</h3>
     <div class="seg" id="views"></div>
-    <h3>天気 · 季節 · 時間</h3>
-    <div class="seg" id="weather"><button data-v="auto" class="on">自動</button><button data-v="clear">晴れ</button><button data-v="drizzle">小雨</button><button data-v="rain">本降り</button></div>
+    <h3 data-en="Weather · Season · Time">天気 · 季節 · 時間</h3>
+    <div class="seg" id="weather"><button data-v="auto" class="on" data-en="Auto">自動</button><button data-v="clear" data-en="Clear">晴れ</button><button data-v="drizzle" data-en="Drizzle">小雨</button><button data-v="rain" data-en="Pouring">本降り</button></div>
     <div class="weather" id="weatherLine"></div>
     <div class="seg" id="seasons"></div>
-    <div class="seg" id="time"><button data-v="morning">朝</button><button data-v="day" class="on">昼</button><button data-v="dusk">夕方</button><button data-v="night">夜</button></div>
-    <div class="seg"><button id="drift">ぼんやり見る</button><button id="sound">音 · OFF</button></div>
-    <div class="hint">ドラッグで回転 · ホイールでズーム · <a href="../">Tiny Worlds</a></div>
+    <div class="seg" id="time"><button data-v="morning" data-en="Morning">朝</button><button data-v="day" class="on" data-en="Day">昼</button><button data-v="dusk" data-en="Dusk">夕方</button><button data-v="night" data-en="Night">夜</button></div>
+    <div class="seg"><button id="drift" data-en="Drift">ぼんやり見る</button><button id="sound" data-en="Sound · OFF">音 · OFF</button></div>
+    <div class="story"><b data-en="Story: Mina, a travelling illustrator, on a rainy day">物語：旅するイラストレーター・ミナの雨の日</b> <span id="storyTitle"></span><br><span id="storyLine" data-en="Mina travels with a sketchbook. When it rains, she ducks into a café and draws what she sees through the window.">スケッチブックを持って旅するミナ。雨の日にはカフェに入って、窓の外を描きます。</span>
+      <div class="seg" style="margin-top:6px"><button id="storyBtn" data-en="Watch the story">物語を見る</button></div><a id="storyNext" hidden></a></div>
+    <div class="hint" data-en="Drag to orbit · scroll to zoom · <a href=&quot;../&quot;>Tiny Worlds</a>">ドラッグで回転 · ホイールでズーム · <a href="../">Tiny Worlds</a></div>
   </aside>
   <script type="module" src="./src/wa.js"></script>
 </body>

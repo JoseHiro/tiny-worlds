@@ -38,18 +38,19 @@
 <body>
   <div id="app"></div>
   <div class="brand">
-    <div class="eyebrow">Tiny Worlds 04 · バルセロナの背景 · 制作中</div>
+    <div class="eyebrow" data-en="Tiny Worlds 04 · Barcelona backdrop · in progress">Tiny Worlds 04 · バルセロナの背景 · 制作中</div>
     <h1>Sagrada<span>.</span></h1>
-    <p>サグラダ・ファミリア（2026年の姿）の試作。塔の形と高さ・配置、身廊と後陣の骨格、工事中の栄光のファサードとクレーン。人と同じ縮尺（1 m ≒ 0.76）。</p>
+    <p data-en="A draft of the Sagrada Família as it stands in 2026: the towers’ shapes, heights and layout, the frame of the nave and apse, and the Glory façade under construction with its cranes. Same scale as the people (1 m ≈ 0.76).">サグラダ・ファミリア（2026年の姿）の試作。塔の形と高さ・配置、身廊と後陣の骨格、工事中の栄光のファサードとクレーン。人と同じ縮尺（1 m ≒ 0.76）。</p>
   </div>
   <aside class="panel">
-    <div class="seg scenes"><a href="./nordic.html">北欧のカフェ</a><a href="./sagrada.html" class="on">サグラダ・ファミリア（試作）</a></div>
-    <h3>見る場所</h3>
+    <div class="seg" id="lang"><button data-v="ja">日本語</button><button data-v="en">English</button></div>
+    <div class="seg scenes"><a href="./nordic.html" data-en="Nordic café">北欧のカフェ</a><a href="./sagrada.html" class="on" data-en="Sagrada Família (draft)">サグラダ・ファミリア（試作）</a></div>
+    <h3 data-en="Views">見る場所</h3>
     <div class="seg" id="views"></div>
-    <h3>時間</h3>
-    <div class="seg" id="time"><button data-v="morning">朝</button><button data-v="day" class="on">昼</button><button data-v="dusk">夕方</button><button data-v="night">夜</button></div>
+    <h3 data-en="Time">時間</h3>
+    <div class="seg" id="time"><button data-v="morning" data-en="Morning">朝</button><button data-v="day" class="on" data-en="Day">昼</button><button data-v="dusk" data-en="Dusk">夕方</button><button data-v="night" data-en="Night">夜</button></div>
     <div class="weather" id="towerLine"></div>
-    <div class="hint">ドラッグで回転 · ホイールでズーム · <a href="../">Tiny Worlds</a></div>
+    <div class="hint" data-en="Drag to orbit · scroll to zoom · <a href=&quot;../&quot;>Tiny Worlds</a>">ドラッグで回転 · ホイールでズーム · <a href="../">Tiny Worlds</a></div>
   </aside>
   <script type="module" src="./src/sagrada-page.js"></script>
 </body>

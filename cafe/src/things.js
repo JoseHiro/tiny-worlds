@@ -79,6 +79,27 @@ export function notebook({ color = CAFE.sage } = {}) {
   const hl = cyl(0.008, 0.008, 0.1, M(0xf2e94c), -0.11, 0.008, 0.05, 6); hl.rotation.x = Math.PI / 2; g.add(hl); // a highlighter
   return g;
 }
+// Mina's sketchbook (DESIGN.md §12), open at the last drawing: 1 the rainy street from the Nordic window, 2 the stone
+// lantern and the ripples in the garden, 3 the Sagrada Família in pencil, 4 the same in watercolour at night
+const SKETCH = [
+  (x) => { x.strokeRect(14, 22, 100, 70); x.beginPath(); x.moveTo(64, 22); x.lineTo(64, 92); x.moveTo(14, 57); x.lineTo(114, 57); x.stroke(); for (let k = 0; k < 18; k++) { const a = 20 + (k * 37) % 90, b = 26 + (k * 23) % 58; x.beginPath(); x.moveTo(a, b); x.lineTo(a - 2, b + 7); x.stroke(); } x.beginPath(); x.ellipse(36, 98, 12, 5, 0, 0, 7); x.moveTo(24, 98); x.lineTo(20, 90); x.lineTo(28, 94); x.stroke(); },
+  (x) => { x.strokeRect(52, 30, 24, 8); x.strokeRect(56, 38, 16, 14); x.beginPath(); x.moveTo(46, 30); x.lineTo(64, 18); x.lineTo(82, 30); x.moveTo(60, 52); x.lineTo(60, 80); x.moveTo(68, 52); x.lineTo(68, 80); x.moveTo(48, 82); x.lineTo(80, 82); x.stroke(); for (const r of [6, 12, 18]) { x.beginPath(); x.ellipse(96, 100, r, r * 0.4, 0, 0, 7); x.stroke(); } x.beginPath(); x.arc(30, 96, 10, Math.PI, 0); x.stroke(); },
+  (x) => { for (const [cx, h] of [[30, 56], [46, 70], [64, 90], [82, 70], [98, 56]]) { x.beginPath(); x.moveTo(cx - 7, 112); x.lineTo(cx - 4, 112 - h); x.quadraticCurveTo(cx, 106 - h - 14, cx + 4, 112 - h); x.lineTo(cx + 7, 112); x.stroke(); for (let k = 0; k < 5; k++) { x.beginPath(); x.moveTo(cx - 2, 104 - k * h / 6); x.lineTo(cx + 2, 104 - k * h / 6); x.stroke(); } } x.beginPath(); x.moveTo(10, 114); x.lineTo(118, 114); x.stroke(); },
+];
+const sketchTex = (n) => canvasTex('sketch' + n, 256, 128, (x) => {
+  x.fillStyle = '#fbf7ee'; x.fillRect(0, 0, 256, 128); x.fillStyle = '#e6dfd0'; x.fillRect(127, 0, 2, 128);
+  const page = (i, dx) => { if (i < 1) return; x.save(); x.translate(dx, 0); if (i === 4) { const g = x.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, '#2f3e6a'); g.addColorStop(1, '#c9714a'); x.globalAlpha = 0.55; x.fillStyle = g; x.fillRect(8, 8, 112, 112); x.globalAlpha = 1; x.strokeStyle = '#f6e3b0'; } else x.strokeStyle = '#4a4540'; x.lineWidth = 1.4; SKETCH[Math.min(i, 3) - 1](x); x.restore(); };
+  page(n - 1, 0); page(n, 128);
+});
+export function sketchbook({ page = 1 } = {}) {
+  const g = new THREE.Group();
+  g.add(box(0.36, 0.01, 0.2, M(0x3a3f4a), 0, 0.005, 0));
+  const face = new THREE.MeshStandardMaterial({ map: sketchTex(page), roughness: 0.9 });
+  g.add(mesh(new THREE.PlaneGeometry(0.34, 0.18).rotateX(-Math.PI / 2), face, 0, 0.012, 0));
+  const pencil = cyl(0.004, 0.004, 0.15, M(0x3a3f4a), 0.2, 0.008, 0.02, 6); pencil.rotation.x = Math.PI / 2; pencil.rotation.z = 0.4; g.add(pencil);
+  g.userData.page = (n) => { face.map = sketchTex(n); }; // turn to a later drawing
+  return g;
+}
 export function tablet() {
   const g = new THREE.Group();
   g.add(rbox(0.24, 0.008, 0.17, 0.01, M(0x2a2d33), 0, 0.004, 0));

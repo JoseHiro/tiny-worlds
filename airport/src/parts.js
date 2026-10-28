@@ -527,6 +527,11 @@ const ROLES = {
   rainKid: { top: 0xf2c94c, legs: 0x2f3e57, hat: 'rainhat', capColor: 0xf2c94c, scale: 0.7, shoes: 0xf2c94c },
   rainComer: { top: 0x5f6b5a, legs: 0x2f3e57, hat: 'hair', carry: 'umbrella' },
   regular: { top: 0xc9714a, legs: 0x3a3f4a, hat: 'hair', glasses: true, carry: 'mug' },
+  // Mina, the travelling illustrator (cafe/DESIGN.md §12): a blue raincoat, a brown bob, a sketchbook in her bag
+  mina: { top: 0x5f7f9a, legs: 0x3a3f4a, hat: 'bob', hair: 0x6b4a35, backpack: 0xc9a07a, carry: 'umbrella', shoes: 0x8a5a3a },
+  minaIn: { top: 0x5f7f9a, legs: 0x3a3f4a, hat: 'bob', hair: 0x6b4a35, backpack: 0xc9a07a, carry: 'mug', shoes: 0x8a5a3a },
+  minaBare: { top: 0x5f7f9a, legs: 0x3a3f4a, hat: 'bob', hair: 0x6b4a35, backpack: 0xc9a07a, shoes: 0x8a5a3a }, // her umbrella left behind
+  minaWagasa: { top: 0x5f7f9a, legs: 0x3a3f4a, hat: 'bob', hair: 0x6b4a35, backpack: 0xc9a07a, carry: 'wagasa', shoes: 0x8a5a3a },
   okami: { robe: 0x5a4a5a, pattern: 'plain', obi: 0xc9b48a, otaiko: true, hat: 'updo', shoes: 0x2a2018, stride: 0.3, pace: 0.7 }, // the mistress of a teahouse (女将)
   // monks, shrine priest and shrine maiden
   monkBroom: { robe: 0x6b5a48, pattern: 'plain', obi: 0x6b5a48, hat: 'bald', shoes: 0xf2ede2, carry: 'broom', stride: 0.35, pace: 0.6 }, // a monk in work clothes (作務衣) sweeping
@@ -751,9 +756,9 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
   } else if (cfg.hat === 'sankaku') { // a white headscarf tied at the back
     head.add(dome(0.214, 0xf6f4ee, 0.0, Math.PI * 0.52));
     head.add(mesh(new THREE.ConeGeometry(0.05, 0.1, 4).rotateZ(Math.PI / 2), mat(0xf6f4ee), -0.23, 0.08, 0));
-  } else if (cfg.hat === 'bob') { // a schoolgirl's bob
-    head.add(dome(0.216, PALETTE.ink, 0.0, Math.PI * 0.62));
-    const back = mesh(new THREE.SphereGeometry(0.2, 14, 10), mat(PALETTE.ink), -0.05, -0.04, 0); back.scale.set(0.9, 0.9, 1.08); head.add(back);
+  } else if (cfg.hat === 'bob') { // a bob
+    head.add(dome(0.216, cfg.hair ?? PALETTE.ink, 0.0, Math.PI * 0.62));
+    const back = mesh(new THREE.SphereGeometry(0.2, 14, 10), mat(cfg.hair ?? PALETTE.ink), -0.05, -0.04, 0); back.scale.set(0.9, 0.9, 1.08); head.add(back);
   } else if (cfg.hat === 'maiko') { // the maiko's swept-up hair with silk flowers and dangling pins
     head.add(dome(0.216, PALETTE.ink, 0.0, Math.PI * 0.56));
     for (const zz of [1, -1]) { const w = mesh(new THREE.SphereGeometry(0.11, 12, 8), mat(PALETTE.ink), -0.06, 0.12, zz * 0.17); w.scale.set(1, 0.8, 0.6); head.add(w); } // the side wings

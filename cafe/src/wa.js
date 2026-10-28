@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { bakeStatic } from '../../airport/src/merge.js';
 import { mesh, box } from '../../airport/src/parts.js';
+import { L, onLang } from '../../koto/src/i18n.js';
 import { createWorld, v3, LOOKS } from '../../koto/src/world.js';
 import { Agent, FACE } from '../../koto/src/people.js';
 import { roof } from '../../town/src/roofs.js';
@@ -13,17 +14,18 @@ import { toro, andon, endai, cat, setLamps } from '../../town/src/koto-props.js'
 import { momiji, tsubaki, bamboo, mossPatch, Falling } from '../../town/src/seasons.js';
 import { signTexture } from '../../town/src/buildings.js';
 import { CAFE, M, setGlow, shell, cutaway, counter, pourOver, register, pastryCase, wallShelf, windowBar, chair, longTable, lowTable, plant, umbrellaStand, washiLamp, tatamiDais, zabuton, kakejiku, tsukubai } from './furniture.js';
-import { cup, plate, laptop, book, notebook, Steam } from './things.js';
+import { cup, plate, laptop, book, notebook, sketchbook, Steam } from './things.js';
+import { minaStory, holdWeather } from './mina.js';
 import { Weather, Rain, Wet, puddles, WindowDrops } from './rain.js';
 import { Ambience } from './sound.js';
 
 const VIEWS = {
-  all: ['全体', v3(15, 14, -19), v3(0, 0.5, -1)],
-  garden: ['坪庭', v3(1.6, 1.6, -0.6), v3(0, 0.9, -7.5)],
-  alley: ['路地から', v3(4.6, 1.6, 8.9), v3(-1.2, 1.7, 4)],
-  tatami: ['小上がり', v3(-0.6, 2.3, 1.2), v3(-3.8, 0.5, -1.8)],
-  counter: ['カウンター', v3(1.4, 2.2, 1.6), v3(4.6, 1.1, -0.2)],
-  above: ['坪庭を上から', v3(0.5, 10, -1.5), v3(0, 0, -7)],
+  all: [['全体', 'Overview'], v3(15, 14, -19), v3(0, 0.5, -1)],
+  garden: [['坪庭', 'Courtyard garden'], v3(1.6, 1.6, -0.6), v3(0, 0.9, -7.5)],
+  alley: [['路地から', 'From the alley'], v3(4.6, 1.6, 8.9), v3(-1.2, 1.7, 4)],
+  tatami: [['小上がり', 'Tatami room'], v3(-0.6, 2.3, 1.2), v3(-3.8, 0.5, -1.8)],
+  counter: [['カウンター', 'Counter'], v3(1.4, 2.2, 1.6), v3(4.6, 1.1, -0.2)],
+  above: [['坪庭を上から', 'Garden from above'], v3(0.5, 10, -1.5), v3(0, 0, -7)],
 };
 const world = createWorld({ views: VIEWS, shadow: 20, target: [0, 0, -1], look: 'day' });
 const { scene, camera, life, people, steps } = world;
@@ -151,6 +153,43 @@ for (const [role, x0, x1, z, d] of [['umbrellaWoman', 14, -14, 7.8, 6], ['rainCo
 // the café cat asleep on the tatami
 const kitty = cat({ color: 0x3a3a3a, mode: 'sleep' }); kitty.position.set(-5.3, DT, -0.5); kitty.rotation.y = 0.8; scene.add(kitty); life.push(kitty);
 
+// ---------- the story, chapter 2 (DESIGN.md §12): caught in a sudden downpour without her umbrella, Mina ducks under
+// the noren, has matcha and dorayaki on the tatami, draws the garden from the glass, and is lent a wagasa ----------
+const mine = { tea: put(cup({ kind: 'chawan' }), -2.15, -1.95, LT), dora: put(plate({ food: 'dora' }), -2.65, -1.95, LT), book: put(sketchbook({ page: 2 }), 1.2, -3.5, BT), tea2: put(cup({ kind: 'chawan' }), 1.55, -3.45, BT) };
+const showMine = (...k) => { for (const [n, o] of Object.entries(mine)) o.visible = k.includes(n); };
+showMine();
+const onMat = (m, dur, extra = {}) => ({ do: m, dur, face: FACE.down, lift: lift(ZB), ...extra });
+const atGarden = (m, dur, extra = {}) => ({ do: m, dur, face: FACE.up, lift: lift(CH), ...extra });
+minaStory(world, {
+  no: 2, heightAt, role: 'minaBare',
+  setup: () => { holdWeather(weather, 'clear'); world.setLook('day'); showMine(); kitty.rotation.y = 0.8; },
+  route: [
+    { jump: [-14, 7.0], say: ['昼すぎ。ミナは古い町の石畳の路地を歩いていた。空はまだもっている。', 'Early afternoon. Mina walks a stone-paved alley in an old town. The sky is holding, for now.'], shot: [[-4, 2.2, 9.6], [-11, 1.2, 6.8]] },
+    { to: [-7, 6.9], shot: { track: [-3.2, 2.2, 3.6] } },
+    { to: [-4.5, 6.6], call: () => holdWeather(weather, 'rain'), say: ['ぽつ、ぽつ……ざあっ。急に本降りになった。', 'Pit, pat… then a downpour, all at once.'] },
+    { to: [-1.2, 5.6], say: ['「傘、置いてきちゃった……！」 近くの暖簾の下へ駆けこむ。', '“I left my umbrella behind…!” She runs for the nearest noren.'] },
+    { to: [0, 5.4], call: ring }, { to: [0, 3.4] },
+    { to: [3.2, 1.4], shot: [[0.6, 2.2, 3.4], [3.8, 1.1, 0.6]] },
+    { do: 'idle', dur: 4.5, face: FACE.east, say: ['「いらっしゃいませ。どうぞ、雨宿りしていってください」', '“Welcome. Please, stay until the rain eases.”'] },
+    { swap: 'minaIn' },
+    { to: [-1.0, -2.25] }, { jump: [-2.4, -2.25] },
+    onMat('sitSip', 6, { call: () => showMine('tea', 'dora'), say: ['小上がりで、抹茶とどら焼き。「……あまい」', 'On the tatami: matcha and dorayaki. “…Sweet.”'], shot: [[-0.6, 2.0, 0.6], [-2.6, 0.5, -1.9]] }),
+    onMat('sitThink', 6, { call: () => (kitty.rotation.y = 2.4), say: ['雨の音。軒から落ちるしずく。黒い猫が畳の上で寝返りをうつ。', 'The sound of rain. Drops falling from the eaves. A black cat rolls over on the tatami.'], shot: [[-3.6, 1.5, 1.4], [-4.8, 0.5, -0.6]] }),
+    onMat('sitSip', 4.5, { say: ['「奥の席、空きましたよ。坪庭がよく見えます」', '“The seat at the back is free now. You can see the garden from there.”'] }),
+    { jump: [-1.0, -2.25], call: () => showMine() }, { to: [1.2, -2.3] }, { to: [1.2, -2.92] },
+    atGarden('sitWrite', 10, { call: () => showMine('book', 'tea2'), say: ['ガラスの向こうの坪庭。苔、石灯籠、つくばいに広がる波紋を描く。', 'Through the glass, the little garden: moss, a stone lantern, rings spreading on the water basin. She draws them.'], shot: [[2.4, 1.5, -2.0], [1.3, 0.55, -5.4]] }),
+    atGarden('sitThink', 5, { call: () => { world.setLook('dusk'); holdWeather(weather, 'drizzle'); }, say: ['気づけば夕方。雨は小降りになったけれど、まだやみそうにない。', 'Suddenly it’s evening. The rain has eased, but it isn’t stopping.'], shot: [[2.2, 2.0, -8.6], [1.2, 1.0, -3.0]] }),
+    { to: [1.2, -2.3], call: () => showMine() }, { to: [3.2, 1.4] },
+    { do: 'idle', dur: 3, face: FACE.east, say: ['「お会計を……」', '“Could I pay, please…”'], shot: [[0.6, 2.2, 3.4], [3.8, 1.1, 0.6]] },
+    { do: 'idle', dur: 5, face: FACE.east, say: ['「よかったら、この傘使ってください。次に来たときに返してくれればいいので」', '“Please, take this umbrella. Just bring it back next time you’re passing.”'] },
+    { swap: 'minaWagasa' },
+    { do: 'idle', dur: 3, face: FACE.east, say: ['赤い和傘。「……また来ます。かならず」', 'A red paper umbrella. “…I’ll come back. I promise.”'] },
+    { to: [0, 3.4], call: ring }, { to: [0, 5.4] },
+    { to: [14, 6.8], say: ['和傘に雨がぽつぽつと鳴る。次は、海の向こうの街へ。', 'Rain taps on the paper umbrella. Next: a city across the sea.'], shot: [[3, 2.4, 9.8], [8, 1.4, 6.6]], end: true },
+    { hide: 9999 },
+  ],
+});
+
 // ---------- rain: over the garden and the alley ----------
 const rain = new Rain(scene, { zones: [[-6, 6, -9.5, -4.3, 0], [-15, 15, 4.9, 11, 0]], top: 7, count: 2200, splashes: 120 });
 rain.dripLine([-6.2, 2.45, 5.0], [6.2, 2.45, 5.0], 0, 20); // from the tiled eave
@@ -165,20 +204,22 @@ const petals = new Falling(scene, { area: [-6, 6, -9.5, -4.2], top: 5 });
 
 // ---------- panel and loop ----------
 const $ = (id) => document.getElementById(id);
-const WJA = { clear: '晴れ', cloudy: 'くもり', drizzle: '小雨', rain: '本降り', after: '雨上がり' };
+const WJA = { clear: ['晴れ', 'clear'], cloudy: ['くもり', 'cloudy'], drizzle: ['小雨', 'drizzle'], rain: ['本降り', 'pouring'], after: ['雨上がり', 'after the rain'] };
 for (const b of $('weather').children) b.onclick = () => { weather.hold(b.dataset.v); [...$('weather').children].forEach((x) => x.classList.toggle('on', x === b)); };
 let drift = false, driftT = 0, driftI = 0;
 const DRIFT = [[[1.6, 1.6, -0.6], [0, 0.9, -7.5]], [[-0.6, 2.3, 1.2], [-3.8, 0.5, -1.8]], [[4.6, 1.6, 8.9], [-1.2, 1.7, 4]], [[1.4, 2.2, 1.6], [4.6, 1.1, -0.2]], [[-1.0, 1.4, -2.2], [-4.6, 0.6, -1.6]]];
 $('drift').onclick = () => { drift = !drift; driftT = 0; $('drift').classList.toggle('on', drift); };
-$('sound').onclick = () => { const on = sound.toggle(); $('sound').textContent = on ? '音 · ON' : '音 · OFF'; $('sound').classList.toggle('on', on); };
+const soundLabel = () => { $('sound').textContent = L(sound.on ? ['音 · ON', 'Sound · ON'] : ['音 · OFF', 'Sound · OFF']); };
+$('sound').onclick = () => { $('sound').classList.toggle('on', sound.toggle()); soundLabel(); };
+onLang(soundLabel);
 const sky = new THREE.Color(), grey = new THREE.Color('#8f98a3');
 let uiT = 0;
 steps.push((t, dt) => {
   weather.update(dt);
-  const r = weather.rain, look = world.look, L = LOOKS[look];
+  const r = weather.rain, look = world.look, LK = LOOKS[look];
   const dim = 1 - 0.5 * weather.cloud;
-  world.hemi.intensity = L.hemi[0] * (0.6 + 0.4 * dim); world.sun.intensity = L.sun[0] * dim;
-  sky.set(L.sky ?? '#e8eef2').lerp(grey, look === 'night' ? 0.15 : weather.cloud * 0.55); scene.background.copy(sky);
+  world.hemi.intensity = LK.hemi[0] * (0.6 + 0.4 * dim); world.sun.intensity = LK.sun[0] * dim;
+  sky.set(LK.sky ?? '#e8eef2').lerp(grey, look === 'night' ? 0.15 : weather.cloud * 0.55); scene.background.copy(sky);
   const dark = Math.min(1, { morning: 0.25, day: 0, dusk: 0.6, night: 1 }[look] + weather.cloud * 0.35);
   setGlow(dark); setLamps(dark); lamps.forEach((l) => (l.intensity = 3 + dark * 12));
   rain.update(t, dt, r); drops.update(dt, r); wet.update(weather.wet); pud.update(weather.wet); petals.update(t, dt);
@@ -193,7 +234,7 @@ steps.push((t, dt) => {
   cutaway(shop, camera);
   across.visible = camera.position.y < 5 && camera.position.z < 10;
   mainRoof.visible = camera.position.y < T + 0.5 || (camera.position.z > 9 && camera.position.y < 6);
-  if ((uiT -= dt) <= 0) { uiT = 0.5; $('weatherLine').textContent = `いまの天気：${WJA[weather.state]}${weather.mode === 'auto' ? '（自動で移り変わります）' : ''}`; }
+  if ((uiT -= dt) <= 0) { uiT = 0.5; $('weatherLine').textContent = L([`いまの天気：${WJA[weather.state][0]}${weather.mode === 'auto' ? '（自動で移り変わります）' : ''}`, `Now: ${WJA[weather.state][1]}${weather.mode === 'auto' ? ' (changes on its own)' : ''}`]); }
 });
 world.start();
 window.__cafe = { weather, rain, steam, shop, sound };

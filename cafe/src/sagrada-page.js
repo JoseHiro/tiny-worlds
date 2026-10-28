@@ -2,20 +2,21 @@
 // seen from Plaça de Gaudí, from the Passion side and from above, before it goes behind the Barcelona terrace.
 import * as THREE from 'three';
 import { person } from '../../airport/src/parts.js';
+import { L, onLang } from '../../koto/src/i18n.js';
 import { createWorld, v3 } from '../../koto/src/world.js';
 import { SAGRADA_SCALE, basilica, towers, gloryWorks, nativityFacade, passionFacade, setNight, nightLights } from './sagrada.js';
 
 const S = SAGRADA_SCALE;
 const VIEWS = {
-  plaza: ['ガウディ広場から', v3(205, 22, 22), v3(0, 58, -4)],
-  all: ['全体', v3(170, 150, 190), v3(0, 40, 0)],
-  passion: ['受難の側', v3(-150, 24, -60), v3(0, 52, 0)],
-  glory: ['栄光（工事中）', v3(40, 40, 140), v3(0, 30, 30)],
-  top: ['上から', v3(30, 300, 40), v3(0, 0, 0)],
-  near: ['生誕の塔を見上げる', v3(42, 3, 30), v3(24, 60, 0)],
-  nativity: ['生誕のファサード', v3(62, 6, 4), v3(26, 22, 0)],
-  portal: ['愛の門', v3(40, 2.4, 2), v3(27, 12, 0)],
-  passionF: ['受難のファサード', v3(-82, 12, -12), v3(-26, 24, 0)],
+  plaza: [['ガウディ広場から', 'From Plaça de Gaudí'], v3(205, 22, 22), v3(0, 58, -4)],
+  all: [['全体', 'Overview'], v3(170, 150, 190), v3(0, 40, 0)],
+  passion: [['受難の側', 'Passion side'], v3(-150, 24, -60), v3(0, 52, 0)],
+  glory: [['栄光（工事中）', 'Glory (in progress)'], v3(40, 40, 140), v3(0, 30, 30)],
+  top: [['上から', 'From above'], v3(30, 300, 40), v3(0, 0, 0)],
+  near: [['生誕の塔を見上げる', 'Looking up the Nativity towers'], v3(42, 3, 30), v3(24, 60, 0)],
+  nativity: [['生誕のファサード', 'Nativity façade'], v3(62, 6, 4), v3(26, 22, 0)],
+  portal: [['愛の門', 'Portal of Charity'], v3(40, 2.4, 2), v3(27, 12, 0)],
+  passionF: [['受難のファサード', 'Passion façade'], v3(-82, 12, -12), v3(-26, 24, 0)],
 };
 const world = createWorld({ views: VIEWS, shadow: 120, target: [0, 0, 0], look: 'day' });
 const { scene, camera, life, steps } = world;
@@ -44,7 +45,8 @@ const flood = nightLights(scene);
 for (let i = 0; i < 8; i++) { const p = person(['tourist', 'visitor', 'woman', 'kimonoWoman', 'senior', 'child'][i % 6], { mode: i % 3 ? 'idle' : 'look' }); p.position.set(96 + (i % 4) * 3, 0, 20 + Math.floor(i / 4) * 4); p.rotation.y = Math.PI; scene.add(p); life.push({ userData: { update: (tt) => p.userData.update(tt) } }); }
 
 // heights, for checking against the sources
-document.getElementById('towerLine').textContent = 'イエス 172.5 m · マリア 138 m · 福音書記者 135 m · 使徒 98.5〜112 m（14本）';
+const towerLine = () => { document.getElementById('towerLine').textContent = L(['イエス 172.5 m · マリア 138 m · 福音書記者 135 m · 使徒 98.5〜112 m（14本）', 'Jesus 172.5 m · Mary 138 m · Evangelists 135 m · Apostles 98.5–112 m (14)']); };
+towerLine(); onLang(towerLine);
 steps.push(() => { const k = world.look === 'night' ? 1 : world.look === 'dusk' ? 0.35 : 0; setNight(k); flood.update(k); });
 world.start();
 window.__sagrada = { b, towers: t };

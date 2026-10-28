@@ -7,6 +7,7 @@ import { clock } from '../../sealife/src/kit.js';
 import { mat } from '../../airport/src/parts.js';
 import { setLamps } from '../../town/src/koto-props.js';
 import { setSeason, onSeason, SEASONS } from '../../town/src/seasons.js';
+import { L, onLang } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 export const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -99,13 +100,19 @@ export function createWorld({ shadow = 62, target = [0, 0, 0], views, follow = n
     fly = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: p.clone(), t1: t.clone() };
     [...$('views').children].forEach((b) => b.classList.toggle('on', b.dataset.v === k));
   }
-  for (const [k, [ja]] of Object.entries(VIEWS)) { const b = document.createElement('button'); b.textContent = ja; b.dataset.v = k; b.onclick = () => goView(k); $('views').appendChild(b); }
+  // a view's name is a string, or [ja, en]
+  for (const [k, [name]] of Object.entries(VIEWS)) { const b = document.createElement('button'); b.textContent = L(name); b.dataset.v = k; b.onclick = () => goView(k); $('views').appendChild(b); }
   const first = Object.keys(VIEWS)[0];
   camera.position.copy(VIEWS[first][1]); controls.target.copy(VIEWS[first][2]);
   $('views').children[0].classList.add('on');
   let season = 'spring';
-  if ($('seasons')) for (const [k, S] of Object.entries(SEASONS)) { const b = document.createElement('button'); b.textContent = S.ja; b.dataset.v = k; b.onclick = () => { setSeason(k); season = k; [...$('seasons').children].forEach((x) => x.classList.toggle('on', x === b)); }; $('seasons').appendChild(b); }
+  const SEASON_EN = { spring: 'Spring', summer: 'Early summer', autumn: 'Autumn', winter: 'Winter' };
+  if ($('seasons')) for (const [k, S] of Object.entries(SEASONS)) { const b = document.createElement('button'); b.textContent = L([S.ja, SEASON_EN[k]]); b.dataset.v = k; b.onclick = () => { setSeason(k); season = k; [...$('seasons').children].forEach((x) => x.classList.toggle('on', x === b)); }; $('seasons').appendChild(b); }
   $('seasons')?.children[0]?.classList.add('on');
+  onLang(() => {
+    for (const b of $('views').children) b.textContent = L(VIEWS[b.dataset.v][0]);
+    for (const b of $('seasons')?.children ?? []) b.textContent = L([SEASONS[b.dataset.v].ja, SEASON_EN[b.dataset.v]]);
+  });
   onSeason((name, S) => { grass.color.set(S.grass); if (look === 'day') scene.background.set(S.sky); });
   function applyLook() {
     const L = LOOKS[look];

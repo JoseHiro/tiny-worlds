@@ -27,6 +27,9 @@
     .scenes > * + * { border-left: 1px solid var(--ink); }
     .scenes a.on { background: var(--accent); color: #fff; }
     .weather { font-size: 11.5px; color: var(--muted); }
+    .story { font-size: 11.5px; border-left: 2px solid #c9714a; padding-left: 8px; }
+    .story a[hidden] { display: none; }
+    .story a { display: block; margin-top: 6px; color: #b5452b; font-weight: 600; text-decoration: none; }
     .hint { font-size: 11px; color: var(--muted); }
     a { color: inherit; }
     @media (max-width: 720px) { .brand h1 { font-size: 40px; } .brand p { display: none; } .panel { left: 12px; right: 12px; width: auto; } }
@@ -40,18 +43,21 @@
   <div class="brand">
     <div class="eyebrow">Tiny Worlds 04 · Cozy Café</div>
     <h1>Stilla<span>.</span></h1>
-    <p>北の街の角にある小さなカフェ。白い壁と明るい木、キャンドルとラテの湯気。窓際でノートPCに向かう人、勉強する学生、ソファで本を読む人。外は雨が降ったりやんだり。</p>
+    <p data-en="A small corner café in a northern town. White walls and pale wood, candles and the steam of lattes. Someone at a laptop by the window, students studying, a reader on the sofa. Outside, the rain comes and goes.">北の街の角にある小さなカフェ。白い壁と明るい木、キャンドルとラテの湯気。窓際でノートPCに向かう人、勉強する学生、ソファで本を読む人。外は雨が降ったりやんだり。</p>
   </div>
   <aside class="panel">
-    <div class="seg scenes"><a href="./nordic.html" class="on">北欧</a><a href="./wa.html">和</a><a href="./barcelona.html">バルセロナ</a></div>
-    <h3>見る場所</h3>
+    <div class="seg" id="lang"><button data-v="ja">日本語</button><button data-v="en">English</button></div>
+    <div class="seg scenes"><a href="./nordic.html" class="on" data-en="Nordic">北欧</a><a href="./wa.html" data-en="Japanese">和</a><a href="./barcelona.html" data-en="Barcelona">バルセロナ</a></div>
+    <h3 data-en="Views">見る場所</h3>
     <div class="seg" id="views"></div>
-    <h3>天気 · 時間</h3>
-    <div class="seg" id="weather"><button data-v="auto" class="on">自動</button><button data-v="clear">晴れ</button><button data-v="drizzle">小雨</button><button data-v="rain">本降り</button></div>
+    <h3 data-en="Weather · Time">天気 · 時間</h3>
+    <div class="seg" id="weather"><button data-v="auto" class="on" data-en="Auto">自動</button><button data-v="clear" data-en="Clear">晴れ</button><button data-v="drizzle" data-en="Drizzle">小雨</button><button data-v="rain" data-en="Pouring">本降り</button></div>
     <div class="weather" id="weatherLine"></div>
-    <div class="seg" id="time"><button data-v="morning">朝</button><button data-v="day" class="on">昼</button><button data-v="dusk">夕方</button><button data-v="night">夜</button></div>
-    <div class="seg"><button id="drift">ぼんやり見る</button><button id="sound">音 · OFF</button></div>
-    <div class="hint">ドラッグで回転 · ホイールでズーム · <a href="../">Tiny Worlds</a></div>
+    <div class="seg" id="time"><button data-v="morning" data-en="Morning">朝</button><button data-v="day" class="on" data-en="Day">昼</button><button data-v="dusk" data-en="Dusk">夕方</button><button data-v="night" data-en="Night">夜</button></div>
+    <div class="seg"><button id="drift" data-en="Drift">ぼんやり見る</button><button id="sound" data-en="Sound · OFF">音 · OFF</button></div>
+    <div class="story"><b data-en="Story: Mina, a travelling illustrator, on a rainy day">物語：旅するイラストレーター・ミナの雨の日</b> <span id="storyTitle"></span><br><span id="storyLine" data-en="Mina travels with a sketchbook. When it rains, she ducks into a café and draws what she sees through the window.">スケッチブックを持って旅するミナ。雨の日にはカフェに入って、窓の外を描きます。</span>
+      <div class="seg" style="margin-top:6px"><button id="storyBtn" data-en="Watch the story">物語を見る</button></div><a id="storyNext" hidden></a></div>
+    <div class="hint" data-en="Drag to orbit · scroll to zoom · <a href=&quot;../&quot;>Tiny Worlds</a>">ドラッグで回転 · ホイールでズーム · <a href="../">Tiny Worlds</a></div>
   </aside>
   <script type="module" src="./src/nordic.js"></script>
 </body>

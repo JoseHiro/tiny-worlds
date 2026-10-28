@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { bakeStatic } from '../../airport/src/merge.js';
 import { box } from '../../airport/src/parts.js';
+import { L, onLang } from '../../koto/src/i18n.js';
 import { createWorld, v3, LOOKS } from '../../koto/src/world.js';
 import { Agent, FACE } from '../../koto/src/people.js';
 import { cat } from '../../town/src/koto-props.js';
@@ -11,17 +12,18 @@ import { sedan, keiCar, bicycle, CAR_COLORS, KEI_COLORS } from '../../town/src/v
 import { streetLight } from '../../town/src/gear.js';
 import { streetTree } from '../../town/src/nature.js';
 import { CAFE, M, GLOW, setGlow, shell, cutaway, counter, espressoMachine, grinder, pourOver, register, pastryCase, menuBoard, wallShelf, windowBar, stool, chair, roundTable, longTable, sofa, armchair, rug, lowTable, pendant, floorLamp, candle, stringLights, plant, bookshelf, door, awning, bladeSign, aFrame, umbrellaStand, coatRack, ceilingFan, recordPlayer } from './furniture.js';
-import { cup, laptop, book, notebook, tablet, phone, plate, Steam } from './things.js';
+import { cup, laptop, book, notebook, tablet, phone, plate, sketchbook, Steam } from './things.js';
+import { minaStory, holdWeather } from './mina.js';
 import { Weather, Rain, Wet, puddles, WindowDrops } from './rain.js';
 import { Ambience } from './sound.js';
 
 const VIEWS = {
-  all: ['全体', v3(19, 17, 23), v3(0, 0.8, 0.5)],
-  window: ['窓の外から', v3(-2.6, 1.85, 8.6), v3(-2.6, 1.4, 3.9)],
-  counter: ['カウンター', v3(1.4, 3.3, 1.2), v3(2.5, 1.1, -4.0)],
-  table: ['相席テーブル', v3(-2.2, 4.4, 3.6), v3(-2.2, 0.6, 0.3)],
-  sofa: ['ソファ', v3(-3.0, 2.2, 0.2), v3(-6.0, 0.7, -2.6)],
-  street: ['通り', v3(11.5, 2.4, 13.5), v3(2, 1.8, 4.5)],
+  all: [['全体', 'Overview'], v3(19, 17, 23), v3(0, 0.8, 0.5)],
+  window: [['窓の外から', 'From the window'], v3(-2.6, 1.85, 8.6), v3(-2.6, 1.4, 3.9)],
+  counter: [['カウンター', 'Counter'], v3(1.4, 3.3, 1.2), v3(2.5, 1.1, -4.0)],
+  table: [['相席テーブル', 'Shared table'], v3(-2.2, 4.4, 3.6), v3(-2.2, 0.6, 0.3)],
+  sofa: [['ソファ', 'Sofa'], v3(-3.0, 2.2, 0.2), v3(-6.0, 0.7, -2.6)],
+  street: [['通り', 'Street'], v3(11.5, 2.4, 13.5), v3(2, 1.8, 4.5)],
 };
 const world = createWorld({ views: VIEWS, shadow: 24, target: [0, 0, 1], look: 'day' });
 const { scene, camera, life, people, steps } = world;
@@ -176,6 +178,49 @@ comer('rainComer', -2.9, 4); comer('chatB', -0.2, 40);
 const passers = [['rainComer', -10.5, 7.9, 13, 7.9, 0], ['tourist', 13, 8.2, -10.5, 8.2, 12], ['business', 10.5, -6.5, 10.5, 13, 6], ['woman', 12.4, 13, 12.4, -6.5, 20]].map(([r, x0, z0, x1, z1, d]) => agent(r, [{ jump: [x0, z0] }, { to: [x1, z1] }, { hide: 6 }], { delay: d, speed: 0.95 }));
 // the café cat, asleep at the end of the window bar
 const kitty = cat({ color: 0xe8a050, mode: 'sleep' }); kitty.position.set(-6.0, BT, 4.5); kitty.rotation.y = 0.4; scene.add(kitty); life.push(kitty);
+// ---------- the story, chapter 1 (DESIGN.md §12): Mina comes in out of the drizzle, sketches the street from the
+// window bar, the cat climbs into her lap, the rain stops and she goes on her way ----------
+const SEAT = -5.6, me = () => tale.actors()[0].p.userData;
+const mPlate = onTable(plate({ food: 'roll' }), SEAT + 0.32, 4.62, 0, BT), mBook = onTable(sketchbook({ page: 1 }), SEAT - 0.05, 4.5, Math.PI, BT);
+mPlate.visible = mBook.visible = false;
+let catWalk = null;
+function catTo(x, y, z, mode, dur = 2.2) { // the cat strolls (or hops) from where it is to (x, y, z), then settles
+  const p0 = kitty.position.clone(), p1 = new THREE.Vector3(x, y, z); let t = 0;
+  kitty.userData.mode = 'walk'; kitty.rotation.y = Math.atan2(-(z - p0.z), x - p0.x);
+  catWalk = (dt) => { t = Math.min(1, t + dt / dur); kitty.position.lerpVectors(p0, p1, t); kitty.position.y += Math.sin(t * Math.PI) * 0.25; if (t === 1) { kitty.userData.mode = mode; catWalk = null; } };
+}
+const sit = (m, dur, extra = {}) => ({ do: m, dur, face: FACE.down, lift: lift(STOOL), ...extra });
+const tale = minaStory(world, {
+  no: 1, heightAt,
+  setup: () => { holdWeather(weather, 'drizzle'); world.setLook('morning'); mPlate.visible = mBook.visible = false; mBook.userData.page(1); kitty.position.set(-6.0, BT, 4.5); kitty.rotation.y = 0.4; kitty.userData.mode = 'sleep'; catWalk = null; },
+  route: [
+    { jump: [-10.5, 6.6], say: ['朝の小雨。スケッチブックを鞄に入れて、ミナは北の街の石畳を歩いていた。', 'A drizzly morning. With a sketchbook in her bag, Mina walks the cobbles of a northern town.'], shot: [[-1.5, 2.0, 9.0], [-8, 1.2, 6.4]] },
+    { to: [1.5, 6.4], shot: { track: [-3.5, 2.6, 4] } },
+    { to: [4.15, 6.3], say: ['「あ、いい匂い」 角のカフェから、シナモンとコーヒーの香り。', '“Oh, that smells good.” Cinnamon and coffee from the café on the corner.'], call: ring },
+    { to: [4.15, 4.3] },
+    { to: [3.45, 4.0], call: () => (me().indoors = true), say: ['ドアのベルが鳴る。傘を傘立てに。', 'The bell over the door rings. Her umbrella goes in the stand.'], shot: [[1.2, 2.4, 1.6], [3.6, 1.0, 4.0]] },
+    { do: 'hold', dur: 1.4, face: FACE.down },
+    { to: [3.6, -1.9], shot: [[6.0, 2.3, 0.6], [2.6, 1.0, -2.6]] },
+    { do: 'idle', dur: 4, face: FACE.up, say: ['「カルダモンロールと、ラテをひとつ」', '“A cardamom roll and a latte, please.”'] },
+    { to: [1.9, -2.0] }, { do: 'idle', dur: 2.5, face: FACE.up, say: ['ラテの上にはハート。', 'A heart on top of the latte.'] },
+    { swap: 'minaIn' },
+    { to: [SEAT, 3.3], call: () => (me().indoors = true) }, { to: [SEAT, 4.02] },
+    sit('sitSip', 5, { call: () => (mPlate.visible = mBook.visible = true), say: ['窓際のいちばん端の席。となりの窓台で、店の猫が眠っている。', 'The last stool along the window. On the sill beside her, the café cat is asleep.'], shot: [[-3.5, 1.55, 3.4], [-6.1, 0.95, 4.35]] }),
+    sit('sitWrite', 9, { say: ['雨の通りを描く。傘の人、光る石畳、向かいの黄色い家。', 'She draws the rainy street: people under umbrellas, shining cobbles, the yellow house opposite.'], shot: [[-5.6, 1.7, 8.2], [-5.6, 1.2, 4.1]] }),
+    sit('sitThink', 5, { call: () => catTo(SEAT + 0.04, 0.74, 4.3, 'sleep'), say: ['猫が起きて、のびをして……ミナのひざの上へ。', 'The cat wakes, stretches… and climbs into Mina’s lap.'], shot: [[-4.5, 1.25, 2.9], [-5.6, 0.75, 4.2]] }),
+    sit('sitThink', 4, { say: ['「……動けなくなっちゃった」', '“…Well, now I can’t move.”'] }),
+    sit('sitWrite', 8, { call: () => mBook.userData.page(1), say: ['猫をひざにのせたまま、もう一枚。ラテはもう冷めている。', 'One more drawing with the cat on her lap. The latte has gone cold.'], shot: [[-3.6, 2.4, 2.4], [-5.6, 0.8, 4.4]] }),
+    sit('sitSip', 4, { call: () => { holdWeather(weather, 'clear'); world.setLook('day'); }, say: ['気がつくと雨がやんでいた。雲のすきまから日が差す。', 'Before she knows it, the rain has stopped. Sun through a gap in the clouds.'], shot: [[-5.6, 1.9, 9.5], [-5.6, 1.2, 4.2]] }),
+    sit('sitThink', 3, { call: () => catTo(-6.0, BT, 4.5, 'sleep', 1.4), say: ['猫は窓台に戻って、また丸くなる。', 'The cat goes back to the sill and curls up again.'] }),
+    { to: [SEAT, 3.3], call: () => (mPlate.visible = mBook.visible = false) }, { to: [3.45, 4.0] },
+    { swap: 'minaBare' },
+    { do: 'idle', dur: 1.2, face: FACE.up, say: ['「ごちそうさまでした」', '“Thank you, that was lovely.”'] },
+    { to: [4.15, 4.3], call: ring }, { to: [4.15, 6.3], call: () => (me().indoors = false) },
+    { to: [13.4, 6.4], say: ['晴れた空の下、次の町へ。……傘を傘立てに置いたまま。', 'Off to the next town under a clearing sky… leaving her umbrella in the stand.'], shot: [[8, 2.6, 13], [4, 1.4, 6]], end: true },
+    { hide: 9999 },
+  ],
+});
+
 // cars along the street
 const cars = [[sedan({ color: CAR_COLORS[2] }), 1, 10.2], [keiCar({ color: KEI_COLORS[0] }), -1, 12.4], [sedan({ color: CAR_COLORS[0] }), -1, 12.4]].map(([c, dir, z], i) => { c.userData.dir = dir; c.userData.x = -8 + i * 9; c.position.z = z; c.rotation.y = dir > 0 ? 0 : Math.PI; scene.add(c); return c; });
 
@@ -189,21 +234,23 @@ const drops = new WindowDrops(scene, panes);
 
 // ---------- the panel: weather, the drifting camera, the sound ----------
 const $ = (id) => document.getElementById(id);
-const WJA = { clear: '晴れ', cloudy: 'くもり', drizzle: '小雨', rain: '本降り', after: '雨上がり' };
+const WJA = { clear: ['晴れ', 'clear'], cloudy: ['くもり', 'cloudy'], drizzle: ['小雨', 'drizzle'], rain: ['本降り', 'pouring'], after: ['雨上がり', 'after the rain'] };
 for (const b of $('weather').children) b.onclick = () => { weather.hold(b.dataset.v); [...$('weather').children].forEach((x) => x.classList.toggle('on', x === b)); };
 let drift = false, driftT = 0, driftI = 0;
 const DRIFT = [[[-2.6, 1.7, 8.0], [-2.6, 1.3, 4.0]], [[-0.6, 2.0, 2.6], [-2.6, 0.7, 0.1]], [[-3.6, 1.8, -0.4], [-6.2, 0.7, -2.6]], [[2.8, 2.2, -0.6], [2.6, 1.1, -4.2]], [[3.2, 1.8, 1.5], [5.6, 0.7, 2.5]], [[10, 2.6, 11.5], [0, 1.8, 4.6]]];
 $('drift').onclick = () => { drift = !drift; driftT = 0; $('drift').classList.toggle('on', drift); };
-$('sound').onclick = () => { const on = sound.toggle(); $('sound').textContent = on ? '音 · ON' : '音 · OFF'; $('sound').classList.toggle('on', on); };
+const soundLabel = () => { $('sound').textContent = L(sound.on ? ['音 · ON', 'Sound · ON'] : ['音 · OFF', 'Sound · OFF']); };
+$('sound').onclick = () => { $('sound').classList.toggle('on', sound.toggle()); soundLabel(); };
+onLang(soundLabel);
 const sky = new THREE.Color(), grey = new THREE.Color('#8f98a3');
 let uiT = 0;
 steps.push((t, dt) => {
   weather.update(dt);
-  const r = weather.rain, look = world.look, L = LOOKS[look];
+  const r = weather.rain, look = world.look, LK = LOOKS[look];
   // light: clouds dim the sun, darkness (night, clouds, rain) brings up the lamps inside
   const dim = 1 - 0.5 * weather.cloud;
-  world.hemi.intensity = L.hemi[0] * (0.6 + 0.4 * dim); world.sun.intensity = L.sun[0] * dim;
-  sky.set(L.sky ?? '#e8eef2').lerp(grey, look === 'night' ? 0.15 : weather.cloud * 0.55); scene.background.copy(sky);
+  world.hemi.intensity = LK.hemi[0] * (0.6 + 0.4 * dim); world.sun.intensity = LK.sun[0] * dim;
+  sky.set(LK.sky ?? '#e8eef2').lerp(grey, look === 'night' ? 0.15 : weather.cloud * 0.55); scene.background.copy(sky);
   const dark = Math.min(1, { morning: 0.25, day: 0, dusk: 0.6, night: 1 }[look] + weather.cloud * 0.35);
   setGlow(dark); lamps.forEach((l) => (l.intensity = 3 + dark * 14));
   lamp1.userData.setNight?.(dark > 0.5);
@@ -212,7 +259,8 @@ steps.push((t, dt) => {
   sound.update(dt, r);
   // the door swings while someone passes; umbrellas open in the rain
   doorT = Math.max(0, doorT - dt); dr.userData.open = doorT > 0 ? 1 : 0;
-  for (const a of agents) a.p.userData.umbrella = !a.p.userData.indoors && r > 0.15;
+  for (const a of people) a.p.userData.umbrella = !a.p.userData.indoors && r > 0.15;
+  catWalk?.(dt);
   laptops.mac.userData.typing = mac.p.userData.mode === 'sitType'; laptops.call.userData.typing = call.p.userData.mode === 'sitType';
   laptops.mac.userData.update(t, dt);
   for (const c of cars) { const ud = c.userData; ud.speed = 3.5; ud.x += ud.dir * ud.speed * dt; if (ud.x > 16) ud.x = -14; if (ud.x < -14) ud.x = 16; c.position.x = ud.x; c.visible = ud.x > -10.8 && ud.x < 13.2; ud.update(dt); }
@@ -220,7 +268,7 @@ steps.push((t, dt) => {
   if (drift && ((driftT -= dt) <= 0)) { driftT = 14; const [p, q] = DRIFT[driftI++ % DRIFT.length]; world.cam(v3(...p), v3(...q), 7); }
   cutaway(shop, camera);
   across.visible = camera.position.y < 6.5;
-  if ((uiT -= dt) <= 0) { uiT = 0.5; $('weatherLine').textContent = `いまの天気：${WJA[weather.state]}${weather.mode === 'auto' ? '（自動で移り変わります）' : ''}`; }
+  if ((uiT -= dt) <= 0) { uiT = 0.5; $('weatherLine').textContent = L([`いまの天気：${WJA[weather.state][0]}${weather.mode === 'auto' ? '（自動で移り変わります）' : ''}`, `Now: ${WJA[weather.state][1]}${weather.mode === 'auto' ? ' (changes on its own)' : ''}`]); }
 });
 world.start();
 window.__cafe = { weather, rain, steam, shop, sound };
