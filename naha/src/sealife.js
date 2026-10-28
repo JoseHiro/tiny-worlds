@@ -102,7 +102,7 @@ export function populate(parent, { swimmer, coralSpots = [] } = {}) {
   const heads = coralSpots.length ? coralSpots : Array.from({ length: 6 }, () => spotIn('reef'));
   for (let i = 0; i < 4; i++) {
     const [x, z] = heads[Math.floor(rnd() * heads.length)];
-    school(i === 3 ? 'damselBlue' : 'damselGreen', 'reef', i === 3 ? 10 : 22, { center: V(x, bedHeight(x, z) + 0.75, z), size: V(1.4, 0.35, 1.4), speed: 0.35, radius: 0.35 }).threats.push(tap, ...sharks);
+    school(i === 3 ? 'damselBlue' : 'damselGreen', 'reef', i === 3 ? 10 : 22, { center: V(x, Math.min(bedHeight(x, z) + 1.25, -0.35), z), size: V(1.4, 0.35, 1.4), speed: 0.35, radius: 0.35 }).threats.push(tap, ...sharks);
   }
   const reefFish = [['butterflyfish', 2, 0.9, 0.4], ['butterflyfish', 2, 0.9, 0.4], ['butterflyfish', 2, 0.9, 0.4], ['moorishIdol', 2, 1.4, 0.35], ['moorishIdol', 3, 1.4, 0.35], ['parrotfish', 1, 4, 0.5], ['parrotfish', 1, 4, 0.5], ['parrotfish', 1, 4, 0.5]];
   for (const [key, n, radius, speed] of reefFish) {

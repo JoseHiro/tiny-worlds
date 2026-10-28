@@ -2,7 +2,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { BLOCK, seabed, bedTexture, cutFaces, bedHeight } from './terrain.js';
-import { Ripples, waterSurface, waterCutMaterial, earthCutMaterial, withCaustics, shared } from './water.js';
+import { Ripples, waterSurface, waterCutMaterial, earthCutMaterial, withCaustics, causticsInject, shared } from './water.js';
+import { Reef, reefScape } from '../../sealife/src/reef.js';
 import { person, PALETTE, mat } from '../../airport/src/parts.js';
 import { populate, CLIP } from './sealife.js';
 import { Spray, waveHeight } from './waves.js';
@@ -59,39 +60,21 @@ scene.add(props);
 let seed = 5;
 const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 
-// corals: blobs, branches and tables on the reef flat
-const coralColors = ['#f59ab0', '#9b7fd1', '#ff9f6b', '#f2c94c', '#7fd6c2', '#e86a8a'].map((c) => new THREE.Color(c));
-const blob = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.45, 1), withCaustics(new THREE.MeshStandardMaterial({ roughness: 0.8 })), 260);
-const branch = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.06, 0.1, 0.9, 6), withCaustics(new THREE.MeshStandardMaterial({ roughness: 0.7 })), 600);
-const table = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.9, 0.25, 0.18, 10), withCaustics(new THREE.MeshStandardMaterial({ roughness: 0.8 })), 70);
-const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), eul = new THREE.Euler();
-let nb = 0, nbr = 0, nt = 0;
-const coralSpots = []; // coral heads, where the chromis gather
-for (let k = 0; k < 520 && (nb < 260 || nbr < 600 || nt < 70); k++) {
-  const x = -42 + rnd() * 84, z = -19 + rnd() * 15;
-  const h = bedHeight(x, z);
-  if (h > -1.0 || h < -2.6) continue;
-  const c = coralColors[Math.floor(rnd() * coralColors.length)];
-  const kind = rnd();
-  if (kind < 0.35 && nb < 260) {
-    const s = 0.4 + rnd() * 0.7;
-    blob.setMatrixAt(nb, m4.compose(new THREE.Vector3(x, h + s * 0.3, z), q.identity(), sc.set(s, s * 0.7, s)));
-    blob.setColorAt(nb++, c);
-  } else if (kind < 0.85 && nbr < 594) {
-    coralSpots.push([x, z]);
-    for (let j = 0; j < 6; j++) { // a little bush of branches
-      eul.set((rnd() - 0.5) * 0.9, rnd() * 6, (rnd() - 0.5) * 0.9);
-      q.setFromEuler(eul);
-      branch.setMatrixAt(nbr, m4.compose(new THREE.Vector3(x + (rnd() - 0.5) * 0.4, h + 0.4, z + (rnd() - 0.5) * 0.4), q, sc.set(1, 0.7 + rnd() * 0.6, 1)));
-      branch.setColorAt(nbr++, c);
-    }
-  } else if (nt < 70 && rnd() < 0.4) {
-    table.setMatrixAt(nt, m4.compose(new THREE.Vector3(x, h + 0.55, z), q.identity(), sc.setScalar(0.5 + rnd() * 0.5)));
-    table.setColorAt(nt++, c);
-  }
+// the reef (the shared kit in ../sealife/src/reef.js), placed by zone from the seabed's depth
+const zsAt = (x, z) => z + Math.sin(x * 0.07) * 2.6 + Math.sin(x * 0.19 + 1.3) * 0.8; // (terrain.js's wavy reef line)
+function zoneAt(x, z) {
+  const h = bedHeight(x, z), zs = zsAt(x, z);
+  if (h > -0.4) return null; // too shallow (the wash zone)
+  if (zs > -5.5) return 'lagoon';
+  if (zs > -15) return 'flat';
+  if (zs > -17.5) return 'crest';
+  if (zs > -25 && h > -8.8) return 'slope';
+  return null;
 }
-blob.count = nb; branch.count = nbr; table.count = nt;
-for (const im of [blob, branch, table]) { im.castShadow = true; im.receiveShadow = true; props.add(im); }
+const reef = new Reef({ extras: [causticsInject], clip: CLIP, seed: 11, top: -0.1 });
+const avoid = [[-18, -10, 1.3], [21, -11.5, 1.3], [-36, -12, 1.3], [-11, -14, 1.6], [3, -13.5, 1.8], [-31, 1, 4.2], [-4, 7, 3], [12, -9, 1.2]]; // anemones, the moray, the whitetip's bed, the garden eels, Hana's water, the squid
+const coralSpots = reefScape(reef, { bounds: [-44.5, 44.5, -29.5, 14], zoneAt, ground: bedHeight, avoid, seed: 5 }); // bommies: where the chromis gather
+const reefGroup = reef.build(props);
 
 // beach: palms, parasols, loungers, people
 function palm(x, z, lean) {

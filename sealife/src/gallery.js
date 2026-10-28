@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { makeCreature, School, Cruise, Wander, Burrows, clock, assemble, part, tube, seeded } from './kit.js';
 import { SPECIES, GROUPS } from './species.js';
+import { Reef, REEF_KINDS, bommie } from './reef.js';
 
 const BG = new THREE.Color('#d9eef0');
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -249,6 +250,48 @@ for (const g of GROUPS) for (const key of g.keys) {
   ITEMS.push({ key, group: g.id, name: spec.name.ja, en: spec.name.en, note: spec.note, build: single(spec), view: spec.upright ? [1, 0.8, 1.2] : key === 'manta' ? [0.8, 0.9, 1.1] : [1, 0.45, 1.25] });
 }
 
+// ---------- the reef kit (reef.js): each kind as a few colonies in its colours, and a bommie with its fish ----------
+const REEF_NOTES = {
+  staghorn: '幅1.0〜1.6 · 3段に分かれる枝、枝先が明るい · 茶・オリーブ・紫・ピンク', table: '直径1.6〜2.6 · 柱の上の平たい皿、縁が反る · 礁の縁', brain: '0.6〜1.0 · 迷路の溝の半球', boulder: '1.5〜3 · でこぼこの大きな塊（根の土台）',
+  foliose: '幅0.8〜1.4 · 重なる薄い葉の渦', finger: '幅0.5〜0.9 · 太く短い指の集まり', mushroom: '0.25〜0.4 · 砂の上の円盤、放射状のひだ', leather: '0.5〜0.9 · ひだのある笠、ゆらゆら揺れる',
+  softTree: '0.4〜0.8 · 小さな房の茂み、揺れる · ピンク・紫・黄', seaFan: '高さ1〜1.8 · 平らな扇の網目、流れに揺れる · 赤・橙・黄', barrel: '0.5〜0.9 · 樽型のカイメン', tubeSponge: '0.4〜0.8 · 管のカイメンの束',
+  rock: '0.3〜1.2 · 角ばった岩', rubble: '崩れたサンゴのかけら', seagrass: '0.4〜0.6 · 細い葉、揺れる',
+};
+const sand = (scene, r) => { const m = new THREE.Mesh(new THREE.CircleGeometry(r, 40).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#ecdcb6', roughness: 1 })); m.position.y = -0.01; scene.add(m); return m; };
+function reefCard(kind) {
+  return (scene) => {
+    const K = REEF_KINDS[kind], n = K.colors.length, reef = new Reef({ seed: kind.length });
+    const step = Math.max(0.9, K.h * 1.4);
+    K.colors.forEach((c, i) => reef.add(kind, (i - (n - 1) / 2) * step, 0, (i % 2) * 0.3, { color: i, variant: i % K.make.length, ry: i * 1.3, ...(kind === 'seaFan' ? { ry: Math.PI / 2 } : {}) }));
+    const pivot = new THREE.Group();
+    scene.add(pivot);
+    reef.build(pivot);
+    sand(pivot, n * step * 0.62 + 0.6);
+    return { obj: pivot, radius: Math.max(n * step * 0.55, K.h * 1.2), target: V(0, K.h * 0.4, 0), update: (t, dt, spin) => { if (spin) pivot.rotation.y += dt * 0.15; } };
+  };
+}
+function bommieCard(scene) {
+  scene.fog = new THREE.Fog(BG, 14, 40);
+  sand(scene, 9);
+  const reef = new Reef({ seed: 9 }), r = seeded(4);
+  bommie(reef, 0, 0, 0, 1.5, r);
+  for (let i = 0; i < 26; i++) { const a = r() * 6.28, d = 2.4 + r() * 4; const k = ['staghorn', 'brain', 'finger', 'softTree', 'seagrass', 'rubble', 'mushroom', 'leather', 'table'][i % 9]; reef.add(k, Math.cos(a) * d, 0, Math.sin(a) * d); }
+  reef.add('seaFan', -3.2, 0, -2.6, { ry: Math.PI / 2, size: 1.3 });
+  reef.add('barrel', 3, 0, -2.2, { size: 1.1 });
+  reef.build(scene);
+  const updates = [];
+  const chromis = makeCreature(SPECIES.damselGreen(), { count: 30 }); scene.add(chromis);
+  const s = new School(chromis, { center: V(0, 2.2, 0), size: V(2.6, 0.8, 2.6), speed: 0.35, radius: 0.35 }); updates.push((t, dt) => s.update(dt));
+  const tangs = makeCreature(SPECIES.blueTang(), { count: 8 }); scene.add(tangs);
+  const s2 = new School(tangs, { center: V(1, 1.4, 1.5), size: V(6, 1, 5), speed: 0.8, radius: 0.8 }); updates.push((t, dt) => s2.update(dt));
+  const turtle = makeCreature(SPECIES.greenTurtle()); scene.add(turtle);
+  const c = new Cruise(turtle, { center: V(0, 0, 0), rx: 5.5, rz: 4, y: 2.6, speed: 0.7, bob: 0.3 }); updates.push((t, dt) => c.update(dt));
+  return { obj: scene, radius: 6, target: V(0, 1, 0), update: (t, dt) => updates.forEach((f) => f(t, dt)) };
+}
+const REEF_ITEMS = [{ group: 'reef', wide: true, name: '水槽：サンゴの根', en: 'Aquarium · a bommie', note: 'ハマサンゴの土台にエダサンゴ・ノウサンゴ・テーブル・ソフトコーラルが乗った根 · デバスズメダイの群れ、ナンヨウハギ、ウミガメ', build: bommieCard, view: [1, 0.6, 1.1] },
+  ...Object.entries(REEF_KINDS).map(([kind, K]) => ({ group: 'reef', name: K.ja, en: kind, note: REEF_NOTES[kind] ?? '', build: reefCard(kind), view: [1, 0.6, 1.2] }))];
+ITEMS.push(...REEF_ITEMS);
+
 // ---------- page ----------
 
 const canvas = document.getElementById('stage');
@@ -258,7 +301,7 @@ renderer.toneMapping = THREE.NeutralToneMapping;
 
 const grid = document.getElementById('grid');
 const tabs = document.getElementById('tabs');
-const TABS = [{ id: 'all', ja: 'すべて', n: ITEMS.length }, { id: 'aquarium', ja: '水槽', n: AQUARIUMS.length }, ...GROUPS.map((g) => ({ ...g, n: g.keys.length }))];
+const TABS = [{ id: 'all', ja: 'すべて', n: ITEMS.length }, { id: 'aquarium', ja: '水槽', n: AQUARIUMS.length }, ...GROUPS.map((g) => ({ ...g, n: g.keys.length })), { id: 'reef', ja: 'サンゴ礁', n: REEF_ITEMS.length }];
 for (const t of TABS) {
   const b = document.createElement('button');
   b.textContent = `${t.ja} ${t.n}`;
