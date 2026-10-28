@@ -26,6 +26,12 @@ export function cup({ kind = 'latte', art = 'heart', color = CAFE.white } = {}) 
     g.userData = { kind: 'cup', cup: kind, hot: false };
     return g;
   }
+  if (kind === 'yunomi' || kind === 'chawan') { // a tall teacup with no handle, or a wide bowl of whisked matcha
+    const glaze = M(color === CAFE.white ? (kind === 'yunomi' ? 0x8a7a6a : 0x3a3430) : color, { roughness: 0.6 });
+    if (kind === 'yunomi') { g.add(cyl(0.035, 0.03, 0.09, glaze, 0, 0.045, 0, 12)); g.add(mesh(new THREE.CircleGeometry(0.031, 12).rotateX(-Math.PI / 2), M(0x9a8a3a, { roughness: 0.2 }), 0, 0.085, 0)); g.userData = { kind: 'cup', cup: kind, hot: true, steamAt: [0, 0.1, 0] }; }
+    else { g.add(mesh(new THREE.SphereGeometry(0.065, 14, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), glaze, 0, 0.065, 0)); g.add(mesh(new THREE.CircleGeometry(0.06, 14).rotateX(-Math.PI / 2), M(0x8fb04a, { roughness: 0.5 }), 0, 0.055, 0)); g.userData = { kind: 'cup', cup: kind, hot: true, steamAt: [0, 0.07, 0] }; }
+    return g;
+  }
   const r = kind === 'espresso' ? 0.03 : kind === 'mug' ? 0.045 : 0.045, h = kind === 'espresso' ? 0.04 : kind === 'mug' ? 0.1 : 0.06;
   if (kind !== 'mug') g.add(cyl(0.075, 0.07, 0.01, china, 0, 0.005, 0, 16)); // saucer
   g.add(cyl(r, r * 0.75, h, china, 0, 0.01 + h / 2, 0, 14));

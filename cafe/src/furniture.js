@@ -22,7 +22,7 @@ export const GLOW = {
   flame: new THREE.MeshStandardMaterial({ color: 0xffe2a0, emissive: 0xffa040, emissiveIntensity: 1.2 }),
   case: new THREE.MeshStandardMaterial({ color: 0xfff6e6, emissive: 0xfff0d0, emissiveIntensity: 0.25, roughness: 0.5 }),
 };
-export function setGlow(dark) { GLOW.bulb.emissiveIntensity = 0.5 + dark * 1.6; GLOW.case.emissiveIntensity = 0.2 + dark * 0.6; }
+export function setGlow(dark) { GLOW.bulb.emissiveIntensity = 0.5 + dark * 1.6; GLOW.case.emissiveIntensity = 0.2 + dark * 0.6; WASHI.emissiveIntensity = 0.35 + dark * 1.3; }
 export const GLASS = new THREE.MeshStandardMaterial({ color: 0xcfe2e6, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.18, depthWrite: false });
 
 // ---------- the shell: floor, four walls with windows and a door, a ceiling with beams ----------
@@ -407,5 +407,53 @@ export function recordPlayer() {
   disc.position.set(-0.03, 0.11, 0); disc.userData.dynamic = true; g.add(disc);
   const arm = box(0.2, 0.01, 0.01, M(CAFE.steel, { metalness: 0.6 }), 0.12, 0.13, 0.08); arm.rotation.y = 0.6; g.add(arm);
   g.userData = { kind: 'recordPlayer', update: (t, dt = 0) => { disc.rotation.y += dt * 3.5; } };
+  return g;
+}
+
+// ---------- the Japanese café's pieces (cafe/DESIGN.md §2.5 和のカフェ) ----------
+// a paper lantern hanging from the ceiling (washi over a bamboo frame)
+export function washiLamp({ drop = 1.0, r = 0.2, h = 0.42 } = {}) {
+  const g = new THREE.Group();
+  g.add(cyl(0.006, 0.006, drop, M(CAFE.iron), 0, -drop / 2, 0, 4));
+  g.add(mesh(new THREE.CylinderGeometry(r, r, h, 16, 1, true), WASHI, 0, -drop - h / 2, 0));
+  for (const y of [0, -h]) g.add(mesh(new THREE.TorusGeometry(r, 0.01, 4, 16).rotateX(Math.PI / 2), M(0x8a6a4a), 0, -drop + y, 0));
+  g.userData = { kind: 'lamp' };
+  return g;
+}
+export const WASHI = new THREE.MeshStandardMaterial({ color: 0xfaf3e2, emissive: 0xffc27a, emissiveIntensity: 0.4, roughness: 0.9, side: THREE.DoubleSide });
+const tatamiTex = (() => { const c = document.createElement('canvas'); c.width = 128; c.height = 256; const x = c.getContext('2d'); x.fillStyle = '#c9c48a'; x.fillRect(0, 0, 128, 256); x.strokeStyle = 'rgba(120,110,60,0.25)'; for (let y = 0; y < 256; y += 3) { x.beginPath(); x.moveTo(0, y); x.lineTo(128, y); x.stroke(); } x.fillStyle = '#2f3e2a'; x.fillRect(0, 0, 8, 256); x.fillRect(120, 0, 8, 256); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+// 小上がり: a raised floor of tatami mats with a wooden edge and a step
+export function tatamiDais({ w = 5, d = 3.2, h = 0.36 } = {}) {
+  const g = new THREE.Group();
+  g.add(box(w, h, d, M(CAFE.walnut), 0, h / 2, 0));
+  const mats = Math.round(w / 0.9);
+  for (let k = 0; k < mats; k++) { const t = tatamiTex.clone(); t.needsUpdate = true; t.repeat.set(1, 1); const m = mesh(new THREE.PlaneGeometry(w / mats - 0.02, d - 0.1).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: t, roughness: 0.95 }), -w / 2 + (k + 0.5) * (w / mats), h + 0.005, 0); g.add(m); }
+  g.add(box(w, 0.06, 0.12, M(0x3a2c22), 0, h, d / 2 - 0.06)); // the edge (框)
+  g.add(box(1.2, 0.18, 0.4, M(CAFE.walnut), w / 2 - 1, 0.09, d / 2 + 0.2)); // a step stone of wood
+  return bake(g, 'tatamiDais', { top: h });
+}
+export function zabuton({ color = 0x7a2f3a } = {}) { const g = new THREE.Group(); g.add(rbox(0.5, 0.07, 0.5, 0.03, M(color, { roughness: 1 }), 0, 0.035, 0)); return g; }
+// a hanging scroll with brush lettering
+export function kakejiku({ text = '一期一会' } = {}) {
+  const c = document.createElement('canvas'); c.width = 96; c.height = 384; const x = c.getContext('2d');
+  x.fillStyle = '#6b5a48'; x.fillRect(0, 0, 96, 384); x.fillStyle = '#f6efe0'; x.fillRect(12, 40, 72, 300);
+  x.fillStyle = '#1d1f23'; x.font = 'bold 56px serif'; x.textAlign = 'center'; [...text].forEach((ch, i) => x.fillText(ch, 48, 100 + i * 66));
+  x.fillStyle = '#c8283a'; x.fillRect(58, 300, 16, 16); // the seal
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const g = new THREE.Group();
+  g.add(mesh(new THREE.PlaneGeometry(0.5, 2.0), new THREE.MeshStandardMaterial({ map: t, roughness: 0.9 }), 0, 0, 0));
+  for (const y of [1.0, -1.0]) g.add(cyl(0.025, 0.025, 0.6, M(0x3a2c22), 0, y, 0.02, 6)).children.at(-1).rotation.z = Math.PI / 2;
+  return g;
+}
+// つくばい: a low stone basin fed by a bamboo spout, with a ladle; its water ripples in the rain
+export function tsukubai() {
+  const g = new THREE.Group(), stone = M(0x8a867c, { roughness: 1, flatShading: true });
+  g.add(mesh(new THREE.CylinderGeometry(0.42, 0.5, 0.4, 10), stone, 0, 0.2, 0));
+  const water = mesh(new THREE.CircleGeometry(0.3, 16).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x4f7a7a, roughness: 0.05, metalness: 0.2 }), 0, 0.38, 0); g.add(water);
+  const spout = cyl(0.035, 0.035, 0.9, M(0x8fb06a), 0.45, 0.62, 0, 8); spout.rotation.z = 1.25; g.add(spout); g.add(cyl(0.04, 0.04, 0.55, M(0x8fb06a), 0.82, 0.3, 0, 8));
+  const ladle = cyl(0.008, 0.008, 0.4, M(0xc9b07a), -0.05, 0.42, 0.12, 4); ladle.rotation.x = Math.PI / 2; g.add(ladle);
+  for (const [x, z] of [[-0.7, 0.4], [0.2, 0.75], [-0.4, -0.6]]) { const st = mesh(new THREE.DodecahedronGeometry(0.22, 0), stone, x, 0.1, z); st.scale.y = 0.5; g.add(st); }
+  const stream = cyl(0.01, 0.01, 0.12, M(0xcfe8f0, { transparent: true, opacity: 0.6 }), 0.09, 0.44, 0, 4); g.add(stream);
+  g.userData = { kind: 'tsukubai', water };
   return g;
 }

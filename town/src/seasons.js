@@ -226,7 +226,7 @@ export function mossPatch({ w = 3, d = 2, seed = 4, ferns = 5 } = {}) {
     return assemble(ps);
   });
   const m = new THREE.Mesh(geo, mossMat); m.receiveShadow = true;
-  m.userData = { kind: 'nature', nature: 'moss' };
+  m.userData = { kind: 'nature', nature: 'moss', keep: true }; // (its colours are per vertex: never merged)
   return m;
 }
 
