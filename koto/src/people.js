@@ -38,7 +38,11 @@ export class Agent {
     if (s.label) this.label = s.label;
     if (s.jump) { this.place(...s.jump); this.next(); }
     else if (s.call && !s.do && !s.to && !s.until && s.hide === undefined) this.next(); // an event only (onStep has run it)
-    else if (s.until) { ud.mode = 'idle'; if (s.face !== undefined) this.p.rotation.y = s.face; if (s.until()) this.next(); }
+    else if (s.until) { // wait (idle, or doing something: { until, do, lift })
+      ud.mode = s.do ?? 'idle'; if (s.face !== undefined) this.p.rotation.y = s.face;
+      if (s.lift !== undefined) this.p.position.y = this.heightAt(this.p.position.x, this.p.position.z) + s.lift;
+      if (s.until()) this.next();
+    }
     else if (s.hide !== undefined && typeof s.hide === 'function') { this.p.visible = false; if (s.hide()) { this.p.visible = true; this.next(); } return; }
     else if (s.hide !== undefined) { this.p.visible = false; this.t += dt; if (this.t >= s.hide) { this.p.visible = true; this.next(); } return; }
     else if (s.to) {

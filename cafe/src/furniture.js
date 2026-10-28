@@ -94,14 +94,15 @@ export function shell({ w = 14, d = 10, h = 3.2, wall = CAFE.plaster, wainscot =
 }
 // hide the walls between the camera and the room (and the ceiling when looking from above)
 export function cutaway(sh, camera, { near = 22, high = 4.6 } = {}) {
-  const P = camera.position, { walls, ceiling, w, d, h } = sh.userData, o = sh.position;
+  const P = camera.position, { walls, ceiling, h } = sh.userData, wp = new THREE.Vector3(), n = new THREE.Vector3();
   for (const wg of Object.values(walls)) {
-    const n = wg.userData.normal, wx = o.x + n.x * w / 2, wz = o.z + n.z * d / 2;
-    const outside = (P.x - wx) * n.x + (P.z - wz) * n.z > 0;
-    const far = P.distanceTo(new THREE.Vector3(wx, 1.5, wz)) > near || P.y > high;
+    wg.getWorldPosition(wp); n.copy(wg.userData.normal).transformDirection(sh.matrixWorld); // (works for a shell turned in the world)
+    const outside = (P.x - wp.x) * n.x + (P.z - wp.z) * n.z > 0;
+    const far = P.distanceTo(wp.setY(wp.y + 1.5)) > near || P.y > wp.y - 1.5 + high;
     wg.visible = !(outside && far);
   }
-  ceiling.visible = P.y < o.y + h;
+  sh.getWorldPosition(wp);
+  ceiling.visible = P.y < wp.y + h;
 }
 
 // ---------- the counter and the bar ----------
