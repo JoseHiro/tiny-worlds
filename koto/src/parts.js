@@ -7,9 +7,9 @@ import { person } from '../../airport/src/parts.js';
 import { roof } from '../../town/src/roofs.js';
 import { machiya, hondo, torii, senbonTorii, KOTO } from '../../town/src/koto.js';
 import { sakura, momiji, yanagi, ume, matsu, tsubaki, ajisai, fujidana, bamboo, mossPatch, Falling, setSeason, onSeason, SEASONS } from '../../town/src/seasons.js';
-import { sanmon, gojunoto, shoro, temizuya, haiden, shamusho, daibutsu, karesansui, pondBridge, ishidan, ishigaki, bochi } from '../../town/src/koto-temples.js';
+import { sanmon, gojunoto, shoro, temizuya, haiden, shamusho, daibutsu, karesansui, pondBridge, ishidan, ishigaki, bochi, hokora } from '../../town/src/koto-temples.js';
 import { chaya, miyageya, ochaya, kura, ryokan, kominkaCafe, sento, yokan, eki, rickshawHut } from '../../town/src/koto-town.js';
-import { toro, guardianPair, emaRack, omikujiRack, tamagaki, shimenawa, andon, chochin, takegaki, endai, michishirube, maruPost, ido, mizo, moriJio, setLamps, cat, pigeon, sagi, tobi, risu } from '../../town/src/koto-props.js';
+import { toro, guardianPair, emaRack, omikujiRack, tamagaki, shimenawa, andon, chochin, takegaki, endai, michishirube, maruPost, ido, mizo, moriJio, setLamps, cat, pigeon, sagi, tobi, risu, ishibashi, kawa } from '../../town/src/koto-props.js';
 import { rickshaw, tram, kawabune } from '../../town/src/koto-ride.js';
 import { routeBus, bicycle } from '../../town/src/vehicles.js';
 import { vendingMachine } from '../../town/src/gear.js';
@@ -186,6 +186,7 @@ const ITEMS = [
   C('shrine', '社務所', 'Amulet office', 'お守りが並ぶ窓口、「お守り・御朱印」の札', show(() => shamusho(), { spin: false }), { view: [0.4, 0.3, 1] }),
   C('shrine', '狛犬・狐・灯籠', 'Guardians and lanterns', '阿吽の狛犬、赤い前掛けの狐、春日灯籠と雪見灯籠（灯りがつく）', show(() => { const a = guardianPair({ gap: 2.4 }), b = guardianPair({ kind: 'fox', gap: 2.4 }), c = toro(), d = toro({ kind: 'yukimi' }); a.position.x = -3.4; b.position.x = 1.2; c.position.x = 4.2; d.position.x = 5.6; return [a, b, c, d]; }, { spin: false }), { view: [0.3, 0.3, 1], fill: 0.55 }),
   C('shrine', '絵馬・おみくじ・玉垣・注連縄', 'Plaques, fortunes, fence, rope', '絵馬がぎっしりの絵馬掛け、白い紙が結ばれたおみくじ、石の玉垣、注連縄と紙垂', show(() => { const a = emaRack(), b = omikujiRack(), c = tamagaki({ length: 5 }), d = shimenawa({ w: 3 }); a.position.x = -3.4; b.position.x = -0.6; c.position.set(3.4, 0, 0); d.position.set(0, 2.4, -1); return [a, b, c, d]; }, { spin: false }), { view: [0.25, 0.3, 1], fill: 0.6 }),
+  C('shrine', '祠・石橋・川', 'Wayside shrine, stone bridge, canal', '朱の玉垣で囲った小さな祠と鳥居 · ゆるく反った御影石の橋 · 石垣の護岸と流れる水の小川（白川のような）', show(() => { const a = hokora(), b = kawa({ length: 12, w: 4 }), c = ishibashi({ span: 5.2, w: 3.4 }); a.position.set(-4, 0, 4); b.position.z = -1; c.position.z = -1; c.position.x = 2; return [a, b, c]; }, { spin: false, update: (m, t, dt) => m[1].userData.update(t, dt) }), { view: [0.5, 0.6, 1], fill: 0.75 }),
   C('building', '茶屋・甘味処', 'Tea house', '平屋、開けた店先、緋毛氈の縁台、野点傘、団子の看板、暖簾', show(() => chaya(), { spin: false }), { view: [0.45, 0.35, 1] }),
   C('building', '土産物屋', 'Souvenir shop', '町家の1階が店：扇子、和菓子の箱、和傘立て、漬物の樽、手書きの値札', show(() => miyageya(), { spin: false }), { view: [0.45, 0.3, 1] }),
   C('building', 'お茶屋（花街）', 'Teahouse of the geisha district', '弁柄格子、駒寄せ、2階の簾と欄干、紋入りの提灯（灯る）', show(() => ochaya(), { spin: false }), { view: [0.45, 0.3, 1] }),

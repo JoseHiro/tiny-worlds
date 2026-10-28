@@ -510,6 +510,7 @@ const ROLES = {
   kimonoKid: { robe: 0xe8673c, pattern: 'sakura', obi: 0xf2c94c, otaiko: true, hat: 'updo', kanzashi: 0xd9482b, shoes: 0xc8283a, stride: 0.32, scale: 0.7 },
   // 舞妓さん: the long hanging obi (だらり), tall clogs (おこぼ), the big hairdo with flower pins — shown plainly, without white make-up
   maiko: { robe: 0x7a2f5a, pattern: 'sakura', obi: 0x1f2a3a, darari: true, okobo: true, hat: 'maiko', kanzashi: 0xf2a3c4, collarColor: 0xc8283a, stride: 0.2, pace: 0.6, longSleeve: true },
+  okami: { robe: 0x5a4a5a, pattern: 'plain', obi: 0xc9b48a, otaiko: true, hat: 'updo', shoes: 0x2a2018, stride: 0.3, pace: 0.7 }, // the mistress of a teahouse (女将)
   // monks, shrine priest and shrine maiden
   monkBroom: { robe: 0x6b5a48, pattern: 'plain', obi: 0x6b5a48, hat: 'bald', shoes: 0xf2ede2, carry: 'broom', stride: 0.35, pace: 0.6 }, // a monk in work clothes (作務衣) sweeping
   monk: { robe: 0x1f2228, pattern: 'plain', obi: 0x1f2228, kesa: 0x8e6a3a, hat: 'bald', shoes: 0xf2ede2, stride: 0.35, pace: 0.75 },

@@ -1,50 +1,32 @@
 // Koto — scene A+B (koto/DESIGN.md §7.5): the sloping approach street lined with shops, the stone steps, and the
 // temple precinct behind its gate. One diorama block; everything that never moves is merged by material.
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { clock } from '../../sealife/src/kit.js';
-import { mat, mesh, box } from '../../airport/src/parts.js';
+import { box } from '../../airport/src/parts.js';
 import { bakeStatic } from '../../airport/src/merge.js';
 import { roof } from '../../town/src/roofs.js';
 import { machiya, hondo, KOTO, M } from '../../town/src/koto.js';
 import { sanmon, gojunoto, shoro, temizuya, karesansui, pondBridge, ishidan, ishigaki, bochi } from '../../town/src/koto-temples.js';
 import { chaya, miyageya, kura, ryokan, kominkaCafe } from '../../town/src/koto-town.js';
-import { toro, andon, chochin, michishirube, takegaki, setLamps, cat, pigeon, sagi, tobi } from '../../town/src/koto-props.js';
+import { toro, andon, chochin, michishirube, takegaki, cat, pigeon, sagi, tobi } from '../../town/src/koto-props.js';
 import { rickshaw } from '../../town/src/koto-ride.js';
-import { sakura, momiji, matsu, ume, tsubaki, bamboo, mossPatch, Falling, setSeason, onSeason, SEASONS } from '../../town/src/seasons.js';
-import { Agent, worshipRoute, strollRoute, sweepRoute, group, still, yawTo, FACE, v3 } from './people.js';
+import { sakura, momiji, matsu, ume, tsubaki, bamboo, mossPatch, Falling } from '../../town/src/seasons.js';
+import { Agent, worshipRoute, strollRoute, sweepRoute, group, still, yawTo, FACE } from './people.js';
+import { createWorld, v3 } from './world.js';
 
-const $ = (id) => document.getElementById(id);
+const VIEWS = {
+  all: ['全体', v3(70, 62, 78), v3(0, 2, -9)],
+  street: ['参道', v3(0.5, 8.5, 42), v3(0, 3.2, 14)],
+  gate: ['山門', v3(1.5, 9.5, 12), v3(0, 5.5, -7)],
+  precinct: ['境内', v3(26, 18, -6), v3(0, 4, -30)],
+  hall: ['本堂', v3(11, 11, -13), v3(0, 7, -42)],
+  pagoda: ['五重塔', v3(25, 8, -5.5), v3(13, 9, -30)],
+  garden: ['庭', v3(-7, 7.5, -21), v3(-16, 4, -32)],
+};
+let followMe;
+const world = createWorld({ views: VIEWS, target: [0, 0, -10], follow: { agent: () => followMe, idle: '' } });
+const { scene, life, people, stills, steps } = world;
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.toneMapping = THREE.NeutralToneMapping;
-$('app').appendChild(renderer.domElement);
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(SEASONS.spring.sky);
-const camera = new THREE.PerspectiveCamera(32, 1, 0.5, 700);
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.maxPolarAngle = 1.48;
-controls.minDistance = 4;
-controls.maxDistance = 300;
-
-const hemi = new THREE.HemisphereLight('#fffaf0', '#c9c4b4', 1.4);
-const sun = new THREE.DirectionalLight('#fff4e0', 2.5);
-sun.position.set(40, 60, 30);
-sun.castShadow = true;
-sun.shadow.mapSize.set(4096, 4096);
-Object.assign(sun.shadow.camera, { left: -62, right: 62, top: 62, bottom: -62, near: 1, far: 200 });
-sun.shadow.bias = -0.0004;
-sun.shadow.normalBias = 0.03;
-sun.target.position.set(0, 0, -10);
-scene.add(hemi, sun, sun.target);
-
-// ---------- the ground: a slab with a cut-away soil edge, the street sloping up to the terrace ----------
-let look = 'day';
+// ---------- the ground: the street sloping up to the terrace ----------
 const X0 = -28, X1 = 28, Z0 = -56, Z1 = 36, TERRACE = 3.5;
 const Hs = (z) => 2.4 * (1 - z / 34); // the street: 0 at the foot (z 34), 2.4 at the steps (z 0)
 const STEP = { z0: -0.2, rise: 0.18, run: 0.42, n: 6 };
@@ -56,49 +38,16 @@ function heightAt(x, z) {
   if (Math.abs(x) < 7 && z < -3.5 && z > -11.5) return TERRACE + 0.5;
   return TERRACE;
 }
-const soil = mat(0x8a6a4a, { roughness: 1 }), grass = new THREE.MeshStandardMaterial({ color: SEASONS.spring.grass, roughness: 1 });
-function slab(x0, x1, z0, z1, top, seg = 1) {
-  const geo = new THREE.BoxGeometry(x1 - x0, 1, z1 - z0, 1, 1, seg);
-  const p = geo.attributes.position;
-  for (let i = 0; i < p.count; i++) { const x = p.getX(i) + (x0 + x1) / 2, z = p.getZ(i) + (z0 + z1) / 2; p.setXYZ(i, x, p.getY(i) > 0 ? top(z) : -1.6, z); }
-  geo.computeVertexNormals();
-  const m = new THREE.Mesh(geo, [soil, soil, grass, soil, soil, soil]);
-  m.receiveShadow = true;
-  scene.add(m);
-  return m;
-}
-slab(X0, X1, -3, Z1, Hs, 24);
-slab(X0, X1, Z0, -3, () => TERRACE);
-onSeason((name, S) => { grass.color.set(S.grass); if (look === 'day') scene.background.set(S.sky); });
-
-// stone paving (石畳), and the raked gravel of the precinct
-const paving = (() => {
-  const c = document.createElement('canvas'); c.width = c.height = 256;
-  const g = c.getContext('2d');
-  g.fillStyle = '#9d968a'; g.fillRect(0, 0, 256, 256);
-  for (let y = 0; y < 256; y += 32) for (let x = (y / 32) % 2 ? -24 : 0; x < 256; x += 48) { g.fillStyle = `hsl(35, 8%, ${62 + ((x * 7 + y * 3) % 9)}%)`; g.fillRect(x + 2, y + 2, 44, 28); }
-  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t;
-})();
-function paved(w, len, place, { y = (z) => 0, segs = 1 } = {}) {
-  const t = paving.clone(); t.needsUpdate = true; t.repeat.set(w / 3, len / 3);
-  const geo = new THREE.PlaneGeometry(w, len, 1, segs).rotateX(-Math.PI / 2);
-  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: t, roughness: 0.9 }));
-  place(m);
-  const p = geo.attributes.position;
-  for (let i = 0; i < p.count; i++) p.setY(i, y(p.getZ(i) + m.position.z));
-  geo.computeVertexNormals();
-  m.receiveShadow = true; scene.add(m);
-  return m;
-}
-paved(6.2, Z1 - STEP.z0, (m) => m.position.set(0, 0, (Z1 + STEP.z0) / 2), { y: (z) => Hs(z) + 0.03, segs: 24 }); // the street
-paved(3.2, 24.5, (m) => m.position.set(0, 0, -11.6 - 12.25), { y: () => TERRACE + 0.03 }); // the precinct path, gate to hall
-paved(2.0, 5.2, (m) => { m.position.set(4.2, 0, -14.6); }, { y: () => TERRACE + 0.025 }).rotation.y = Math.PI / 2; // a branch to the font
+world.slab(X0, X1, -3, Z1, Hs, 24);
+world.slab(X0, X1, Z0, -3, () => TERRACE);
+world.paved(6.2, Z1 - STEP.z0, 0, (Z1 + STEP.z0) / 2, { y: (z) => Hs(z) + 0.03, segs: 24 }); // the street
+world.paved(3.2, 24.5, 0, -11.6 - 12.25, { y: () => TERRACE + 0.03 }); // the precinct path, gate to hall
+world.paved(2.0, 5.2, 4.2, -14.6, { y: () => TERRACE + 0.025, rotY: Math.PI / 2 }); // a branch to the font
 const gravel = new THREE.Mesh(new THREE.PlaneGeometry(26, 27).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xd9d4c8, roughness: 1 }));
 gravel.position.set(0, TERRACE + 0.015, -24.5); gravel.receiveShadow = true; scene.add(gravel);
 
 // ---------- A: the street of shops ----------
 const town = new THREE.Group(); scene.add(town);
-const life = []; // things with update(t, dt)
 const at = (obj, x, z, yaw = 0, y = null) => { obj.position.set(x, y ?? heightAt(x, z), z); obj.rotation.y = yaw; town.add(obj); return obj; };
 // shops along each side: [make, frontage, depth, how far the shop front reaches out]
 const LEFT = [
@@ -173,9 +122,8 @@ put(sagi(), -13.8, -44.6, 2.4, T - 0.2);
 const kite = put(tobi(), 0, 0, 0, 0); kite.userData.radius = 34; kite.userData.height = 30;
 
 // ---------- people ----------
-const people = [];
 const agent = (role, route, o = {}) => { const a = new Agent(scene, role, route, { heightAt, ...o }); people.push(a); return a; };
-const followMe = agent('kimonoWoman', worshipRoute(1.9, { garden: true }), { speed: 0.9 });
+followMe = agent('kimonoWoman', worshipRoute(1.9, { garden: true }), { speed: 0.9 });
 agent('kimonoMan', worshipRoute(2.3), { speed: 0.9, delay: 0.5, phase: 1 });
 agent('kimonoWoman2', worshipRoute(2.6, { pagoda: false, j: 0.8 }), { speed: 0.85, delay: 18 });
 agent('visitor', worshipRoute(1.7, { wash: false, j: -0.9 }), { speed: 1.1, delay: 9 });
@@ -193,7 +141,6 @@ agent('kimonoKid', strollRoute(1.9, [[21, -1]]), { delay: 26, speed: 0.9 });
 agent('tourist', strollRoute(2.2, [[31, 1], [10, -1]]), { delay: 36, speed: 1.0 });
 // temple people
 agent('monkBroom', sweepRoute(-2.2, -13, -31), { speed: 0.5 });
-const stills = [];
 stills.push(still(scene, 'monk', 'hold', [-10.4, T, -13.6], FACE.west));
 stills.push(still(scene, 'gardener', 'photo', [-20.6, T, -25.2], FACE.west));
 for (const [k, x] of [[0, -16], [1, -14.2]]) stills.push(still(scene, k ? 'kimonoMan' : 'kimonoWoman2', 'sit', [x, T + 0.32, -33.4], FACE.down));
@@ -219,60 +166,10 @@ function rickshawAt(s) {
   s -= L; const a = s / RK.x; return [RK.x * Math.cos(a), RK.foot + RK.x * Math.sin(a), FACE.down - a];
 }
 let rkS = 4;
+
 // petals, leaves and snow over the street and the precinct
 const falls = [new Falling(scene, { area: [-12, 12, 0, 36], top: 10 }), new Falling(scene, { area: [-26, 26, -54, -6], top: 12 })];
-
-// ---------- views, seasons, dusk ----------
-const VIEWS = {
-  all: ['全体', v3(70, 62, 78), v3(0, 2, -9)],
-  street: ['参道', v3(0.5, 8.5, 42), v3(0, 3.2, 14)],
-  gate: ['山門', v3(1.5, 9.5, 12), v3(0, 5.5, -7)],
-  precinct: ['境内', v3(26, 18, -6), v3(0, 4, -30)],
-  hall: ['本堂', v3(11, 11, -13), v3(0, 7, -42)],
-  pagoda: ['五重塔', v3(25, 8, -5.5), v3(13, 9, -30)],
-  garden: ['庭', v3(-7, 7.5, -21), v3(-16, 4, -32)],
-};
-let fly = null, following = false;
-function goView(k) {
-  following = false; $('follow').classList.remove('on');
-  const [, p, t] = VIEWS[k];
-  fly = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: p.clone(), t1: t.clone() };
-  [...$('views').children].forEach((b) => b.classList.toggle('on', b.dataset.v === k));
-}
-for (const [k, [ja]] of Object.entries(VIEWS)) { const b = document.createElement('button'); b.textContent = ja; b.dataset.v = k; b.onclick = () => goView(k); $('views').appendChild(b); }
-camera.position.copy(VIEWS.all[1]); controls.target.copy(VIEWS.all[2]);
-$('views').children[0].classList.add('on');
-for (const [k, S] of Object.entries(SEASONS)) { const b = document.createElement('button'); b.textContent = S.ja; b.dataset.v = k; b.onclick = () => { setSeason(k); [...$('seasons').children].forEach((x) => x.classList.toggle('on', x === b)); }; $('seasons').appendChild(b); }
-$('seasons').children[0].classList.add('on');
-function applyLook() {
-  const dusk = look === 'dusk';
-  hemi.intensity = dusk ? 0.9 : 1.4; hemi.color.set(dusk ? '#ffd9c0' : '#fffaf0'); hemi.groundColor.set(dusk ? '#7a6a7a' : '#c9c4b4');
-  sun.intensity = dusk ? 1.1 : 2.5; sun.color.set(dusk ? '#ff9a5a' : '#fff4e0');
-  sun.position.set(dusk ? 70 : 40, dusk ? 22 : 60, dusk ? 10 : 30);
-  scene.background.set(dusk ? '#d9a88a' : SEASONS[seasonNow()].sky);
-  setLamps(dusk ? 1 : 0);
-  [...$('time').children].forEach((b) => b.classList.toggle('on', b.dataset.v === look));
-}
-const seasonNow = () => [...$('seasons').children].find((b) => b.classList.contains('on'))?.dataset.v ?? 'spring';
-for (const b of $('time').children) b.onclick = () => { look = b.dataset.v; applyLook(); };
-$('follow').onclick = () => { following = !following; $('follow').classList.toggle('on', following); fly = null; [...$('views').children].forEach((b) => b.classList.remove('on')); };
-
-function resize() {
-  const w = innerWidth, h = innerHeight;
-  renderer.setSize(w, h);
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-}
-addEventListener('resize', resize);
-resize();
-
-const timer = new THREE.Clock();
-let uiT = 0;
-function step(t, dt) {
-  clock.uTime.value = t;
-  for (const o of life) o.userData.update(t, dt);
-  for (const a of people) a.update(t, dt);
-  for (const s of stills) s.update(t);
+steps.push((t, dt) => {
   for (const f of falls) f.update(t, dt);
   // the rickshaw: it stops a moment at the top for its passengers to look at the gate
   const pause = ((rkS % rkLen) + rkLen) % rkLen, L = RK.foot - RK.top;
@@ -282,33 +179,5 @@ function step(t, dt) {
   rk.position.set(x, Hs(z) + 0.02, z); rk.rotation.y = yaw;
   rk.userData.speed = atTop ? 0 : RK.v;
   rk.userData.update(t, dt);
-}
-renderer.setAnimationLoop(() => {
-  const dt = Math.min(timer.getDelta(), 0.05), t = timer.elapsedTime;
-  step(t, dt);
-  if ((uiT -= dt) <= 0) { uiT = 0.4; if (following) $('followLine').textContent = followMe.label; }
-  if (fly) {
-    fly.t = Math.min(1, fly.t + dt / 1.6);
-    const k = fly.t * fly.t * (3 - 2 * fly.t);
-    camera.position.lerpVectors(fly.p0, fly.p1, k);
-    controls.target.lerpVectors(fly.t0, fly.t1, k);
-    if (fly.t >= 1) fly = null;
-  } else if (following) {
-    const p = followMe.p.position;
-    camera.position.lerp(v3(p.x + 6, p.y + 5.5, p.z + 8), Math.min(1, dt * 1.5));
-    controls.target.lerp(v3(p.x, p.y + 0.9, p.z), Math.min(1, dt * 2.5));
-  }
-  controls.update();
-  renderer.render(scene, camera);
 });
-
-// debug: one frame at a fixed size (the preview pane is narrow); advance the people in time
-window.__koto = {
-  renderer, scene, camera, controls, people, followMe, goView, VIEWS, setSeason, heightAt,
-  setLook: (k) => { look = k; applyLook(); },
-  view(k) { const [, p, t] = VIEWS[k]; fly = null; following = false; camera.position.copy(p); controls.target.copy(t); controls.update(); },
-  follow() { following = true; const p = followMe.p.position; camera.position.set(p.x + 6, p.y + 5.5, p.z + 8); controls.target.set(p.x, p.y + 0.9, p.z); controls.update(); },
-  advance(sec) { const t0 = timer.elapsedTime; for (let k = 0; k < sec * 20; k++) step(t0 + k / 20, 1 / 20); },
-  snapshot(w = 1440, h = 900) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.render(scene, camera); const url = renderer.domElement.toDataURL('image/jpeg', 0.88); resize(); return url; },
-  info: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, heapMB: (performance.memory?.usedJSHeapSize ?? 0) / 1e6 | 0 }),
-};
+world.start();

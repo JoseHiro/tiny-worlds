@@ -8,7 +8,8 @@ export const yawTo = (dx, dz) => Math.atan2(-dz, dx);
 export const FACE = { up: Math.PI / 2, down: -Math.PI / 2, east: 0, west: Math.PI }; // up = toward the temple (−Z)
 
 export class Agent {
-  // route: [{ jump: [x, z] } | { to: [x, z], label? } | { do: mode, dur, face, label? }] — loops
+  // route: [{ jump: [x, z] } | { to: [x, z], label? } | { do: mode, dur, face, label? } | { hide: dur }] — loops
+  // (hide: gone indoors for a while)
   constructor(scene, role, route, { heightAt, speed = 1.0, delay = 0, phase = 0 } = {}) {
     this.p = person(role, { mode: 'idle' });
     this.p.userData.phase = phase;
@@ -25,6 +26,7 @@ export class Agent {
     const s = this.route[this.i], ud = this.p.userData;
     if (s.label) this.label = s.label;
     if (s.jump) { this.place(...s.jump); this.next(); }
+    else if (s.hide !== undefined) { this.p.visible = false; this.t += dt; if (this.t >= s.hide) { this.p.visible = true; this.next(); } return; }
     else if (s.to) {
       const [x, z] = s.to, P = this.p.position, dx = x - P.x, dz = z - P.z, d = Math.hypot(dx, dz), step = this.speed * dt;
       ud.mode = 'walk';

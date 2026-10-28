@@ -1,13 +1,14 @@
 // Temple and shrine buildings for the old capital (koto/DESIGN.md §3.1–3.2), beyond the main hall and torii in koto.js:
 // the two-storey gate (山門), the five-storey pagoda (五重塔), the bell tower (鐘楼), the purification font (手水舎),
 // a shrine's worship hall (拝殿, 流造), the amulet office (社務所), the great Buddha (大仏), a dry garden (枯山水),
-// a pond with an arched bridge (池と太鼓橋), stone steps and walls (石段・石垣) and a corner of old graves.
+// a pond with an arched bridge (池と太鼓橋), stone steps and walls (石段・石垣), a corner of old graves and a little
+// roadside shrine (祠).
 // Front faces +Z, ground y = 0, origin at the footprint centre.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mat, mesh, box, cyl } from '../../airport/src/parts.js';
 import { roof } from './roofs.js';
-import { KOTO, M, finish } from './koto.js';
+import { KOTO, M, finish, torii } from './koto.js';
 import { signTexture } from './buildings.js';
 import { toro } from './koto-props.js';
 
@@ -352,4 +353,27 @@ export function bochi({ n = 6 } = {}) {
     for (let k = 0; k < 3; k++) { const t = box(0.1, 1.4 + k * 0.1, 0.02, wood, x + 0.3 + k * 0.08, 0.7, z - 0.45); t.rotation.z = -0.05 * k; g.add(t); } // 卒塔婆
   }
   return finish(g, 'bochi');
+}
+
+// ---------- 祠: a little roadside shrine in a vermilion fence, with a small torii and lanterns ----------
+export function hokora() {
+  const g = new THREE.Group();
+  const shu = M(KOTO.shu, { roughness: 0.6 }), stone = stoneM(), wood = M(KOTO.plainWood);
+  g.add(box(3.2, 0.25, 2.6, stone, 0, 0.125, -0.2));
+  g.add(box(1.4, 0.55, 1.1, stone, 0, 0.5, -0.6)); // the base
+  g.add(box(0.9, 0.75, 0.8, wood, 0, 1.15, -0.6));
+  g.add(box(0.7, 0.55, 0.04, M(0x3a2c22), 0, 1.15, -0.18));
+  for (let k = -0.3; k <= 0.31; k += 0.1) g.add(box(0.025, 0.55, 0.05, shu, k, 1.15, -0.16));
+  const R = roof({ kind: 'nagare', w: 1.4, d: 1.7, h: 0.5, sori: 0.15, material: 'copper', onigawara: false }); R.position.set(0, 1.55, -0.35); g.add(R);
+  // the vermilion fence (玉垣) round three sides, open at the front
+  for (const [x0, z0, x1, z1] of [[-1.5, -1.45, 1.5, -1.45], [-1.5, -1.45, -1.5, 0.9], [1.5, -1.45, 1.5, 0.9]]) {
+    const len = Math.hypot(x1 - x0, z1 - z0), n = Math.round(len / 0.32);
+    for (let k = 0; k <= n; k++) g.add(box(0.07, 0.75, 0.07, shu, x0 + (x1 - x0) * k / n, 0.62, z0 + (z1 - z0) * k / n));
+    const rail = box(x1 === x0 ? 0.08 : len, 0.07, x1 === x0 ? len : 0.08, shu, (x0 + x1) / 2, 0.92, (z0 + z1) / 2); g.add(rail);
+  }
+  const t = torii({ w: 1.3, h: 1.7 }); t.position.z = 1.0; g.add(t);
+  for (const x of [-0.75, 0.75]) g.add(box(0.12, 0.3, 0.12, M(0xc9c4b4), x, 0.4, 0.1)); // offering stands
+  for (const x of [-0.75, 0.75]) g.add(mesh(new THREE.SphereGeometry(0.06, 8, 6), M(0xf2ede2), x, 0.6, 0.1));
+  shide(g, 0, 1.0, -0.12, 0.6);
+  return finish(g, 'hokora');
 }

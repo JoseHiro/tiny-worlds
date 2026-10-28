@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Koto Lane — Tiny Worlds</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --panel: rgba(250, 247, 241, 0.86); --line: #d9d3c4; --ink: #1c2232; --muted: #6f7a76; --accent: #d9482b; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #eef0f4; color: var(--ink); font: 13px/1.45 Inter, system-ui, sans-serif; }
+    #app { position: fixed; inset: 0; }
+    .brand { position: fixed; left: 28px; top: 24px; pointer-events: none; max-width: 330px; }
+    .eyebrow { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+    .brand h1 { font: italic 400 56px/0.95 'Instrument Serif', serif; margin: 6px 0 10px; }
+    .brand h1 span { color: var(--accent); }
+    .brand p { margin: 0; color: var(--muted); font-size: 12px; }
+    .panel { position: fixed; right: 18px; bottom: 18px; width: 272px; background: var(--panel); backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 9px; }
+    .panel h3 { margin: 0; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+    .seg { display: flex; flex-wrap: wrap; border: 1px solid var(--ink); border-radius: 8px; overflow: hidden; }
+    .seg button { flex: 1 0 25%; border: 0; background: transparent; font: 500 11px Inter, sans-serif; color: var(--ink); padding: 6px 0; cursor: pointer; }
+    .seg button:not(:first-child) { border-left: 1px solid var(--ink); }
+    .seg button.on { background: var(--ink); color: #fff; }
+    .scenes a { flex: 1; text-align: center; padding: 7px 0; font: 600 11.5px Inter, sans-serif; text-decoration: none; color: var(--ink); }
+    .scenes a + a { border-left: 1px solid var(--ink); }
+    .scenes a.on { background: var(--accent); color: #fff; }
+    .hint { font-size: 11px; color: var(--muted); }
+    .follow { font-size: 11.5px; border-left: 2px solid var(--accent); padding-left: 8px; }
+    a { color: inherit; }
+    @media (max-width: 720px) { .brand h1 { font-size: 40px; } .brand p { display: none; } .panel { left: 12px; right: 12px; width: auto; } }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <div class="brand">
+    <div class="eyebrow">Tiny Worlds 03 · 花街の路地</div>
+    <h1>Koto<span>.</span></h1>
+    <p>格子の続く石畳の路地。提灯と行灯がともり、白川に柳がゆれます。お座敷へ向かう舞妓さん、着物で散策する人、通り抜ける人力車。夕方から夜がおすすめです。</p>
+  </div>
+  <aside class="panel">
+    <div class="seg scenes"><a href="./">参道と境内</a><a href="./lane.html" class="on">花街の路地</a></div>
+    <h3>見る場所</h3>
+    <div class="seg" id="views"></div>
+    <h3>季節 · 時間</h3>
+    <div class="seg" id="seasons"></div>
+    <div class="seg" id="time"><button data-v="day" class="on">昼</button><button data-v="dusk">夕方</button><button data-v="night">夜</button></div>
+    <div class="follow"><b>舞妓さんについて行く</b> <span id="followLine">お座敷へ向かう舞妓さんを、少し離れて追いかけます。</span>
+      <div class="seg" style="margin-top:6px"><button id="follow">ついて行く</button></div></div>
+    <div class="hint">ドラッグで回転 · ホイールでズーム · <a href="./parts.html">古都のパーツ</a> · <a href="../">Tiny Worlds</a></div>
+  </aside>
+  <script type="module" src="./src/lane.js"></script>
+</body>
+</html>

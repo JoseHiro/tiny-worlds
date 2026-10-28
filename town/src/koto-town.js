@@ -82,7 +82,7 @@ export function miyageya({ w = 5.4, d = 8 } = {}) {
 }
 
 // ---------- お茶屋 (a geisha house): red-brown lattice, bamboo blinds and a railing upstairs, crested lanterns ----------
-export function ochaya({ w = 6, d = 10, name = '一力' } = {}) {
+export function ochaya({ w = 6, d = 10, name = '花菱' } = {}) {
   const g = new THREE.Group();
   const bengara = M(KOTO.bengara), wood = M(KOTO.wood), H1 = 3.0, H2 = 2.3, front = d / 2;
   g.add(box(w, 0.12, d + 0.6, stone(), 0, 0.06, 0.3));

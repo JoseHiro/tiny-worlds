@@ -309,3 +309,41 @@ export function risu() { // a squirrel that hops and stops
   g.userData.update = (t) => { const p = (t * 1.5 + g.id) % 3; hop.position.y = p < 1 ? Math.abs(Math.sin(p * Math.PI * 3)) * 0.08 : 0; };
   return g;
 }
+
+// ---------- 石橋: a low granite bridge, gently arched, with stone rails (span along Z) ----------
+export function ishibashi({ span = 5, w = 3.4, rise = 0.28 } = {}) {
+  const g = new THREE.Group(), s = M(0x9a968c, { roughness: 0.8 });
+  const arc = (t) => rise * Math.sin(Math.PI * t), n = 8;
+  for (let k = 0; k < n; k++) {
+    const t0 = k / n, t1 = (k + 1) / n, z0 = -span / 2 + t0 * span, z1 = -span / 2 + t1 * span;
+    const seg = box(w, 0.3, Math.hypot(z1 - z0, arc(t1) - arc(t0)) + 0.02, s, 0, (arc(t0) + arc(t1)) / 2, (z0 + z1) / 2);
+    seg.rotation.x = -Math.atan2(arc(t1) - arc(t0), z1 - z0); g.add(seg);
+    for (const sx of [1, -1]) {
+      const rail = box(0.16, 0.12, Math.hypot(z1 - z0, arc(t1) - arc(t0)) + 0.02, s, sx * (w / 2 - 0.1), (arc(t0) + arc(t1)) / 2 + 0.55, (z0 + z1) / 2);
+      rail.rotation.x = seg.rotation.x; g.add(rail);
+    }
+  }
+  for (const sx of [1, -1]) for (const z of [-span / 2, -span / 4, 0, span / 4, span / 2]) g.add(box(0.2, 0.55, 0.2, s, sx * (w / 2 - 0.1), arc(z / span + 0.5) + 0.32, z));
+  return prop(g, 'ishibashi', { deck: (z) => arc(Math.min(1, Math.max(0, z / span + 0.5))) + 0.15 });
+}
+
+// ---------- 川 (a shallow town canal like 白川): stone walls, a pebbly bed, water that flows (along X) ----------
+const flowTex = (() => { let t; return () => { if (t) return t; const c = document.createElement('canvas'); c.width = 256; c.height = 64; const x = c.getContext('2d'); x.fillStyle = '#5f8a8a'; x.fillRect(0, 0, 256, 64); x.strokeStyle = 'rgba(220,240,240,0.35)'; x.lineWidth = 2; for (let k = 0; k < 40; k++) { const y = (k * 37) % 64, x0 = (k * 71) % 256; x.beginPath(); x.moveTo(x0, y); x.lineTo(x0 + 18 + (k % 5) * 6, y); x.stroke(); } t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t; }; })();
+export function kawa({ length = 44, w = 4, depth = 0.9, water = 0.45 } = {}) {
+  const g = new THREE.Group();
+  const tones = [0x8f8b82, 0x9a968c, 0x86827a, 0xa39f94].map((c) => M(c, { flatShading: true, roughness: 0.95 }));
+  for (const sz of [1, -1]) for (let row = 0; row < 2; row++) for (let x = -length / 2 + (row ? 0.3 : 0); x < length / 2 - 0.2; x += 0.62) {
+    const b = box(0.6, depth / 2 - 0.02, 0.4, tones[(Math.round(x * 3) + row + (sz > 0 ? 1 : 0)) & 3], x + 0.3, -depth + depth / 4 + row * depth / 2, sz * (w / 2 - 0.2));
+    b.rotation.y = Math.sin(x * 7) * 0.04; g.add(b);
+  }
+  for (const sz of [1, -1]) g.add(box(length, 0.1, 0.5, M(0xa9a59a), 0, 0.0, sz * (w / 2 - 0.15))); // the coping stones
+  g.add(box(length, 0.05, w - 0.8, M(0x6f6a5a, { roughness: 1 }), 0, -depth, 0)); // the bed
+  for (let k = 0; k < 40; k++) g.add(mesh(new THREE.DodecahedronGeometry(0.08 + (k % 3) * 0.04, 0), tones[k & 3], -length / 2 + ((k * 37) % 100) / 100 * length, -depth + 0.05, ((k * 53) % 100) / 100 * (w - 1.2) - (w - 1.2) / 2));
+  const t = flowTex().clone(); t.needsUpdate = true; t.repeat.set(length / 6, 1);
+  const water3 = new THREE.Mesh(new THREE.PlaneGeometry(length, w - 0.8).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: t, color: 0xbfe0e0, roughness: 0.15, metalness: 0.1, transparent: true, opacity: 0.78 }));
+  water3.position.y = -depth + water; water3.userData.keep = true; g.add(water3);
+  for (const sx of [1, -1]) { const end = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.8, water), new THREE.MeshStandardMaterial({ color: 0x5f8a8a, transparent: true, opacity: 0.6 })); end.position.set(sx * length / 2, -depth + water / 2, 0); end.rotation.y = sx * Math.PI / 2; end.userData.keep = true; g.add(end); } // the cut faces
+  prop(g, 'kawa', { surface: -depth + water });
+  g.userData.update = (time, dt = 0) => { t.offset.x -= dt * 0.08; };
+  return g;
+}
