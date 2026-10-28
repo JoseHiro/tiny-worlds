@@ -40,22 +40,23 @@
 <body>
   <div id="app"></div>
   <div class="brand">
-    <div class="eyebrow">Tiny Worlds 03 · 花街の路地</div>
+    <div class="eyebrow" data-en="Tiny Worlds 03 · Geisha quarter lanes">Tiny Worlds 03 · 花街の路地</div>
     <h1>Koto<span>.</span></h1>
-    <p>格子の続く石畳の路地。提灯と行灯がともり、白川に柳がゆれます。お座敷へ向かう舞妓さん、着物で散策する人、通り抜ける人力車。夕方から夜がおすすめです。</p>
+    <p data-en="Stone lanes lined with lattice fronts. Lanterns glow, willows sway over the Shirakawa. Maiko on their way to engagements, strollers in kimono, a rickshaw passing through. Best from dusk into night.">格子の続く石畳の路地。提灯と行灯がともり、白川に柳がゆれます。お座敷へ向かう舞妓さん、着物で散策する人、通り抜ける人力車。夕方から夜がおすすめです。</p>
   </div>
   <aside class="panel">
-    <div class="seg scenes"><a href="./">参道と境内</a><a href="./lane.html" class="on">花街の路地</a><a href="./yama.html">竹林と稲荷</a><a href="./umi.html">海と大仏</a></div>
-    <h3>見る場所</h3>
+    <div class="seg" id="lang"><button data-v="ja">日本語</button><button data-v="en">English</button></div>
+    <div class="seg scenes"><a href="./" data-en="Approach &amp; temple">参道と境内</a><a href="./lane.html" class="on" data-en="Geisha lanes">花街の路地</a><a href="./yama.html" data-en="Bamboo &amp; Inari">竹林と稲荷</a><a href="./umi.html" data-en="Sea &amp; Buddha">海と大仏</a></div>
+    <h3 data-en="Views">見る場所</h3>
     <div class="seg" id="views"></div>
-    <h3>季節 · 時間</h3>
+    <h3 data-en="Season · Time">季節 · 時間</h3>
     <div class="seg" id="seasons"></div>
-    <div class="seg" id="time"><button data-v="day" class="on">昼</button><button data-v="dusk">夕方</button><button data-v="night">夜</button></div>
-    <div class="follow"><b>舞妓さんについて行く</b> <span id="followLine">お座敷へ向かう舞妓さんを、少し離れて追いかけます。</span>
-      <div class="seg" style="margin-top:6px"><button id="follow">ついて行く</button></div></div>
-    <div class="story"><b>物語：ハナとおばあちゃん</b> <span id="storyTitle"></span><br><span id="storyLine">着物で古都をめぐる一日。</span>
-      <div class="seg" style="margin-top:6px"><button id="storyBtn">物語を見る</button></div><a id="storyNext" hidden></a></div>
-    <div class="hint">ドラッグで回転 · ホイールでズーム · <a href="./parts.html">古都のパーツ</a> · <a href="../">Tiny Worlds</a></div>
+    <div class="seg" id="time"><button data-v="day" class="on" data-en="Day">昼</button><button data-v="dusk" data-en="Dusk">夕方</button><button data-v="night" data-en="Night">夜</button></div>
+    <div class="follow"><b data-en="Follow a maiko">舞妓さんについて行く</b> <span id="followLine" data-en="Follow a maiko, at a respectful distance, on her way to an engagement.">お座敷へ向かう舞妓さんを、少し離れて追いかけます。</span>
+      <div class="seg" style="margin-top:6px"><button id="follow" data-en="Follow">ついて行く</button></div></div>
+    <div class="story"><b data-en="Story: Hana and Grandma">物語：ハナとおばあちゃん</b> <span id="storyTitle"></span><br><span id="storyLine" data-en="A day in the old capital, in kimono.">着物で古都をめぐる一日。</span>
+      <div class="seg" style="margin-top:6px"><button id="storyBtn" data-en="Watch the story">物語を見る</button></div><a id="storyNext" hidden></a></div>
+    <div class="hint" data-en="Drag to orbit · scroll to zoom · <a href=&quot;./parts.html&quot;>Koto parts</a> · <a href=&quot;../&quot;>Tiny Worlds</a>">ドラッグで回転 · ホイールでズーム · <a href="./parts.html">古都のパーツ</a> · <a href="../">Tiny Worlds</a></div>
   </aside>
   <script type="module" src="./src/lane.js"></script>
 </body>

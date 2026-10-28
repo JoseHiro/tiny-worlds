@@ -147,7 +147,7 @@ export function createWorld({ shadow = 62, target = [0, 0, 0], views, follow = n
     renderer.setAnimationLoop(() => {
       const dt = Math.min(timer.getDelta(), 0.05), t = timer.elapsedTime;
       step(t, dt);
-      if ((uiT -= dt) <= 0) { uiT = 0.4; if (following) $('followLine').textContent = follow.agent().label || follow.idle; }
+      if ((uiT -= dt) <= 0) { uiT = 0.4; if (following) $('followLine').textContent = L(follow.agent().label || follow.idle); }
       if (fly) {
         fly.t = Math.min(1, fly.t + dt / (fly.dur ?? 1.6));
         const k = fly.t * fly.t * (3 - 2 * fly.t);

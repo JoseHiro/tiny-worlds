@@ -27,11 +27,11 @@ let zr = Z_TOP; for (const it of RIGHT) { if (it === 'roji') { zr -= ROJI / 2; b
 const CANAL = -18;
 
 const VIEWS = {
-  all: ['全体', v3(58, 56, 72), v3(0, 0, -2)],
-  lane: ['路地', v3(0.3, 4.6, 37), v3(0, 2.0, 8)],
-  canal: ['白川', v3(-21.8, 3.0, -18.2), v3(3, 0.2, -17.2)],
-  bridge: ['橋と社', v3(8.5, 4.4, -6.5), v3(2.5, 1.0, -15.5)],
-  roji: ['ろーじ', v3(-1.3, 2.5, zr), v3(14, 1.1, zr)],
+  all: [['全体', 'Overview'], v3(58, 56, 72), v3(0, 0, -2)],
+  lane: [['路地', 'Lane'], v3(0.3, 4.6, 37), v3(0, 2.0, 8)],
+  canal: [['白川', 'Shirakawa'], v3(-21.8, 3.0, -18.2), v3(3, 0.2, -17.2)],
+  bridge: [['橋と社', 'Bridge and shrine'], v3(8.5, 4.4, -6.5), v3(2.5, 1.0, -15.5)],
+  roji: [['ろーじ', 'Dead-end alley'], v3(-1.3, 2.5, zr), v3(14, 1.1, zr)],
 };
 let followMe;
 const world = createWorld({ views: VIEWS, shadow: 50, follow: { agent: () => followMe, idle: '', offset: [0.2, 4.4, -7.5] }, look: 'dusk' });
@@ -105,18 +105,18 @@ const agent = (role, route, o = {}) => { const a = new Agent(scene, role, route,
 const hana = houses[0].b; hana.updateMatrixWorld(true);
 const door = new THREE.Vector3(6 / 2 - 1.05, 0, 10 / 2 + 0.6).applyMatrix4(hana.matrixWorld);
 const maikoRoute = [
-  { jump: [1.0, -34], label: 'お座敷へ向かう' },
+  { jump: [1.0, -34], label: ['お座敷へ向かう', 'On the way to an engagement'] },
   { to: [1.0, CANAL - 3] },
-  { to: [1.0, CANAL + 3], label: '白川の石橋を渡る' },
-  { to: [1.0, door.z - 1.5], label: '格子の路地をゆっくり歩く' },
-  { to: [-0.9, door.z], label: 'お茶屋の前へ' },
-  { do: 'bow', dur: 1.8, face: FACE.west, label: '女将さんにお辞儀' },
+  { to: [1.0, CANAL + 3], label: ['白川の石橋を渡る', 'Crossing the stone bridge over the Shirakawa'] },
+  { to: [1.0, door.z - 1.5], label: ['格子の路地をゆっくり歩く', 'Strolling the lattice lane'] },
+  { to: [-0.9, door.z], label: ['お茶屋の前へ', 'To the teahouse front'] },
+  { do: 'bow', dur: 1.8, face: FACE.west, label: ['女将さんにお辞儀', 'Bowing to the proprietress'] },
   { to: [door.x + 0.3, door.z] },
-  { hide: 22, label: 'お座敷' },
-  { to: [-0.9, door.z - 0.6], label: 'お座敷を終えて' },
-  { do: 'bow', dur: 1.4, face: FACE.west, label: 'お辞儀をして帰る' },
+  { hide: 22, label: ['お座敷', 'Teahouse'] },
+  { to: [-0.9, door.z - 0.6], label: ['お座敷を終えて', 'After the engagement'] },
+  { do: 'bow', dur: 1.4, face: FACE.west, label: ['お辞儀をして帰る', 'A bow, then home'] },
   { to: [-1.0, CANAL + 3] },
-  { to: [-1.0, -34], label: '路地を戻る' },
+  { to: [-1.0, -34], label: ['路地を戻る', 'Back along the lane'] },
 ];
 const pair = group(scene, ['maiko', 'maiko'], maikoRoute, { heightAt, speed: 0.55 });
 people.push(...pair);
@@ -168,22 +168,22 @@ story(world, { no: 4, heightAt, speed: 0.75, setup: () => {
 }, route: (who) => {
   const o = who * 0.5;
   return [
-    { jump: [-1.1 - o, 34.2], say: '夕暮れの花街。提灯に灯りがともりはじめました', shot: [VIEWS.lane[1].toArray(), VIEWS.lane[2].toArray()] },
-    { to: [-1.1 - o, 20], say: '格子の続く石畳を、ゆっくり歩きます', shot: { track: [0.3, 4.2, 7] } },
+    { jump: [-1.1 - o, 34.2], say: ['夕暮れの花街。提灯に灯りがともりはじめました', 'Dusk in the geisha quarter. The lanterns are starting to glow.'], shot: [VIEWS.lane[1].toArray(), VIEWS.lane[2].toArray()] },
+    { to: [-1.1 - o, 20], say: ['格子の続く石畳を、ゆっくり歩きます', 'Slowly along the stone lane lined with lattice fronts.'], shot: { track: [0.3, 4.2, 7] } },
     { to: [-1.1 - o, 14], call: () => { // two maiko come up the lane toward them
       pass = group(scene, ['maiko', 'maiko'], [{ jump: [1.0, -4] }, { to: [1.0, 9.6] }, { do: 'bow', dur: 1.8, face: FACE.west }, { to: [1.0, 37] }, { until: () => false }], { heightAt, speed: 0.55 });
       people.push(...pass);
     } },
-    { to: [-1.1 - o, 10.2], say: '向こうから、舞妓さんがふたり…', shot: [[-0.3, 3.4, 1.5], [0, 1.4, 11]] },
+    { to: [-1.1 - o, 10.2], say: ['向こうから、舞妓さんがふたり…', 'Two maiko are coming the other way…'], shot: [[-0.3, 3.4, 1.5], [0, 1.4, 11]] },
     { until: () => pass[0] && pass[0].p.position.z > 8.6, face: FACE.east },
-    { do: 'bow', dur: 1.9, face: FACE.east, say: 'すれ違いざまに、ハナがそっと会釈。舞妓さんもにっこり' },
-    { to: [-1.1 - o, CANAL + 3], say: '白川へ', shot: { track: [0.3, 4.2, 7] } },
+    { do: 'bow', dur: 1.9, face: FACE.east, say: ['すれ違いざまに、ハナがそっと会釈。舞妓さんもにっこり', 'As they pass, Hana gives a small bow. The maiko smile back.'] },
+    { to: [-1.1 - o, CANAL + 3], say: ['白川へ', 'To the Shirakawa'], shot: { track: [0.3, 4.2, 7] } },
     { to: [-0.9 - o * 0.4, CANAL + 0.2] },
-    { do: 'look', dur: 4.5, face: FACE.east, say: '石橋の上から。柳がゆれて、水に提灯の灯りが映ります', shot: [[-7.5, 2.6, CANAL + 1.2], [1, 0.8, CANAL]] },
-    { to: [-0.8, CANAL + 3] }, { to: [2.6, CANAL + 6.4 + o * 0.6], say: '橋のたもとの小さな祠に、手を合わせて', shot: [[-1.5, 3.2, CANAL + 9.5], [4.5, 1, CANAL + 6.4]] },
+    { do: 'look', dur: 4.5, face: FACE.east, say: ['石橋の上から。柳がゆれて、水に提灯の灯りが映ります', 'From the stone bridge: willows sway, and lantern light shines in the water.'], shot: [[-7.5, 2.6, CANAL + 1.2], [1, 0.8, CANAL]] },
+    { to: [-0.8, CANAL + 3] }, { to: [2.6, CANAL + 6.4 + o * 0.6], say: ['橋のたもとの小さな祠に、手を合わせて', 'Hands together at the little shrine by the bridge.'], shot: [[-1.5, 3.2, CANAL + 9.5], [4.5, 1, CANAL + 6.4]] },
     { do: 'pray', dur: 3.2, face: FACE.east },
-    { do: 'look', dur: 5, face: FACE.up, say: 'すっかり夜。路地いっぱいに提灯の灯り', call: () => world.setLook('night'), shot: [[0.4, 4.4, CANAL - 6], [0, 2, 12]] },
-    { until: () => false, say: '「また来ようね」——ハナとおばあちゃんの古都の一日、おしまい', end: true },
+    { do: 'look', dur: 5, face: FACE.up, say: ['すっかり夜。路地いっぱいに提灯の灯り', 'Night has fallen. The lane is full of lantern light.'], call: () => world.setLook('night'), shot: [[0.4, 4.4, CANAL - 6], [0, 2, 12]] },
+    { until: () => false, say: ['「また来ようね」——ハナとおばあちゃんの古都の一日、おしまい', '“Let’s come again.” — Hana and Grandma’s day in the old capital, the end.'], end: true },
   ];
 } });
 

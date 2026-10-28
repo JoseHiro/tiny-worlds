@@ -67,25 +67,25 @@ export class Agent {
 // l: how far from the middle of the street this person keeps (keep left: up on −x, down on +x)
 export function worshipRoute(l, { wash = true, pagoda = true, garden = false, j = 0 } = {}) {
   const r = [
-    { jump: [-l, 35.5], label: '坂の下から参道を上る' },
+    { jump: [-l, 35.5], label: ['坂の下から参道を上る', 'Walking up the approach'] },
     { to: [-l, 1.0] },
-    { to: [-l * 0.45, -3.3], label: '石段を上る' },
-    { do: 'bow', dur: 1.0, face: FACE.up, label: '山門の前で一礼' },
-    { to: [-l * 0.35, -12], label: '山門をくぐる' },
+    { to: [-l * 0.45, -3.3], label: ['石段を上る', 'Climbing the stone steps'] },
+    { do: 'bow', dur: 1.0, face: FACE.up, label: ['山門の前で一礼', 'A bow before the temple gate.'] },
+    { to: [-l * 0.35, -12], label: ['山門をくぐる', 'Through the temple gate'] },
   ];
-  if (wash) r.push({ to: [4.7, -14.6 + j], label: '手水舎へ' }, { do: 'hold', dur: 2.6, face: FACE.east, label: '手水で手と口を清める' }, { to: [1.0, -18] });
+  if (wash) r.push({ to: [4.7, -14.6 + j], label: ['手水舎へ', 'To the water pavilion'] }, { do: 'hold', dur: 2.6, face: FACE.east, label: ['手水で手と口を清める', 'Rinsing hands and mouth'] }, { to: [1.0, -18] });
   r.push(
-    { to: [-l * 0.5, -35.6], label: '本堂へ' },
-    { do: 'bow', dur: 1.1, face: FACE.up, label: '本堂の前で一礼' },
-    { do: 'pray', dur: 2.8, face: FACE.up, label: 'お賽銭を入れて合掌' },
-    { do: 'bow', dur: 1.1, face: FACE.up, label: 'もう一度一礼' },
+    { to: [-l * 0.5, -35.6], label: ['本堂へ', 'To the main hall.'] },
+    { do: 'bow', dur: 1.1, face: FACE.up, label: ['本堂の前で一礼', 'Bowing before the main hall'] },
+    { do: 'pray', dur: 2.8, face: FACE.up, label: ['お賽銭を入れて合掌', 'An offering, hands together'] },
+    { do: 'bow', dur: 1.1, face: FACE.up, label: ['もう一度一礼', 'One more bow'] },
   );
-  if (pagoda) r.push({ to: [4.5, -34.6] }, { to: [8.2, -27.5 + j], label: '五重塔へ' }, { do: 'photo', dur: 2.4, face: yawTo(6.8, -2.5 - j), label: '五重塔の写真を撮る' }, { do: 'look', dur: 1.6, face: yawTo(6.8, -2.5 - j), label: '見上げる' });
-  if (garden) r.push({ to: [0, -23] }, { to: [-11, -24.5], label: '庭へ' }, { do: 'look', dur: 2.5, face: yawTo(-4, -5), label: '枯山水を眺める' });
+  if (pagoda) r.push({ to: [4.5, -34.6] }, { to: [8.2, -27.5 + j], label: ['五重塔へ', 'To the pagoda'] }, { do: 'photo', dur: 2.4, face: yawTo(6.8, -2.5 - j), label: ['五重塔の写真を撮る', 'Photographing the pagoda'] }, { do: 'look', dur: 1.6, face: yawTo(6.8, -2.5 - j), label: ['見上げる', 'Looking up'] });
+  if (garden) r.push({ to: [0, -23] }, { to: [-11, -24.5], label: ['庭へ', 'To the garden'] }, { do: 'look', dur: 2.5, face: yawTo(-4, -5), label: ['枯山水を眺める', 'Gazing at the rock garden'] });
   r.push(
-    { to: [l * 0.35, -12], label: '山門へ戻る' },
+    { to: [l * 0.35, -12], label: ['山門へ戻る', 'Back to the gate'] },
     { to: [l * 0.45, -3.3] },
-    { to: [l, 1.0], label: '参道を下る' },
+    { to: [l, 1.0], label: ['参道を下る', 'Down the approach'] },
     { to: [l, 35.5] },
   );
   return r;

@@ -39,12 +39,12 @@ const dD = distTo(walk(D, { step: 1 })), dT = distTo([...walk(pre, { step: 1 }),
 
 const tunnelEye = pre.getPointAt(0.12), tunnelLook = pre.getPointAt(0.3);
 const VIEWS = {
-  all: ['全体', v3(62, 58, 72), v3(0, 3, 0)],
-  bamboo: ['竹林', v3(-1.0, 2.4, 41.5), v3(2, 2.6, 32)],
-  shrine: ['稲荷', v3(15, 11, 3), v3(-3, 1.5, 7)],
-  tunnel: ['千本鳥居', v3(tunnelEye.x, H(tunnelEye.x, tunnelEye.z) + 1.0, tunnelEye.z), v3(tunnelLook.x, H(tunnelLook.x, tunnelLook.z) + 1.35, tunnelLook.z)],
-  fork: ['分かれ道', v3(-9, 15, -8), v3(1, 4.5, -16)],
-  top: ['山頂', v3(12, 15.5, -24), v3(-3, 9.5, -36)],
+  all: [['全体', 'Overview'], v3(62, 58, 72), v3(0, 3, 0)],
+  bamboo: [['竹林', 'Bamboo grove'], v3(-1.0, 2.4, 41.5), v3(2, 2.6, 32)],
+  shrine: [['稲荷', 'Inari'], v3(15, 11, 3), v3(-3, 1.5, 7)],
+  tunnel: [['千本鳥居', 'Thousand gates'], v3(tunnelEye.x, H(tunnelEye.x, tunnelEye.z) + 1.0, tunnelEye.z), v3(tunnelLook.x, H(tunnelLook.x, tunnelLook.z) + 1.35, tunnelLook.z)],
+  fork: [['分かれ道', 'Fork'], v3(-9, 15, -8), v3(1, 4.5, -16)],
+  top: [['山頂', 'Summit'], v3(12, 15.5, -24), v3(-3, 9.5, -36)],
 };
 let followMe;
 const world = createWorld({ views: VIEWS, shadow: 58, follow: { agent: () => followMe, idle: '', offset: [3.5, 4.5, 5.5] } });
@@ -144,16 +144,16 @@ const toSteps = (pts, label) => pts.map(([x, z], i) => (i === 0 && label ? { to:
 const rev = (c, o) => walk(c, o).reverse();
 // up through the grove, worship, up the tunnel (right fork), look out from the top, down the left fork, home
 function inariRoute(l, { wash = true, photo = true, j = 0 } = {}) {
-  const r = [{ jump: walk(D, { side: -l })[0], label: '竹林の小径を歩く' }, ...toSteps(walk(D, { side: -l, step: 2 }).slice(1))];
-  r.push({ to: [-0.6 * l, 13.9] }, { do: 'bow', dur: 1, face: FACE.up, label: '鳥居で一礼' });
-  if (wash) r.push({ to: [4.9, 9.4 + j], label: '手水舎へ' }, { do: 'hold', dur: 2.5, face: FACE.east, label: '手水で清める' });
-  r.push({ to: [-6 + j, 9.6], label: '拝殿へ' }, { do: 'bow', dur: 1, face: FACE.up }, { do: 'pray', dur: 2.6, face: FACE.up, label: '鈴を鳴らしてお参り' }, { do: 'bow', dur: 1, face: FACE.up });
-  r.push({ to: [P[0][0] + 0.5, P[0][1] + 1.6], label: '千本鳥居へ' }, ...toSteps(walk(pre, { side: 0.3 }), '朱の鳥居のトンネルを上る'));
-  if (photo) r.push({ do: 'photo', dur: 2.4, face: yawAlong(pre, 1) + Math.PI, label: '振り返って写真を撮る' });
-  r.push(...toSteps(walk(forkUp), '分かれ道は右へ'), ...toSteps(walk(post, { side: 0.3 }), '山頂へ'));
-  r.push({ to: [-0.5 + j, -36.2] }, { do: 'look', dur: 3.5, face: FACE.down, label: '山頂から竹林を見下ろす' });
-  r.push(...toSteps(rev(post, { side: -0.3 }), '下りる'), ...toSteps(rev(forkDown), '帰りは左のトンネル'), ...toSteps(rev(pre, { side: -0.3 })));
-  r.push({ to: [1.5, 8] }, { to: [0.6 * l, 13.9], label: '竹林を帰る' }, ...toSteps(walk(D, { side: l, step: 2 }).reverse()));
+  const r = [{ jump: walk(D, { side: -l })[0], label: ['竹林の小径を歩く', 'Walking the bamboo path'] }, ...toSteps(walk(D, { side: -l, step: 2 }).slice(1))];
+  r.push({ to: [-0.6 * l, 13.9] }, { do: 'bow', dur: 1, face: FACE.up, label: ['鳥居で一礼', 'A bow at the torii.'] });
+  if (wash) r.push({ to: [4.9, 9.4 + j], label: ['手水舎へ', 'To the water pavilion'] }, { do: 'hold', dur: 2.5, face: FACE.east, label: ['手水で清める', 'Purifying at the water basin'] });
+  r.push({ to: [-6 + j, 9.6], label: ['拝殿へ', 'To the worship hall'] }, { do: 'bow', dur: 1, face: FACE.up }, { do: 'pray', dur: 2.6, face: FACE.up, label: ['鈴を鳴らしてお参り', 'Ringing the bell and praying'] }, { do: 'bow', dur: 1, face: FACE.up });
+  r.push({ to: [P[0][0] + 0.5, P[0][1] + 1.6], label: ['千本鳥居へ', 'To the thousand gates'] }, ...toSteps(walk(pre, { side: 0.3 }), '朱の鳥居のトンネルを上る'));
+  if (photo) r.push({ do: 'photo', dur: 2.4, face: yawAlong(pre, 1) + Math.PI, label: ['振り返って写真を撮る', 'Turning round for a photo'] });
+  r.push(...toSteps(walk(forkUp), ['分かれ道は右へ', 'Right at the fork.']), ...toSteps(walk(post, { side: 0.3 }), ['山頂へ', 'To the summit']));
+  r.push({ to: [-0.5 + j, -36.2] }, { do: 'look', dur: 3.5, face: FACE.down, label: ['山頂から竹林を見下ろす', 'Looking down on the bamboo from the summit'] });
+  r.push(...toSteps(rev(post, { side: -0.3 }), ['下りる', 'Going down']), ...toSteps(rev(forkDown), ['帰りは左のトンネル', 'Back down by the left-hand tunnel.']), ...toSteps(rev(pre, { side: -0.3 })));
+  r.push({ to: [1.5, 8] }, { to: [0.6 * l, 13.9], label: ['竹林を帰る', 'Leaving the bamboo grove'] }, ...toSteps(walk(D, { side: l, step: 2 }).reverse()));
   return r;
 }
 followMe = agent('kimonoWoman', inariRoute(0.6), { speed: 0.85 });
@@ -206,7 +206,7 @@ steps.push((t, dt) => {
   if (!srk.visible) return;
   if (ride.on) {
     const mid = RK.L * 0.45;
-    if (!ride.said && ride.s >= mid) { ride.said = true; ride.stopped = true; ride.wait = 0; say?.('車夫さん「この竹は高さが10メートルもあるんですよ」ふたりは竹を見上げます'); world.cam(v3(-3, 2.2, 22.5), v3(2.5, 7.5, 18)); }
+    if (!ride.said && ride.s >= mid) { ride.said = true; ride.stopped = true; ride.wait = 0; say?.(['車夫さん「この竹は高さが10メートルもあるんですよ」ふたりは竹を見上げます', 'The rickshaw man: “This bamboo is ten metres tall.” The two of them look up.']); world.cam(v3(-3, 2.2, 22.5), v3(2.5, 7.5, 18)); }
     if (ride.stopped && (ride.wait += dt) > 6.5) { ride.stopped = false; world.track({ p: srk }, [3.5, 3.6, 6.5]); }
     if (!ride.stopped) ride.s = Math.min(RK.L - 0.6, ride.s + 1.4 * dt);
     if (ride.s >= RK.L - 0.6 && !ride.done) { ride.done = true; ride.on = false; }
@@ -219,24 +219,23 @@ const tale = story(world, { no: 2, heightAt, setup: () => { rk.visible = false; 
   route: (who) => {
     const o = who * 0.55, end = D.getPointAt(1);
     return [
-      { jump: [0.9 + o, 38.6], say: '竹林の入り口。ここから人力車に乗ります', shot: [[5.5, 3.2, 44.5], [0, 1.3, 38]], call: () => { srk.visible = true; ride.s = 0.4; } },
+      { jump: [0.9 + o, 38.6], say: ['竹林の入り口。ここから人力車に乗ります', 'The entrance to the bamboo grove. From here, they ride a rickshaw.'], shot: [[5.5, 3.2, 44.5], [0, 1.3, 38]], call: () => { srk.visible = true; ride.s = 0.4; } },
       { do: 'idle', dur: 3, face: FACE.west },
-      { hide: () => ride.done, say: '車夫さんの引く人力車で、竹林の小径へ', call: () => { ride.on = true; world.track({ p: srk }, [3.5, 3.6, 6.5]); } },
-      { jump: [end.x + 1.0 + o, end.z + 0.6], say: '稲荷の大きな鳥居の前で降りました', shot: [[6, 4.2, 22], [0, 3, 12]], call: () => { srk.visible = false; } },
+      { hide: () => ride.done, say: ['車夫さんの引く人力車で、竹林の小径へ', 'Pulled by the rickshaw man, into the bamboo path.'], call: () => { ride.on = true; world.track({ p: srk }, [3.5, 3.6, 6.5]); } },
+      { jump: [end.x + 1.0 + o, end.z + 0.6], say: ['稲荷の大きな鳥居の前で降りました', 'They get off in front of the great torii of the Inari shrine.'], shot: [[6, 4.2, 22], [0, 3, 12]], call: () => { srk.visible = false; } },
       { do: 'idle', dur: 2, face: FACE.up },
-      { to: [0.2 + o, 14.0] }, { do: 'bow', dur: 1.3, face: FACE.up, say: '鳥居をくぐる前に一礼' },
-      { to: [-6 + o, 9.6], say: '拝殿へ', shot: { track: [3.5, 4.2, 6.5] } },
-      { do: 'bow', dur: 1.1, face: FACE.up }, { do: 'pray', dur: 3, face: FACE.up, say: '鈴を鳴らして、手を合わせます', shot: [[-1, 4.5, 15], [-6, 2.5, 6]] }, { do: 'bow', dur: 1.1, face: FACE.up },
-      { to: [P[0][0] + 0.5 + o * 0.5, P[0][1] + 1.6], say: 'いよいよ千本鳥居へ', shot: { track: [3, 4, 6] } },
-      ...walk(pre, { side: 0.3 - o * 0.6, to: 0.55 }).map((q, i) => (i === 1 ? { to: q, say: '朱の鳥居がどこまでも続きます', shot: { track: [0.15, 0.95, 3.2] } } : { to: q })),
-      { do: 'photo', dur: 3, face: yawAlong(pre, 0.5) + Math.PI, say: '振り返って、鳥居のトンネルを写真に', shot: [VIEWS.tunnel[1].toArray(), VIEWS.tunnel[2].toArray()] },
+      { to: [0.2 + o, 14.0] }, { do: 'bow', dur: 1.3, face: FACE.up, say: ['鳥居をくぐる前に一礼', 'Bowing before the torii'] },
+      { to: [-6 + o, 9.6], say: ['拝殿へ', 'To the worship hall'], shot: { track: [3.5, 4.2, 6.5] } },
+      { do: 'bow', dur: 1.1, face: FACE.up }, { do: 'pray', dur: 3, face: FACE.up, say: ['鈴を鳴らして、手を合わせます', 'They ring the bell and put their hands together.'], shot: [[-1, 4.5, 15], [-6, 2.5, 6]] }, { do: 'bow', dur: 1.1, face: FACE.up },
+      { to: [P[0][0] + 0.5 + o * 0.5, P[0][1] + 1.6], say: ['いよいよ千本鳥居へ', 'At last, the thousand gates.'], shot: { track: [3, 4, 6] } },
+      ...walk(pre, { side: 0.3 - o * 0.6, to: 0.55 }).map((q, i) => (i === 1 ? { to: q, say: ['朱の鳥居がどこまでも続きます', 'Vermilion gates, on and on.'], shot: { track: [0.15, 0.95, 3.2] } } : { to: q })),
+      { do: 'photo', dur: 3, face: yawAlong(pre, 0.5) + Math.PI, say: ['振り返って、鳥居のトンネルを写真に', 'Turning round to photograph the tunnel of gates.'], shot: [VIEWS.tunnel[1].toArray(), VIEWS.tunnel[2].toArray()] },
       { do: 'look', dur: 2.5, face: yawAlong(pre, 0.5) + Math.PI },
-      ...walk(pre, { side: -0.3 + o * 0.6, to: 0.55 }).reverse().map((q, i) => (i === 0 ? { to: q, say: '石段を下りて…', shot: { track: [3, 4, 6] } } : { to: q })),
+      ...walk(pre, { side: -0.3 + o * 0.6, to: 0.55 }).reverse().map((q, i) => (i === 0 ? { to: q, say: ['石段を下りて…', 'Down the stone steps…'], shot: { track: [3, 4, 6] } } : { to: q })),
       { to: [1.5, 9] }, { do: 'idle', dur: 2, face: FACE.down },
-      { until: () => false, say: '「次は電車で海へ行こうか」', end: true },
+      { until: () => false, say: ['「次は電車で海へ行こうか」', '“Shall we take the tram to the sea next?”'], end: true },
     ];
   } });
-say = (t) => { document.getElementById('storyLine').textContent = t; };
-void tale;
+say = tale.say;
 
 world.start();

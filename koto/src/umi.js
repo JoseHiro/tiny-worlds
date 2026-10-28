@@ -35,12 +35,12 @@ function heightAt(x, z) {
 }
 
 const VIEWS = {
-  all: ['全体', v3(64, 60, 82), v3(0, 0, -2)],
-  sea: ['海から', v3(5, 4, 42), v3(0, 2.5, 12)],
-  tram: ['電車', v3(4.5, 2.3, 9.4), v3(-14, 1.8, 5.2)],
-  station: ['駅', v3(-27, 6.5, -5), v3(-16, 1.2, 5)],
-  hase: ['長谷の通り', v3(0.4, 3.0, 11.6), v3(0, 4.5, -22)],
-  buddha: ['大仏', v3(3, 5.5, -18.2), v3(0, 6.2, -31)],
+  all: [['全体', 'Overview'], v3(64, 60, 82), v3(0, 0, -2)],
+  sea: [['海から', 'From the sea'], v3(5, 4, 42), v3(0, 2.5, 12)],
+  tram: [['電車', 'Tram'], v3(4.5, 2.3, 9.4), v3(-14, 1.8, 5.2)],
+  station: [['駅', 'Station'], v3(-27, 6.5, -5), v3(-16, 1.2, 5)],
+  hase: [['長谷の通り', 'Hase street'], v3(0.4, 3.0, 11.6), v3(0, 4.5, -22)],
+  buddha: [['大仏', 'Great Buddha'], v3(3, 5.5, -18.2), v3(0, 6.2, -31)],
 };
 let followMe;
 const world = createWorld({ views: VIEWS, shadow: 64, follow: { agent: () => followMe, idle: '', offset: [1.5, 9, 10] } });
@@ -162,20 +162,20 @@ const gateOpen = () => !gateShut;
 // from the beach: up the steps, over the road and the tracks, up the street to the Buddha, and back to the sea
 function buddhaRoute(l, { photo = true, incense = true, j = 0 } = {}) {
   const r = [
-    { jump: [-4 + j * 3, 21 + j], label: '浜辺から' },
-    { to: [-0.6 * l, STEPS.z + 0.6] }, { to: [-0.6 * l, WALL + 0.1], label: '石段を上る' },
-    { to: [-0.6 * l, ROAD[1] + 0.4] }, { until: () => !cars.some((c) => Math.abs(c.userData.x) < 5), face: FACE.up, label: '車が過ぎるのを待つ' },
-    { to: [-0.6 * l, ROAD[0] - 0.4], label: '横断歩道を渡る' },
-    { to: [-l, TRACK + 2.4] }, { until: gateOpen, face: FACE.up, label: '踏切で電車を待つ' },
-    { to: [-l, TRACK - 2.4], label: '踏切を渡る' },
-    { to: [-l, GATE + 3.2], label: '長谷の通りを歩く' }, { do: 'bow', dur: 1, face: FACE.up, label: '山門で一礼' },
-    { to: [-0.5 * l, GATE - 4], label: '大仏へ' },
+    { jump: [-4 + j * 3, 21 + j], label: ['浜辺から', 'From the beach'] },
+    { to: [-0.6 * l, STEPS.z + 0.6] }, { to: [-0.6 * l, WALL + 0.1], label: ['石段を上る', 'Climbing the stone steps'] },
+    { to: [-0.6 * l, ROAD[1] + 0.4] }, { until: () => !cars.some((c) => Math.abs(c.userData.x) < 5), face: FACE.up, label: ['車が過ぎるのを待つ', 'Waiting for the cars to pass'] },
+    { to: [-0.6 * l, ROAD[0] - 0.4], label: ['横断歩道を渡る', 'Using the zebra crossing'] },
+    { to: [-l, TRACK + 2.4] }, { until: gateOpen, face: FACE.up, label: ['踏切で電車を待つ', 'Waiting at the level crossing'] },
+    { to: [-l, TRACK - 2.4], label: ['踏切を渡る', 'Crossing the tracks'] },
+    { to: [-l, GATE + 3.2], label: ['長谷の通りを歩く', 'Walking along Hase street'] }, { do: 'bow', dur: 1, face: FACE.up, label: ['山門で一礼', 'A bow at the temple gate'] },
+    { to: [-0.5 * l, GATE - 4], label: ['大仏へ', 'To the Great Buddha'] },
   ];
-  if (incense) r.push({ to: [-0.9 + j, -24.2] }, { do: 'pray', dur: 2.6, face: FACE.up, label: '香炉の前で手を合わせる' });
-  r.push({ to: [-3.5 + j * 2, -23 + j] }, { do: 'look', dur: 3, face: yawTo(3.5, -8), label: '大仏を見上げる' });
-  if (photo) r.push({ do: 'photo', dur: 2.4, face: yawTo(3.5, -8), label: '写真を撮る' });
-  r.push({ to: [0.5 * l, GATE - 4], label: '海へ戻る' }, { to: [l, GATE + 3.2] }, { to: [l, TRACK - 2.4] }, { until: gateOpen, face: FACE.down, label: '踏切で電車を待つ' }, { to: [l, TRACK + 2.4] });
-  r.push({ to: [0.6 * l, ROAD[0] - 0.4] }, { until: () => !cars.some((c) => Math.abs(c.userData.x) < 5), face: FACE.down }, { to: [0.6 * l, ROAD[1] + 0.4], label: '横断歩道を渡る' }, { to: [0.6 * l, WALL + 0.1], label: '浜へ下りる' }, { to: [0.6 * l, STEPS.z + 0.6] }, { to: [4 - j * 3, 21.5], label: '浜辺でひと休み' });
+  if (incense) r.push({ to: [-0.9 + j, -24.2] }, { do: 'pray', dur: 2.6, face: FACE.up, label: ['香炉の前で手を合わせる', 'Praying at the incense burner'] });
+  r.push({ to: [-3.5 + j * 2, -23 + j] }, { do: 'look', dur: 3, face: yawTo(3.5, -8), label: ['大仏を見上げる', 'Looking up at the Great Buddha'] });
+  if (photo) r.push({ do: 'photo', dur: 2.4, face: yawTo(3.5, -8), label: ['写真を撮る', 'Taking a photo'] });
+  r.push({ to: [0.5 * l, GATE - 4], label: ['海へ戻る', 'Back to the sea'] }, { to: [l, GATE + 3.2] }, { to: [l, TRACK - 2.4] }, { until: gateOpen, face: FACE.down, label: ['踏切で電車を待つ', 'Waiting at the level crossing'] }, { to: [l, TRACK + 2.4] });
+  r.push({ to: [0.6 * l, ROAD[0] - 0.4] }, { until: () => !cars.some((c) => Math.abs(c.userData.x) < 5), face: FACE.down }, { to: [0.6 * l, ROAD[1] + 0.4], label: ['横断歩道を渡る', 'Using the zebra crossing'] }, { to: [0.6 * l, WALL + 0.1], label: ['浜へ下りる', 'Down to the beach'] }, { to: [0.6 * l, STEPS.z + 0.6] }, { to: [4 - j * 3, 21.5], label: ['浜辺でひと休み', 'A rest on the beach'] });
   return r;
 }
 followMe = agent('kimonoWoman', buddhaRoute(1.2), { speed: 0.9 });
@@ -189,7 +189,7 @@ const cls = ['schoolGirl', 'schoolBoy', 'schoolGirl', 'schoolBoy', 'schoolGirl',
 cls.forEach((r, i) => stills.push(still(scene, r, 'idle', [4.5 + (i % 4 - 1.5) * 0.75, 0, -23.4 - Math.floor(i / 4) * 0.7 + (i % 2) * 0.05], FACE.down)));
 stills.push(still(scene, 'teacher', 'photo', [4.6, 0, -19.6], FACE.up));
 // at the station: two waiting who board the tram and come back later
-for (const [role, x, d] of [['kimonoWoman2', -16, 0], ['visitor', -21, 3]]) agent(role, [{ jump: [x, TRACK - 2.0] }, { until: () => tramAtStation && !tramMoving, face: FACE.down, label: '電車を待つ' }, { hide: cycle - 5 + d }, { to: [x + 1.5, TRACK - 2.0], label: '電車を降りる' }, { do: 'idle', dur: 4 + d }]);
+for (const [role, x, d] of [['kimonoWoman2', -16, 0], ['visitor', -21, 3]]) agent(role, [{ jump: [x, TRACK - 2.0] }, { until: () => tramAtStation && !tramMoving, face: FACE.down, label: ['電車を待つ', 'Waiting for the tram'] }, { hide: cycle - 5 + d }, { to: [x + 1.5, TRACK - 2.0], label: ['電車を降りる', 'Getting off the tram'] }, { do: 'idle', dur: 4 + d }]);
 stills.push(still(scene, 'senior', 'sit', [-13.5, 0.62, TRACK - 3.5], FACE.down));
 // on the beach: parents on their mats, children running in and out of the waves, a surfer, shop people
 stills.push(still(scene, 'swimMum', 'sit', [6.4, sand(20.4) + 0.05, 20.6], FACE.down));
@@ -234,24 +234,24 @@ steps.push((t, dt) => {
 story(world, { no: 3, heightAt, setup: () => world.setLook('day'), route: (who) => {
   const o = who * 0.55, noCars = () => !cars.some((c) => Math.abs(c.userData.x) < 5);
   return [
-    { jump: [-17.5 - o, TRACK - 2.0], say: '電車に乗って、海辺の駅「はせ」へ', shot: [VIEWS.station[1].toArray(), VIEWS.station[2].toArray()] },
+    { jump: [-17.5 - o, TRACK - 2.0], say: ['電車に乗って、海辺の駅「はせ」へ', 'By tram to Hase, the station by the sea.'], shot: [VIEWS.station[1].toArray(), VIEWS.station[2].toArray()] },
     { hide: () => tramAtStation && !tramMoving },
-    { do: 'idle', dur: 2.5, face: FACE.down, say: '着物のふたりが電車から降りてきました' },
-    { to: [-13 - o * 0.3, 3.6 - o * 0.4] }, { to: [-1.2 - o, 3.6 - o * 0.4], say: '長谷の通りを大仏へ', shot: { track: [1.2, 6, 8] } },
-    { to: [-1.2 - o, GATE + 3.2] }, { do: 'bow', dur: 1.3, face: FACE.up, say: '山門で一礼', shot: [[2.4, 2.8, GATE + 9.5], [0, 2.6, GATE]] },
+    { do: 'idle', dur: 2.5, face: FACE.down, say: ['着物のふたりが電車から降りてきました', 'The two in kimono step off the tram.'] },
+    { to: [-13 - o * 0.3, 3.6 - o * 0.4] }, { to: [-1.2 - o, 3.6 - o * 0.4], say: ['長谷の通りを大仏へ', 'Along Hase street to the Great Buddha.'], shot: { track: [1.2, 6, 8] } },
+    { to: [-1.2 - o, GATE + 3.2] }, { do: 'bow', dur: 1.3, face: FACE.up, say: ['山門で一礼', 'A bow at the temple gate'], shot: [[2.4, 2.8, GATE + 9.5], [0, 2.6, GATE]] },
     { to: [-0.6 - o * 0.5, GATE - 4] },
-    { to: [-2.2 - o, -23.2], say: '大仏さま！', shot: [[-7, 2.6, -17.5], [0, 5.2, -30]] },
-    { do: 'look', dur: 3.5, face: yawTo(2.2, -8), say: '「大きい！」ハナは思わず見上げます' },
-    { do: 'photo', dur: 2.6, face: yawTo(2.2, -8), say: 'おばあちゃんとならんで、写真を一枚' },
-    { to: [-0.9 + o * 0.8, -24.3], say: '香炉の前で手を合わせます', shot: [[-4, 3.2, -19], [0, 1.6, -25.5]] },
+    { to: [-2.2 - o, -23.2], say: ['大仏さま！', 'The Great Buddha!'], shot: [[-7, 2.6, -17.5], [0, 5.2, -30]] },
+    { do: 'look', dur: 3.5, face: yawTo(2.2, -8), say: ['「大きい！」ハナは思わず見上げます', '“It’s huge!” Hana can’t help staring up.'] },
+    { do: 'photo', dur: 2.6, face: yawTo(2.2, -8), say: ['おばあちゃんとならんで、写真を一枚', 'A photo, side by side with Grandma.'] },
+    { to: [-0.9 + o * 0.8, -24.3], say: ['香炉の前で手を合わせます', 'Hands together before the incense burner.'], shot: [[-4, 3.2, -19], [0, 1.6, -25.5]] },
     { do: 'pray', dur: 3, face: FACE.up },
-    { to: [0.9 + o * 0.6, GATE - 4], say: '海へ下りてみよう', shot: { track: [1.2, 6.5, 8.5] } }, { to: [1.2 + o, GATE + 3.2] }, { to: [1.2 + o, TRACK - 2.4] },
-    { until: gateOpen, face: FACE.down, say: 'カンカンカン… 踏切で電車を待ちます' },
-    { to: [1.2 + o, TRACK + 2.4] }, { to: [0.6 + o, ROAD[0] - 0.4] }, { until: noCars, face: FACE.down }, { to: [0.6 + o, ROAD[1] + 0.4], say: '横断歩道を渡って浜へ' },
+    { to: [0.9 + o * 0.6, GATE - 4], say: ['海へ下りてみよう', 'Let’s go down to the sea.'], shot: { track: [1.2, 6.5, 8.5] } }, { to: [1.2 + o, GATE + 3.2] }, { to: [1.2 + o, TRACK - 2.4] },
+    { until: gateOpen, face: FACE.down, say: ['カンカンカン… 踏切で電車を待ちます', 'Clang, clang, clang… they wait at the level crossing.'] },
+    { to: [1.2 + o, TRACK + 2.4] }, { to: [0.6 + o, ROAD[0] - 0.4] }, { until: noCars, face: FACE.down }, { to: [0.6 + o, ROAD[1] + 0.4], say: ['横断歩道を渡って浜へ', 'Across the zebra crossing to the beach.'] },
     { to: [0.6 + o, WALL + 0.1] }, { to: [0.6 + o, STEPS.z + 0.6] }, { to: [2.2 + o, 22.6] },
-    { do: 'look', dur: 4, face: FACE.down, say: '砂浜から海を眺めます', shot: [[-3.5, 2.2, 15.5], [5, 0.6, 30]] },
-    { do: 'look', dur: 4, face: FACE.down, say: '日が傾いて、海がだんだん金色に', call: () => world.setLook('dusk') },
-    { until: () => false, say: '「暗くなる前に、花街の路地も歩いてみようか」', end: true },
+    { do: 'look', dur: 4, face: FACE.down, say: ['砂浜から海を眺めます', 'They gaze at the sea from the sand.'], shot: [[-3.5, 2.2, 15.5], [5, 0.6, 30]] },
+    { do: 'look', dur: 4, face: FACE.down, say: ['日が傾いて、海がだんだん金色に', 'The sun sinks and the sea turns slowly gold.'], call: () => world.setLook('dusk') },
+    { until: () => false, say: ['「暗くなる前に、花街の路地も歩いてみようか」', '“Before it gets dark, shall we walk the lanes of the old geisha quarter?”'], end: true },
   ];
 } });
 

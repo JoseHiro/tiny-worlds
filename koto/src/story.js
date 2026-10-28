@@ -9,10 +9,10 @@ import { L, onLang } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 export const CHAPTERS = [
-  { no: 1, href: './?story=1', title: '着物で参道へ' },
-  { no: 2, href: './yama.html?story=2', title: '人力車で竹林へ' },
-  { no: 3, href: './umi.html?story=3', title: '電車で海へ' },
-  { no: 4, href: './lane.html?story=4', title: '夕暮れの路地' },
+  { no: 1, href: './?story=1', title: ['着物で参道へ', 'Up the temple approach in kimono'] },
+  { no: 2, href: './yama.html?story=2', title: ['人力車で竹林へ', 'By rickshaw to the bamboo grove'] },
+  { no: 3, href: './umi.html?story=3', title: ['電車で海へ', 'By tram to the sea'] },
+  { no: 4, href: './lane.html?story=4', title: ['夕暮れの路地', 'Lanes at dusk'] },
 ];
 
 // route(who): the steps for Hana (who = 0) or Grandma (who = 1); setup() runs before each telling (hide a bench sitter…)
@@ -26,8 +26,9 @@ export function story(world, { no, heightAt, cast = ['kimonoKid', 'baaKimono'], 
     if (line) $('storyLine').textContent = L(line);
     if (ended) $('storyNext').textContent = next ? L([`第${next.no}章「${L(next.title)}」へ →`, `On to chapter ${next.no}: “${L(next.title)}” →`]) : L(end.label);
   }
+  function say(t) { line = t; $('storyLine').textContent = L(t); } // (also for lines that come from outside a route)
   function onStep(s) {
-    if (s.say) { line = s.say; $('storyLine').textContent = L(line); }
+    if (s.say) say(s.say);
     if (s.shot) { if (s.shot.track) world.track(actors[0], s.shot.track); else world.cam(v3(...s.shot[0]), v3(...s.shot[1])); }
     s.call?.();
     if (s.end) {
@@ -48,5 +49,5 @@ export function story(world, { no, heightAt, cast = ['kimonoKid', 'baaKimono'], 
   onLang(label);
   $('storyBtn').onclick = start;
   if (Number(new URLSearchParams(location.search).get('story')) === no) start();
-  return { start, actors: () => actors };
+  return { start, say, actors: () => actors };
 }
