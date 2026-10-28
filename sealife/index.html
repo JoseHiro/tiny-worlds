@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sea Life — Tiny Worlds</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg: #e8f2f1; --card: #dceeee; --line: #c4dcdc; --ink: #1c2232; --muted: #5f7474; --accent: #1cb0c4; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 Inter, system-ui, sans-serif; }
+    #stage { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+    header { padding: 40px 32px 8px; max-width: 1400px; margin: 0 auto; }
+    .eyebrow { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+    h1 { font: italic 400 56px/1 'Instrument Serif', serif; margin: 6px 0 10px; }
+    h1 span { color: var(--accent); }
+    .lede { color: var(--muted); max-width: 640px; margin: 0; }
+    main { max-width: 1400px; margin: 0 auto; padding: 24px 32px 64px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; cursor: pointer; }
+    .card:hover { border-color: var(--ink); }
+    .card.wide { grid-column: 1 / -1; }
+    .view { aspect-ratio: 4 / 3; }
+    .card.wide .view { aspect-ratio: 21 / 9; }
+    .meta { padding: 10px 14px 12px; border-top: 1px solid var(--line); }
+    .meta span { color: var(--muted); font-size: 12px; }
+    .meta small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+    #detail { position: fixed; inset: 0; z-index: 1; background: var(--bg); display: none; grid-template-columns: 1fr 300px; }
+    #detail.open { display: grid; }
+    #detail aside { border-left: 1px solid var(--line); padding: 32px 24px; display: flex; flex-direction: column; gap: 12px; }
+    #detail h2 { font: italic 400 34px/1.05 'Instrument Serif', serif; margin: 0; }
+    #detail p { color: var(--muted); margin: 0; }
+    button { font: 500 12px Inter, sans-serif; color: var(--ink); background: transparent; border: 1px solid var(--ink); border-radius: 8px; padding: 7px 12px; cursor: pointer; margin-top: auto; }
+    a { color: inherit; }
+    @media (max-width: 720px) { header, main { padding-left: 16px; padding-right: 16px; } #detail { grid-template-columns: 1fr; grid-template-rows: 1fr auto; } .card.wide .view { aspect-ratio: 4 / 3; } }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
+  </script>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <header>
+    <div class="eyebrow">Tiny Worlds · Shared library v0.1</div>
+    <h1>Sea Life<span>.</span></h1>
+    <p class="lede">どの海の世界でも使う、海の生き物のカタログです。まずは種類ごとの代表5種で、形と泳ぎ方を決めています。カードをクリックすると拡大して回せます。<br><a href="../">Tiny Worlds</a> · <a href="https://github.com/JoseHiro/tiny-worlds/blob/main/sealife/DESIGN.md">設計書</a></p>
+  </header>
+  <main id="grid"></main>
+  <section id="detail">
+    <div id="detailView"></div>
+    <aside><div class="eyebrow">Sea Life</div><h2 id="dName"></h2><p id="dNote"></p><p style="font-size:11px">ドラッグで回転 · ホイールでズーム · Esc で戻る</p><button id="close">← 一覧に戻る</button></aside>
+  </section>
+  <script type="module" src="./src/gallery.js"></script>
+</body>
+</html>
