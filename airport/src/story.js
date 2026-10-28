@@ -177,7 +177,7 @@ export class Story {
         const stand = this.inboundStand() ?? this.world.stands[0];
         const fam = [['child', 'ハナ', 'Hana'], ['woman', 'ママ', 'Mum'], ['business', 'パパ', 'Dad']].map(([type, ja, en], i) => {
           const choice = { lane: 1, gate: 0, second: false, seat: i, gx: 0 }; // the family sticks together
-          const a = P.spawnDeparture(deckX + i * 0.9, { story: true, type, stand, choice, xrayHold: type === 'child' ? 6 : 0, init: (x) => { x.preferSeat = ['12A', '12B', '12C'][i]; this.listen(c, x, i === 0); } });
+          const a = P.spawnDeparture(deckX + i * 0.9, { story: true, type, stand, choice, xrayHold: type === 'child' ? 6 : 0, init: (x) => { x.preferSeat = ['12A', '12B', '12C'][i]; x.vip = true; this.listen(c, x, i === 0); } });
           if (a) this.tag(c, a, i === 0 ? c.name : L2(`ハナの${ja}`, `Hana's ${en}`));
           return a;
         });

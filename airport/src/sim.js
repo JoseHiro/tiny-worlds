@@ -776,7 +776,7 @@ export class World {
           const bus = open.some((t) => t.kind === 'bus') && this.busTimer <= 0;
           if (car) { car.sent = true; stopX = car.x; }
           else if (taxi && this.roadPool.some((x) => !x.active && x.kind === 'taxi')) { taxi.sent = true; kind = 'taxi'; stopX = taxi.x; }
-          else if (bus) { kind = 'bus'; stopX = L.BUS_X; this.busTimer = 25; for (const t of open) if (t.kind === 'bus') t.sent = true; }
+          else if (bus) { kind = 'bus'; stopX = L.BUS_X; this.busTimer = 18; for (const t of open) if (t.kind === 'bus') t.sent = true; }
         }
         const u = this.roadPool.find((x) => !x.active && x.kind === kind) ?? this.roadPool.find((x) => !x.active && x.kind === 'car');
         if (u) u.start(r, r.name === 'departures' ? undefined : stopX ?? null);
@@ -865,7 +865,9 @@ export class World {
     this.time += dt;
     this.clock += dt;
     this.spawnTimer -= dt;
-    if (this.spawnTimer <= 0) this.spawnTimer = this.trySpawnArrival() ? 9 + Math.random() * 8 : 1;
+    // quieter in the small hours: fewer arrivals between midnight and 5am
+    const h = (this.clock / 60) % 24;
+    if (this.spawnTimer <= 0) this.spawnTimer = this.trySpawnArrival() ? (9 + Math.random() * 8) * (h < 5 ? 3 : 1) : 1;
 
     for (const f of this.flights) f.update(dt);
     for (const f of this.flights.filter((x) => x.state === 'gone')) {

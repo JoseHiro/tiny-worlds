@@ -89,11 +89,16 @@ export class PaxSystem {
   // someone has left their seat for this gate's aircraft and isn't aboard yet
   // (or a VIP — a story passenger running late — is still on the way)
   boardingPending(stand) {
-    for (const a of this.actors) if (a.stand === stand && (a.stage === 'boarding' || (a.vip && a.stage !== 'aboard'))) return true;
-    return false;
+    for (const a of this.actors) if (a.stand === stand && a.stage === 'boarding') return true;
+    return this.vipPending(stand);
   }
+  // a late runner holds their aircraft from the start; other story passengers only once they
+  // are at the gate (so they don't hold up earlier flights from the same stand)
   vipPending(stand) {
-    for (const a of this.actors) if (a.stand === stand && a.vip && a.stage !== 'aboard') return true;
+    for (const a of this.actors) {
+      if (a.stand !== stand || !a.vip || a.stage === 'aboard') continue;
+      if (a.priority || ['gate', 'boarding'].includes(a.activity)) return true;
+    }
     return false;
   }
 
@@ -102,7 +107,7 @@ export class PaxSystem {
   // group together, init(actor) to attach story listeners
   spawnDeparture(x, opt = {}) {
     const ch = opt.choice ?? {};
-    if (!opt.story && (this.stats.departing > 60 || Math.random() > 0.7)) return null;
+    if (!opt.story && (this.stats.departing > 45 || Math.random() > 0.5)) return null;
     const R = this.rooms;
     const type = opt.type ?? pick(P.PASSENGER_TYPES);
     const stand = opt.stand ?? pick(this.world.stands);
@@ -204,7 +209,7 @@ export class PaxSystem {
       a.kind = 'departure';
       a.type = type;
       a.stand = stand;
-      if (fast) a.vip = true;
+      if (fast) a.vip = a.priority = true; // (story passengers may also set vip in init: the aircraft waits for them)
       opt.init?.(a);
     }, opt.speed);
   }
@@ -335,10 +340,12 @@ export class PaxSystem {
   // walk from the lobby exit to where the ride stops, wait for it, get in
   curbSteps(ticket, offset) {
     const sw = L.CURB.sidewalk[0] - 0.5, lane = L.CURB.lane[0] + 0.3;
-    const x = ticket.x + offset + (ticket.kind === 'bus' ? Math.random() * 2 - 1 : 0);
+    const bus = ticket.kind === 'bus';
+    const x = ticket.x + offset + (bus ? Math.random() * 7 - 3.5 : 0);
+    const z = sw - (bus ? Math.random() * 1.6 : 0);
     return [
-      { to: V(x, sw - 0.6) },
-      { to: V(x, sw), until: () => ticket.board, act: ticket.kind === 'car' ? 'waitCar' : ticket.kind === 'taxi' ? 'waitTaxi' : 'waitBus', look: Math.PI / 2 },
+      { to: V(x, z - 0.6) },
+      { to: V(x, z), until: () => ticket.board, act: ticket.kind === 'car' ? 'waitCar' : ticket.kind === 'taxi' ? 'waitTaxi' : 'waitBus', look: Math.PI / 2 },
       { to: V(x, lane), act: 'curb' },
     ];
   }

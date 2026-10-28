@@ -217,7 +217,18 @@ const TOD = {
 };
 const cur = { bg: new THREE.Color(TOD.day.bg), sky: new THREE.Color(TOD.day.sky), ground: new THREE.Color(TOD.day.ground), sunColor: new THREE.Color(TOD.day.sunColor), dir: new THREE.Vector3(...TOD.day.dir), hemi: 1.35, sun: 2.7, night: 0, bloom: 0.22, flood: 0 };
 let todKey = 'day';
+let todAuto = true; // follow the airport clock: dawn → day → dusk → night
+function todFromClock() {
+  const h = (world.clock / 60) % 24;
+  if (h >= 7 && h < 17) return 'day';
+  if ((h >= 17 && h < 19) || (h >= 5 && h < 7)) return 'dusk';
+  return 'night';
+}
 function updateLighting(dt) {
+  if (todAuto) {
+    const k = todFromClock();
+    if (k !== todKey) { todKey = k; document.body.classList.toggle('night', k === 'night'); }
+  }
   const T = TOD[todKey];
   const k = 1 - Math.exp(-2.2 * dt);
   for (const key of ['bg', 'sky', 'ground', 'sunColor']) cur[key].lerp(new THREE.Color(T[key]), k);
@@ -268,6 +279,8 @@ seg('view', (val) => {
   if (val === 'f2' || val === 'f1') flyTo(new THREE.Vector3(-4, val === 'f2' ? 3 : 0, 24), new THREE.Vector3(26, 60, 70));
 });
 seg('tod', (val) => {
+  todAuto = val === 'auto';
+  if (todAuto) return;
   todKey = val;
   document.body.classList.toggle('night', val === 'night');
 });
@@ -466,4 +479,4 @@ function snapshot(w = 1440, h = 900) {
   resize();
   return url;
 }
-window.__airport = { cabins, cabinView, world, terminal, pax, bags, story, selectPerson, scenery, camera, controls, renderer, scene, flyTo, select, snapshot, setTod: (k) => { todKey = k; }, setView: (k) => { viewPick = k; } };
+window.__airport = { cabins, cabinView, world, terminal, pax, bags, story, selectPerson, scenery, camera, controls, renderer, scene, flyTo, select, snapshot, setTod: (k) => { todAuto = k === 'auto'; if (!todAuto) todKey = k; }, setView: (k) => { viewPick = k; } };
