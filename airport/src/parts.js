@@ -818,7 +818,7 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
   if (cfg.scale) g.scale.setScalar(cfg.scale);
 
   ud.update = (t) => {
-    const m = ud.mode;
+    const m = ud.mode ?? 'idle';
     const phase = t * 7 * (cfg.pace ?? 1) + (ud.phase ?? 0);
     head.rotation.y = 0; head.rotation.z = 0; body.rotation.z = 0;
     if (m.startsWith('sit') && m !== 'sit') { // seated at a table: typing, sipping, reading, writing, thinking, a stretch
