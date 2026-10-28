@@ -94,6 +94,7 @@ const eastbound = (p) => p.end.x > p.start.x;
     pos.setY(k, y);
     c.copy(grass);
     if (x < -6) c.copy(pave);
+    else if (x < 116 && Math.abs(z) > 7.6 && Math.abs(z) < 48) c.copy(pave).lerp(grass, smooth(Math.abs(z), 40, 48)); // the built-up town
     if (x > 299) c.copy(grass).lerp(sand, smooth(x, 299, 303));
     col.set([c.r, c.g, c.b], k * 3);
   }
@@ -159,7 +160,7 @@ scene.add(train);
 }
 
 // ---------- ① 空港通り: palms along both sides, the direction sign ----------
-for (const z of [-9, 9]) put(N.palmRow({ length: 34, spacing: 5.5 }), 13, z);
+for (const z of [-30, 30]) put(N.palmRow({ length: 30, spacing: 5 }), -10, z); // palms either side of the airport plaza
 put(G.guideSign({ lines: [['↑', '那覇市街・ビーチ', 'Naha City · Beach'], ['←', '国際通り', 'Kokusai St.'], ['→', '那覇港', 'Naha Port']] }), 22, -8.3, Math.PI);
 
 // ---------- ② the rental-car office (north side) and its lot of white vans ----------
@@ -174,13 +175,16 @@ const rentals = lot.userData.bays.map((b, i) => {
 });
 const familyVan = rentals[3]; // the one the family gets
 
-// ---------- ③ 国道（市街地）: shops both sides, the crossing, street lights ----------
+// ---------- ③ 国道（市街地）: dense blocks of shops and flats both sides, the store, the petrol station, the crossing ----------
+// blocks face the road: north side faces +Z, south side is turned round to face −Z
+const block = (x, w, side, d, kind, seed) => put(B.cityBlock({ w, d, kind, seed, trees: kind === 'residential' ? (i) => (i % 2 ? N.streetTree({ seed: seed + i }) : N.gajumaru({ seed: seed + i, size: 0.7 })) : null }), x, side * (8.4 + d / 2), side > 0 ? Math.PI : 0);
 put(B.convenienceStore({ brand: 2 }), 74, -16.5);
 const gas = put(B.gasStation(), 84, 18.5, Math.PI);
-put(B.apartment({ accent: 0xe8673c }), 102, 19, Math.PI);
-put(B.souvenirShop(), 63, 15, Math.PI);
-['cafe', 'bakery', 'flowers', 'grocery'].forEach((k, n) => put(B.shopHouse({ kind: k, color: [0xf1ede4, 0xf3e9d6, 0xe8eef0, 0xe8e2d6][n] }), 86 + n * 5, -14.5));
-put(B.apartment({ floors: 4, accent: 0x3a7fd0 }), 110, -18);
+block(60, 12, -1, 28, 'city', 11); block(98, 32, -1, 28, 'city', 12);
+block(64.5, 21, 1, 28, 'city', 13); block(103.5, 21, 1, 28, 'city', 14);
+block(74, 14, -1, 14, 'city', 15).position.z = -8.4 - 14 - 7 - 7; // behind the store
+// ① 空港通り: offices and hotels along the airport road
+block(11, 26, -1, 26, 'city', 21); block(22, 34, 1, 26, 'city', 22);
 for (let x = 6; x <= 102; x += 12) for (const s of [1, -1]) put(G.streetLight({ reach: 1.6 }), x + (s > 0 ? 6 : 0), s * 8.4, s > 0 ? Math.PI / 2 : -Math.PI / 2);
 const banners = [put(G.banner({ text: '冷やし', color: '#3a7fd0' }), 71, -8.6), put(G.banner({ text: '給油', color: '#d9362b' }), 79, 8.7), put(G.banner({ text: '新発売', color: '#2fa58f' }), 80.5, 8.7)];
 // people who cross at the lights when they turn green for walking
@@ -194,12 +198,38 @@ for (let n = 0; n < 4; n++) {
   crossers.push(p);
 }
 
+// people walking along the pavements (they turn round at the ends of their stretch)
+const walkers = [];
+const ROLES = ['kariyushi', 'tourist', 'student', 'business', 'woman', 'senior', 'jogger', 'clerk', 'passenger', 'backpacker', 'child', 'tourist'];
+[[2, 112, 6.7], [2, 112, -6.7], [8, 106, 6.9], [56, 112, -6.9], [116, 168, 3.35], [116, 168, -3.35], [272, 294, 3.35]].forEach(([x0, x1, z], k) => {
+  for (let n = 0; n < (x1 - x0 > 60 ? 3 : 2); n++) {
+    const p = person(ROLES[(k * 3 + n) % ROLES.length], { mode: 'walk' });
+    p.userData.phase = k * 3 + n;
+    p.userData.walk = { x0, x1, dir: n % 2 ? -1 : 1, speed: p.userData.role === 'jogger' ? 2.2 : 0.9 + ((k + n) % 3) * 0.15 };
+    p.position.set(THREE.MathUtils.lerp(x0, x1, ((n + 0.3) / 3 + k * 0.17) % 1), 0.12, z);
+    scene.add(p);
+    walkers.push(p);
+  }
+});
+updaters.push((t, dt) => {
+  for (const p of walkers) {
+    const w = p.userData.walk;
+    p.position.x += w.dir * w.speed * dt;
+    if (p.position.x > w.x1 || p.position.x < w.x0) w.dir = -w.dir;
+    p.rotation.y = w.dir > 0 ? 0 : Math.PI;
+    p.position.y = roadY(p.position.x) + 0.12;
+    p.userData.update(t);
+  }
+});
+
 // ---------- ④ 住宅地: houses, the bus stop, power poles ----------
 const bay = T[12];
 put(G.busStop({ name: '大道' }), 0, 0).position.copy(bay.userData.stopAt).add(bay.position);
 [[118, 0], [131, 2], [156, 1], [168, 0]].forEach(([x, v]) => put(B.house({ variant: v, floors: v === 2 ? 1 : 2, accent: [0x4f9d8f, 0xe8673c, 0x3a7fd0][v] }), x, -13.5));
 put(B.oldHouse(), 145, -14.5);
 [[120, 1], [134, 0], [148, 2], [162, 1]].forEach(([x, v]) => put(B.house({ variant: v, accent: [0x4f9d8f, 0xe8673c, 0x3a7fd0][v] }), x, 13.5, Math.PI));
+block(138, 48, -1, 18, 'residential', 31).position.z = -31;
+block(138, 48, 1, 18, 'residential', 32).position.z = 31;
 {
   const poles = [];
   for (let x = 114; x <= 210; x += 12) poles.push(put(G.powerPole({ transformer: x % 24 === 6 }), x, -7.1));

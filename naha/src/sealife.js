@@ -43,6 +43,7 @@ export function populate(parent, { swimmer, coralSpots = [] } = {}) {
     group.add(m);
     counts[zone]++;
     const w = new Wander(m, { sideways: !!spec.sideways, ...opts });
+    m.userData.wander = w; // (a story can steer it: home, radius, speed)
     updates.push((t, dt) => w.update(dt));
     return m;
   };

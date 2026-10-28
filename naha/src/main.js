@@ -6,6 +6,8 @@ import { Ripples, waterSurface, waterCutMaterial, earthCutMaterial, withCaustics
 import { person, PALETTE, mat } from '../../airport/src/parts.js';
 import { populate, CLIP } from './sealife.js';
 import { Spray, waveHeight } from './waves.js';
+import { beachHouse, souvenirShop } from '../../town/src/buildings.js';
+import { SeaStory } from './story.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -133,7 +135,14 @@ function parasol(x, z, color) {
   return g;
 }
 [[-34, 24, 0.6], [-27, 26, -0.4], [-12, 25, 0.5], [3, 27, -0.6], [21, 25, 0.4], [36, 24, -0.5], [-40, 27, 0.3]].forEach(([x, z, l]) => props.add(palm(x, z, l)));
-[[-20, 21.5, PALETTE.orange], [-6, 21, PALETTE.teal], [12, 21.5, PALETTE.yellow]].forEach(([x, z, c]) => props.add(parasol(x, z, c)));
+[[-20, 21.5, PALETTE.orange], [-6, 21, PALETTE.teal], [16, 20.5, PALETTE.yellow]].forEach(([x, z, c]) => props.add(parasol(x, z, c)));
+// the beach house (海の家) and the souvenir shop, open toward the sea
+const bh = beachHouse();
+bh.position.set(27, bedHeight(27, 25), 25.2); bh.rotation.y = Math.PI;
+props.add(bh);
+const shop = souvenirShop({ name: '浜のおみやげ 紅や' });
+shop.scale.setScalar(0.8); shop.position.set(9, bedHeight(9, 26), 26); shop.rotation.y = Math.PI;
+props.add(shop);
 const beachPeople = [];
 const addPerson = (role, x, z, y, look, mode) => {
   const p = person(role, { mode });
@@ -147,7 +156,7 @@ const addPerson = (role, x, z, y, look, mode) => {
 addPerson('child', -8, 19.5, undefined, Math.PI / 2, 'idle');
 addPerson('woman', -5.6, 21.6, undefined, Math.PI / 2, 'idle');
 // a swimmer in a rubber ring, bobbing in the lagoon
-const swimmer = addPerson('child', -4, 9, -0.75, Math.PI / 2, 'idle');
+const swimmer = addPerson('swimKid', -4, 9, -0.75, Math.PI / 2, 'idle');
 const ring = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.15, 10, 24), mat(PALETTE.orange));
 ring.rotation.x = Math.PI / 2;
 ring.position.set(-4, 0.05, 9);
@@ -261,11 +270,14 @@ renderer.setAnimationLoop(() => {
   // the swimmer rides the waves
   const bob = waveHeight(swimmer.position.x, swimmer.position.z, t, shared.uWave.value) + Math.sin(t * 1.4) * 0.02;
   swimmer.position.y = -0.75 + bob;
-  ring.position.y = 0.05 + bob;
+  ring.position.set(swimmer.position.x, 0.05 + bob, swimmer.position.z); // the ring goes where its swimmer goes
+  ring.visible = swimmer.visible;
   ring.rotation.set(Math.PI / 2 + (waveHeight(-4, 9.4, t, shared.uWave.value) - waveHeight(-4, 8.6, t, shared.uWave.value)) * 0.8, 0, 0);
   spray.update(t, dt, shared.uWave.value, renderer.domElement.height / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))));
   for (const p of beachPeople) p.userData.update(t);
   sea.update(t, dt);
+  bh.userData.update(t);
+  story.update(t, dt);
   if ((uiT -= dt) <= 0) { uiT = 0.5; showEvents(); }
 
   if (fly) {
@@ -275,6 +287,10 @@ renderer.setAnimationLoop(() => {
     controls.target.lerpVectors(fly.t0, fly.t1, k);
     shared.uCutAlpha.value = THREE.MathUtils.lerp(fly.a0, fly.a1, k);
     if (fly.t >= 1) fly = null;
+  } else if (followCam) { // the story follows a swimmer
+    const p = followCam.obj.position;
+    camera.position.lerp(p.clone().add(followCam.offset), Math.min(1, dt * 1.8));
+    controls.target.lerp(vec3(p.x, Math.max(p.y, -0.5), p.z), Math.min(1, dt * 2.4));
   }
   controls.update();
   draw();
@@ -304,4 +320,26 @@ function snapshot(w = 1440, h = 900) {
   return url;
 }
 
-window.__naha = { renderer, scene, camera, controls, ripples, water, snapshot, sea, goView, VIEWS, setLook: (k) => { look = k; applyLook(); } };
+// ---------- Hana's day at the sea ----------
+const vec3 = (x, y, z) => new THREE.Vector3(x, y, z);
+let followCam = null;
+function flyCam(pos, target) { followCam = null; fly = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: pos.clone(), t1: target.clone(), a0: shared.uCutAlpha.value, a1: 0.86 }; }
+const story = new SeaStory({
+  scene, sea, swimmer, ring, bedHeight, beachHouse: bh, shop, parasol: vec3(-20, 0, 21.5),
+  say: (s) => { $('storyLine').textContent = s; },
+  done: (link) => { const a = $('tripLink'); a.href = link.href; a.textContent = link.label; a.hidden = false; },
+  cam: flyCam,
+  follow: (obj, offset) => { followCam = obj ? { obj, offset } : null; },
+});
+$('hanaDay').addEventListener('click', () => { $('tripLink').hidden = true; story.start(); });
+if (new URLSearchParams(location.search).get('from') === 'road') { $('tripLink').hidden = true; story.start(); }
+
+window.__naha = { renderer, scene, camera, controls, ripples, water, snapshot, sea, goView, VIEWS, story,
+  // (debug) put the camera where the story wants it right now
+  settle() {
+    if (fly) { camera.position.copy(fly.p1); controls.target.copy(fly.t1); fly = null; }
+    else if (followCam) { const p = followCam.obj.position; camera.position.copy(p).add(followCam.offset); controls.target.set(p.x, Math.max(p.y, -0.5), p.z); }
+    swimmer.position.y = -0.75; ring.position.set(swimmer.position.x, 0.05, swimmer.position.z); ring.visible = swimmer.visible;
+    controls.update();
+  },
+  advance(sec) { for (let k = 0; k < sec * 30; k++) { const tt = performance.now() / 1000 + k / 30; shared.uTime.value = tt; sea.update(tt, 1 / 30); story.update(tt, 1 / 30); } }, setLook: (k) => { look = k; applyLook(); } };

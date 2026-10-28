@@ -644,3 +644,180 @@ export function park({ trees = [] } = {}) {
   g.userData.update = (t) => swings.forEach((s, i) => (s.rotation.z = Math.sin(t * 1.8 + i * 1.3) * 0.35));
   return g;
 }
+
+// ---------- 中層ビル (the Naha street building), generated ----------
+// A concrete box of `floors` storeys: floor bands, windows on every side, outdoor AC units on the walls,
+// balconies on homes, a shop with an awning on the ground floor (or open pilotis parking), tanks and maybe a
+// billboard on the roof. Front faces +Z. Same seed → same building.
+const WALLS = [0xf3efe6, 0xefe6d6, 0xe9eef0, 0xf1e3dc, 0xe6efe4, 0xf4eddc, 0xe2e4ea];
+const ACCENTS = [0x4f9d8f, 0xe8673c, 0x3a7fd0, 0xd9465b, 0xf2b84b, 0x2c3a57, 0x9b7fd1];
+const SHOPS = [['そば処 てぃだ', '#c4553a'], ['ドラッグ ゆがふ', '#3a7fd0'], ['美容室 Kana', '#d9465b'], ['居酒屋 うりずん', '#2c3a57'], ['不動産 かりゆし', '#4f9d8f'], ['弁当 まーさん', '#e8673c'], ['眼鏡のさくら', '#9b7fd1'], ['携帯ショップ', '#2fa58f'], ['ステーキ88号', '#7a4a2a'], ['カフェ 島時間', '#4f7a4a'], ['コインランドリー', '#1f5fa8'], ['泡盛の店', '#b5603e']];
+const BOARDS = [['オリオンの空', '#1f5fa8'], ['琉球不動産', '#e8673c'], ['〇〇歯科 →', '#2fa58f'], ['ホテル ちゅら', '#2c3a57']];
+const rnd0 = (seed) => { let s = (seed * 9301 + 49297) % 233280 || 1; return () => (s = (s * 16807) % 2147483647) / 2147483647; };
+
+// an outdoor AC unit on a wall facing +Z (with face = 1) or ±X (side): a white box with a dark fan
+function acUnit(g, x, y, z, face = [0, 1]) {
+  const [fx, fz] = face;
+  const u = box(fx ? 0.3 : 0.6, 0.44, fz ? 0.3 : 0.6, mat(0xeeece6, { roughness: 0.6 }), x + fx * 0.16, y, z + fz * 0.16);
+  g.add(u);
+  const fan = mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.02, 12), mat(0x4a4f59), x + fx * 0.32, y, z + fz * 0.32);
+  fan.rotation.set(fz ? Math.PI / 2 : 0, 0, fx ? Math.PI / 2 : 0);
+  g.add(fan);
+}
+export function midrise({ w = 8, d = 8, floors = 4, kind = 'mixed', seed = 1, wallColor = null, accent = null } = {}) {
+  const r = rnd0(seed);
+  const pick = (a) => a[Math.floor(r() * a.length)];
+  const g = new THREE.Group();
+  const wallM = mat(wallColor ?? pick(WALLS), { roughness: 0.9 });
+  const acc = accent ?? pick(ACCENTS);
+  const trim = mat(0xd8d2c6, { roughness: 0.85 });
+  const glassM = mat(0x6f8fa8, { roughness: 0.15, metalness: 0.2 }), frame = mat(0xb9bdc2, { metalness: 0.5, roughness: 0.4 });
+  const pilotis = kind === 'home' && r() < 0.5; // open ground floor with parking (very Okinawan)
+  const shop = kind !== 'home' && kind !== 'office';
+  const H = floors * FLOOR + 0.3, y0 = pilotis ? FLOOR : 0;
+  g.add(box(w + 0.6, 0.1, d + 0.6, mat(0xcfcac0), 0, 0.05, 0));
+  g.add(box(w, H - y0, d, wallM, 0, y0 + (H - y0) / 2 + 0.05, 0));
+  if (pilotis) {
+    for (const [x, z] of [[-w / 2 + 0.25, -d / 2 + 0.25], [w / 2 - 0.25, -d / 2 + 0.25], [-w / 2 + 0.25, d / 2 - 0.25], [w / 2 - 0.25, d / 2 - 0.25], [0, d / 2 - 0.25]]) g.add(box(0.45, FLOOR, 0.45, wallM, x, FLOOR / 2 + 0.05, z));
+    g.add(box(w - 1, 2.0, 0.2, wallM, 0, 1.05, -d / 2 + 0.2)); // the back wall of the car port
+  }
+  // floor bands (the storeys show on the outside)
+  for (let f = 1; f < floors; f++) g.add(box(w + 0.08, 0.14, d + 0.08, trim, 0, f * FLOOR + 0.05, 0));
+  // windows all round; homes get balconies (with an AC unit on each) on the front
+  const winRow = (count, span, y, ww, wh, place) => { for (let i = 0; i < count; i++) place(-span / 2 + (i + 0.5) * (span / count), y, ww, wh); };
+  for (let f = shop || pilotis ? 1 : 0; f < floors; f++) {
+    const y = f * FLOOR + 1.45;
+    const nf = Math.max(1, Math.floor(w / 2.1)), ns = Math.max(1, Math.floor(d / 2.6));
+    const front = (x, yy, ww, wh) => {
+      g.add(box(ww, wh, 0.05, glassM, x, yy, d / 2 + 0.01));
+      g.add(box(ww + 0.1, 0.07, 0.1, frame, x, yy + wh / 2, d / 2 + 0.03));
+      g.add(box(0.05, wh, 0.07, frame, x, yy, d / 2 + 0.03));
+      if (kind === 'home') { // balcony slab, rail, an AC unit standing on it
+        g.add(box(ww + 0.5, 0.12, 0.9, wallM, x, f * FLOOR + 0.15, d / 2 + 0.45));
+        g.add(box(ww + 0.5, 0.75, 0.06, mat(0xe9e6df), x, f * FLOOR + 0.55, d / 2 + 0.88));
+        if (r() < 0.75) acUnit(g, x + ww / 2 - 0.2, f * FLOOR + 0.45, d / 2 + 0.2);
+        if (r() < 0.3) g.add(box(0.5, 0.45, 0.02, mat(pick([0x8db6d6, 0xf2c4cf, 0xf4f2ec, 0xf2b84b])), x - 0.3, f * FLOOR + 1.3, d / 2 + 0.6)); // washing
+      } else if (r() < 0.45) acUnit(g, x + ww / 2 + 0.35, yy - 0.6, d / 2);
+    };
+    const back = (x, yy, ww, wh) => { g.add(box(ww, wh, 0.05, glassM, x, yy, -d / 2 - 0.01)); if (r() < 0.55) acUnit(g, x + ww / 2 + 0.35, yy - 0.6, -d / 2, [0, -1]); };
+    const side = (s) => (z, yy, ww, wh) => { g.add(box(0.05, wh, ww, glassM, s * (w / 2 + 0.01), yy, z)); g.add(box(0.1, 0.07, ww + 0.1, frame, s * (w / 2 + 0.03), yy + wh / 2, z)); if (r() < 0.5) acUnit(g, s * w / 2, yy - 0.65, z + ww / 2 + 0.4, [s, 0]); };
+    winRow(nf, w, y, kind === 'office' ? 1.6 : 1.1, kind === 'office' ? 1.5 : 1.15, front);
+    winRow(nf, w, y, 0.9, 1.0, back);
+    winRow(ns, d, y, 0.9, 1.0, side(1));
+    winRow(ns, d, y, 0.9, 1.0, side(-1));
+  }
+  // the ground floor
+  if (shop) {
+    const [name, col] = pick(SHOPS);
+    g.add(box(w - 0.8, 2.2, 0.06, mat(0xbfd9e3, { transparent: true, opacity: 0.45, depthWrite: false }), 0, 1.2, d / 2 + 0.02));
+    for (let x = -w / 2 + 0.4; x <= w / 2 - 0.4 + 0.01; x += (w - 0.8) / 3) g.add(box(0.08, 2.2, 0.1, frame, x, 1.2, d / 2 + 0.05));
+    g.add(box(0.9, 2.0, 0.08, mat(0x9fc7d8, { transparent: true, opacity: 0.6 }), w / 2 - 1.2, 1.05, d / 2 + 0.07));
+    const colorNum = parseInt(col.slice(1), 16);
+    awning(g, w - 0.4, 2.55, d / 2, [colorNum, 0xf4f2ec], 0.9);
+    signBoard(g, name, Math.min(w - 1.2, 4.2), 0.55, 0, 3.0 + 0.05, d / 2 + 0.02, { bg: '#f8f6f0', fg: col });
+    // goods / plants by the door
+    if (r() < 0.6) g.add(box(0.7, 0.8, 0.5, mat(pick([0x8a6a4a, 0xd8d2c4])), -w / 2 + 1.0, 0.45, d / 2 + 0.6));
+    if (r() < 0.5) { g.add(cyl(0.22, 0.18, 0.4, mat(0xb5603e), w / 2 - 0.4, 0.25, d / 2 + 0.6, 10)); g.add(mesh(new THREE.SphereGeometry(0.32, 8, 6), mat(0x4f8a3f), w / 2 - 0.4, 0.65, d / 2 + 0.6)); }
+  } else if (!pilotis) {
+    door(g, w / 2 - 1.3, d / 2, { glass: kind === 'office', w: kind === 'office' ? 1.6 : 0.9 });
+  }
+  // colour: a vertical stripe up one corner, or a band under the roof
+  if (r() < 0.5) g.add(box(0.6, H - y0, 0.06, mat(acc), -w / 2 + 0.5, y0 + (H - y0) / 2 + 0.05, d / 2 + 0.04));
+  else g.add(box(w + 0.1, 0.35, d + 0.1, mat(acc), 0, H - 0.1, 0));
+  // the roof: parapet, water tanks (1–3), sometimes a billboard on a frame
+  flatRoof(g, w, d, H + 0.05, trim, { parapet: 0.4, units: r() < 0.5 ? 1 : 0 });
+  const tanks = 1 + Math.floor(r() * 3);
+  for (let i = 0; i < tanks; i++) waterTank(g, -w / 2 + 1.2 + i * 1.5, H + 0.3, -d / 2 + 1.3);
+  if (kind !== 'home' && floors >= 4 && r() < 0.35) {
+    const [txt, c] = pick(BOARDS);
+    for (const x of [-1.6, 1.6]) g.add(box(0.12, 2.4, 0.12, frame, x, H + 1.5, d / 2 - 1));
+    signBoard(g, txt, 4, 1.3, 0, H + 2.2, d / 2 - 0.95, { bg: c, fg: '#ffffff' });
+  }
+  return finish(g, 'midrise', { floors, kind });
+}
+
+// ---------- blocks: fill a w × d area facing +Z with a row of buildings (and a back row if deep enough) ----------
+// kind 'city': mid-rises with shops (3–7 floors) · 'residential': houses, small apartments (some on pilotis), trees
+export function cityBlock({ w = 24, d = 20, kind = 'city', seed = 1, trees = null } = {}) {
+  const r = rnd0(seed + 77);
+  const g = new THREE.Group();
+  g.add(box(w, 0.06, d, mat(kind === 'city' ? 0xcfcac0 : 0xb9c79e, { roughness: 1 }), 0, 0.03, 0)); // paving / yards
+  const row = (z0, depthMax, facing, tall) => {
+    let x = -w / 2 + 0.4;
+    while (x < w / 2 - 3) {
+      const bw = Math.min(w / 2 - 0.4 - x, 5 + Math.floor(r() * 5));
+      if (bw < 3.5) break;
+      const bd = Math.min(depthMax, 6 + Math.floor(r() * 4));
+      let b;
+      if (kind === 'city') b = r() < 0.12 && bw > 7 ? parkingFill(bw, bd, r) : midrise({ w: bw - 0.6, d: bd - 1, floors: (tall ? 4 : 3) + Math.floor(r() * (tall ? 4 : 3)), kind: r() < 0.3 ? 'home' : r() < 0.15 ? 'office' : 'mixed', seed: Math.floor(r() * 1e6) });
+      else b = r() < 0.55 ? house({ variant: Math.floor(r() * 3), floors: r() < 0.3 ? 1 : 2, accent: ACCENTS[Math.floor(r() * 4)] }) : midrise({ w: bw - 0.8, d: bd - 1.5, floors: 2 + Math.floor(r() * 2), kind: 'home', seed: Math.floor(r() * 1e6) });
+      if (kind !== 'city' && b.userData.building === 'house') b.scale.setScalar(Math.min(1, (bw - 0.4) / 10));
+      b.position.set(x + bw / 2, 0, z0 - facing * bd / 2);
+      if (facing < 0) b.rotation.y = Math.PI;
+      g.add(b);
+      x += bw + 0.3;
+    }
+  };
+  row(d / 2 - 0.3, Math.min(10, d * 0.5), 1, false);
+  if (d > 16) row(-d / 2 + 0.3, Math.min(10, d * 0.45), -1, true);
+  if (trees) for (let i = 0; i < Math.round(w / 10); i++) { const t = trees(i); t.position.set(-w / 2 + 3 + r() * (w - 6), 0, (r() - 0.5) * d * 0.2); g.add(t); }
+  // one more merge across the whole block: a few draw calls per block instead of a dozen per building
+  g.traverse((o) => { if (o.userData?.kind === 'building') o.userData.kind = 'part'; });
+  bakeStatic(g);
+  g.userData = { kind: 'block', blockKind: kind };
+  return g;
+}
+// a little car park in a gap between buildings (cars added by the world if wanted)
+function parkingFill(w, d) {
+  const g = new THREE.Group();
+  g.add(box(w - 0.4, 0.05, d - 0.4, mat(0x5a5e65, { roughness: 0.95 }), 0, 0.06, 0));
+  for (let x = -w / 2 + 0.6; x <= w / 2 - 0.6; x += 1.5) g.add(box(0.06, 0.012, d * 0.55, mat(0xf4f0e8), x, 0.09, -d * 0.15));
+  g.add(box(0.06, 1.8, 0.06, mat(0x9aa0a6), w / 2 - 0.5, 0.9, d / 2 - 0.5));
+  g.add(mesh(new THREE.PlaneGeometry(0.7, 0.7), mat(0xffffff, { map: signTexture('P', { w: 128, h: 128, font: 'bold 100px sans-serif', bg: '#1f5fa8', fg: '#ffffff' }) }), w / 2 - 0.5, 2.0, d / 2 - 0.46));
+  g.userData = { kind: 'building', building: 'parkingFill' };
+  return g;
+}
+
+// ---------- 海の家 (a beach house): posts, a tin roof, a counter, menus, the 氷 flag, tables and benches ----------
+// Open side faces +Z. update(t) flutters the flag.
+export function beachHouse({ name = '海の家 ちゅらさん' } = {}) {
+  const g = new THREE.Group();
+  const wood = mat(0x9c7a55, { roughness: 0.85 }), dark = mat(0x6e5236, { roughness: 0.9 });
+  const W = 9, D = 6;
+  g.add(box(W, 0.2, D, mat(0xc9a77c, { roughness: 1 }), 0, 0.1, 0)); // the wooden deck
+  for (const x of [-W / 2 + 0.2, 0, W / 2 - 0.2]) for (const z of [-D / 2 + 0.2, D / 2 - 0.2]) g.add(box(0.2, 2.9, 0.2, wood, x, 1.55, z));
+  const roof = mesh(new THREE.BoxGeometry(W + 1.2, 0.1, D + 1.4), mat(0x5f8fa8, { roughness: 0.6, metalness: 0.3 }), 0, 3.05, 0.2);
+  roof.rotation.x = -0.08; g.add(roof);
+  for (let x = -W / 2 - 0.5; x <= W / 2 + 0.5; x += 0.45) g.add(box(0.05, 0.03, D + 1.4, mat(0x4f7f98), x, 3.11, 0.2)); // the ridges of the tin
+  g.add(box(W, 2.6, 0.1, dark, 0, 1.4, -D / 2 + 0.05)); // back wall
+  // the counter with a cooler, the shaved-ice machine, a menu board
+  g.add(box(4, 1.0, 0.7, wood, -1.8, 0.7, -D / 2 + 1.0));
+  g.add(rbox(0.9, 0.55, 0.5, 0.06, mat(0x3a7fd0), -3.2, 1.48, -D / 2 + 1.0));
+  g.add(cyl(0.18, 0.22, 0.5, mat(0xd9362b), -1.0, 1.45, -D / 2 + 1.0, 12)); // the ice shaver
+  g.add(mesh(new THREE.SphereGeometry(0.12, 10, 6), mat(0xe9f4f8), -1.0, 1.75, -D / 2 + 1.0));
+  signBoard(g, 'かき氷 300  ソーキそば 700\nタコライス 650  ジュース 150', 3.4, 1.0, -1.6, 2.3, -D / 2 + 0.12, { bg: '#2c3a57', fg: '#f3e9d6', w: 640, h: 190, font: 'bold 40px sans-serif' });
+  signBoard(g, name, 4.4, 0.6, 0, 3.4, D / 2 + 0.5, { bg: '#f3e9d6', fg: '#c4553a' });
+  // tables and benches
+  for (const [x, z] of [[1.6, 0.5], [3.4, 0.5], [1.6, 2.1], [3.4, 2.1]]) {
+    g.add(box(1.2, 0.08, 0.7, wood, x, 0.85, z));
+    g.add(box(0.08, 0.6, 0.08, dark, x, 0.52, z));
+    for (const s of [1, -1]) g.add(box(1.2, 0.07, 0.3, wood, x, 0.55, z + s * 0.6));
+  }
+  // an outdoor shower
+  g.add(box(0.1, 2.4, 0.1, mat(0x9aa0a6), W / 2 + 1.1, 1.2, D / 2));
+  g.add(cyl(0.18, 0.12, 0.08, mat(0xc9ccd1), W / 2 + 0.85, 2.35, D / 2, 10));
+  g.add(box(0.9, 0.06, 0.9, mat(0xc9c5bc), W / 2 + 0.85, 0.03, D / 2));
+  // the 氷 flag: white with a red character over blue waves
+  const flagTex = signTexture('氷', { w: 256, h: 256, font: 'bold 170px serif', bg: '#ffffff', fg: '#d9362b' });
+  const flag = new THREE.Group(); flag.userData.dynamic = true;
+  g.add(cyl(0.03, 0.03, 2.6, mat(0xdcdcdc), W / 2 - 0.2, 1.5, D / 2 + 0.4, 6));
+  const cloth = mesh(new THREE.PlaneGeometry(0.75, 0.75), mat(0xffffff, { map: flagTex, side: THREE.DoubleSide, roughness: 0.8 }), 0.4, 0, 0);
+  flag.add(cloth);
+  flag.add(mesh(new THREE.PlaneGeometry(0.75, 0.16), mat(0x3a7fd0, { side: THREE.DoubleSide }), 0.4, -0.33, 0.001));
+  flag.position.set(W / 2 - 0.2, 2.45, D / 2 + 0.4);
+  g.add(flag);
+  finish(g, 'beachHouse');
+  g.userData.update = (t) => { flag.rotation.y = Math.sin(t * 2.1) * 0.35; };
+  g.userData.counter = new THREE.Vector3(-1.8, 0, -D / 2 + 1.9); // where you stand to order (local)
+  return g;
+}

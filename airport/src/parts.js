@@ -497,6 +497,10 @@ const ROLES = {
   tourist: { top: PALETTE.pink, legs: PALETTE.white, hat: 'straw', handbag: PALETTE.yellow },
   rider: { top: PALETTE.red, legs: PALETTE.navy, hat: 'bike', capColor: PALETTE.white },
   busDriver: { top: PALETTE.sky, legs: PALETTE.navy, hat: 'cap', tie: PALETTE.navy },
+  // at the beach (naha): swimwear
+  swimKid: { top: PALETTE.orange, legs: PALETTE.skin, hat: 'baseball', capColor: PALETTE.yellow, scale: 0.72 },
+  swimMum: { top: PALETTE.pink, legs: PALETTE.skin, hat: 'straw' },
+  swimDad: { top: PALETTE.teal, legs: PALETTE.navy, hat: 'hair' },
 };
 
 export const PASSENGER_TYPES = ['passenger', 'woman', 'backpacker', 'business', 'child', 'senior'];
