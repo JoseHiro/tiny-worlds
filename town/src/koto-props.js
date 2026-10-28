@@ -347,3 +347,38 @@ export function kawa({ length = 44, w = 4, depth = 0.9, water = 0.45 } = {}) {
   g.userData.update = (time, dt = 0) => { t.offset.x -= dt * 0.08; };
   return g;
 }
+
+// ---------- 踏切: a level crossing post — crossbuck, two red lamps that blink in turn, a striped barrier arm ----------
+// set(closed 0…1, t): lamps blink while closed > 0; the arm comes down as closed → 1. The arm reaches `arm` along +X.
+export function fumikiri({ arm = 2.6 } = {}) {
+  const g = new THREE.Group();
+  const stripe = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 8; const x = c.getContext('2d'); for (let k = 0; k < 8; k++) { x.fillStyle = k % 2 ? '#1d1f23' : '#f2c94c'; x.fillRect(k * 8, 0, 8, 8); } const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+  const striped = new THREE.MeshStandardMaterial({ map: stripe, roughness: 0.6 });
+  g.add(mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.2, 8), striped, 0, 1.6, 0));
+  for (const r of [0.6, -0.6]) { const b = box(1.1, 0.14, 0.03, M(0xf6f4ee), 0, 3.0, 0.05); b.rotation.z = r; g.add(b); } // the crossbuck (×)
+  g.add(box(0.9, 0.06, 0.06, M(0x1d1f23), 0, 2.45, 0.05));
+  const lamps = [-1, 1].map((s) => { const m = new THREE.MeshStandardMaterial({ color: 0x5a1a1a, emissive: 0xff2a1a, emissiveIntensity: 0, roughness: 0.4 }); g.add(cyl(0.13, 0.13, 0.06, M(0x1d1f23), s * 0.38, 2.45, 0.08, 14)).children.at(-1).rotation.x = Math.PI / 2; const l = mesh(new THREE.CircleGeometry(0.1, 14), m, s * 0.38, 2.45, 0.12); g.add(l); return m; });
+  g.add(box(0.3, 0.25, 0.25, M(0x2a2d33), 0, 0.9, -0.15)); // the mechanism box
+  const pivot = new THREE.Group(); pivot.position.set(0.15, 0.95, 0.1); pivot.userData.dynamic = true;
+  const a = mesh(new THREE.BoxGeometry(arm, 0.08, 0.06).translate(arm / 2, 0, 0), striped); pivot.add(a); g.add(pivot);
+  for (const m of lamps) m.userData.dynamic = true;
+  prop(g, 'fumikiri');
+  g.userData.set = (closed, t) => {
+    pivot.rotation.z = (1 - closed) * 1.45; // up (open) → down
+    const on = closed > 0 ? Math.floor(t * 2.6) % 2 : -1;
+    lamps.forEach((m, i) => (m.emissiveIntensity = on === i ? 2.4 : 0));
+  };
+  g.userData.set(0, 0);
+  return g;
+}
+// a beach parasol and a mat
+export function parasol({ color = 0xe8673c, mat2 = 0x3fc1c9 } = {}) {
+  const g = new THREE.Group();
+  g.add(cyl(0.025, 0.025, 2.1, M(0xf6f4ee), 0, 1.05, 0, 6));
+  const c = document.createElement('canvas'); c.width = 128; c.height = 8; const x = c.getContext('2d'); for (let k = 0; k < 8; k++) { x.fillStyle = k % 2 ? '#f6f4ee' : '#' + new THREE.Color(color).getHexString(); x.fillRect(k * 16, 0, 16, 8); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  g.add(mesh(new THREE.ConeGeometry(1.2, 0.4, 16, 1, true), new THREE.MeshStandardMaterial({ map: t, side: THREE.DoubleSide, roughness: 0.8 }), 0, 2.0, 0));
+  g.add(box(1.8, 0.02, 1.0, M(mat2, { roughness: 1 }), 0.3, 0.01, 0.9));
+  g.userData = { kind: 'prop', prop: 'parasol' };
+  return g;
+}

@@ -22,8 +22,8 @@
     .seg button { flex: 1 0 25%; border: 0; background: transparent; font: 500 11px Inter, sans-serif; color: var(--ink); padding: 6px 0; cursor: pointer; }
     .seg button:not(:first-child) { border-left: 1px solid var(--ink); }
     .seg button.on { background: var(--ink); color: #fff; }
-    .scenes a { flex: 1; text-align: center; padding: 7px 0; font: 600 11.5px Inter, sans-serif; text-decoration: none; color: var(--ink); }
-    .scenes a + a { border-left: 1px solid var(--ink); }
+    .scenes a { flex: 1 0 50%; text-align: center; padding: 7px 0; font: 600 11.5px Inter, sans-serif; text-decoration: none; color: var(--ink); }
+    .scenes a:nth-child(2n) { border-left: 1px solid var(--ink); } .scenes a:nth-child(n+3) { border-top: 1px solid var(--ink); }
     .scenes a.on { background: var(--accent); color: #fff; }
     .hint { font-size: 11px; color: var(--muted); }
     .follow { font-size: 11.5px; border-left: 2px solid var(--accent); padding-left: 8px; }
@@ -42,7 +42,7 @@
     <p>格子の続く石畳の路地。提灯と行灯がともり、白川に柳がゆれます。お座敷へ向かう舞妓さん、着物で散策する人、通り抜ける人力車。夕方から夜がおすすめです。</p>
   </div>
   <aside class="panel">
-    <div class="seg scenes"><a href="./">参道と境内</a><a href="./lane.html" class="on">花街の路地</a><a href="./yama.html">竹林と稲荷</a></div>
+    <div class="seg scenes"><a href="./">参道と境内</a><a href="./lane.html" class="on">花街の路地</a><a href="./yama.html">竹林と稲荷</a><a href="./umi.html">海と大仏</a></div>
     <h3>見る場所</h3>
     <div class="seg" id="views"></div>
     <h3>季節 · 時間</h3>
