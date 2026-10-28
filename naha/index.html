@@ -25,6 +25,8 @@
     .seg button + button { border-left: 1px solid var(--ink); }
     .seg button.on { background: var(--ink); color: #fff; }
     .hint { font-size: 11px; color: var(--muted); }
+    .trip { font-size: 11.5px; border-left: 2px solid #e8673c; padding-left: 8px; }
+    .trip a { display: block; margin-top: 4px; color: #e8673c; font-weight: 600; text-decoration: none; }
     .event { font-size: 11px; color: var(--muted); border-left: 2px solid var(--line); padding-left: 8px; }
     .event.live { color: var(--ink); border-color: var(--accent); }
     a { color: inherit; }
@@ -51,7 +53,8 @@
     <label>透明度 <input id="clarity" type="range" min="0" max="1" step="0.02" value="0.6" /></label>
     <label>光の網目 <input id="caustic" type="range" min="0" max="2.5" step="0.05" value="1" /></label>
     <div class="seg" id="look"><button data-v="day" class="on">昼</button><button data-v="dusk">夕方</button></div>
-    <div class="hint">ドラッグで回転 · ホイールでズーム · 水面クリックで波紋 · <a href="../">Tiny Worlds</a></div>
+    <div class="trip" id="trip"><b>ハナの一家</b> 空港から車でこの海へ。浮き輪の子がハナです。<a href="../road/?leg=back">帰り道へ（海 → 空港）→</a></div>
+    <div class="hint">ドラッグで回転 · ホイールでズーム · 水面クリックで波紋 · <a href="../road/">那覇の道</a> · <a href="../">Tiny Worlds</a></div>
   </aside>
   <script type="module" src="./src/main.js"></script>
 </body>

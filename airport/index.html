@@ -29,6 +29,8 @@
     }
     .tag i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
     .tag.sel { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .worldlink { display: block; margin-top: 6px; font-size: 11px; font-weight: 600; color: var(--accent); text-decoration: none; }
+    .worldlink small { display: block; font-weight: 400; opacity: 0.75; }
     .tag.story { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 9px; padding: 1px 6px; }
 
     .brand { position: fixed; left: 28px; top: 24px; pointer-events: none; max-width: 300px; }
@@ -148,7 +150,8 @@
       <div class="stat"><b id="sOnTime">—</b><span data-i18n="onTime">定時率</span></div>
     </div>
     <p id="paxLine" class="empty" style="margin:-6px 0 0"></p>
-    <div><h3 data-i18n="storyTitle">ストーリー</h3><ul id="story"></ul></div>
+    <div><h3 data-i18n="storyTitle">ストーリー</h3><ul id="story"></ul>
+      <a class="worldlink" href="../road/?leg=out">ハナの旅の続き：那覇の道へ → <small>Hana's trip goes on: the Naha road</small></a></div>
     <div><h3 data-i18n="stands">スポット</h3><ul id="stands"></ul></div>
     <div><h3 data-i18n="selected">選択中の便</h3><div id="flight"><p class="empty">飛行機をクリックすると、ここに便の詳細が表示されます。</p></div></div>
     <div>

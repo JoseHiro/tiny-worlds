@@ -370,7 +370,9 @@ export class Traffic {
       c.s += c.v * dt;
       while (c.s >= c.path.len) {
         // jumping to an unconnected lane (an open road's end sending cars back round): check again now
-        if (c.next && this.wrap && c.next.start.distanceTo(c.path.end) > 0.5) { c.next = this.wrap(c.path); c.next2 = undefined; }
+        const jump = c.next && c.next.start.distanceTo(c.path.end) > 0.5;
+        if (jump && this.wrap) { c.next = this.wrap(c.path); c.next2 = undefined; }
+        if (jump && c.next) c.teleported = true; // (a world can fade it in)
         if (!c.next) { c.s = c.path.len; c.v = 0; break; }
         c.s -= c.path.len;
         c.path = c.next;

@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { mat, mesh, box, cyl } from '../../airport/src/parts.js';
 import { TILE, H, R0, R1, CURB, LANE, M, raised, rect, stripe, strip, dashes, LEFT, tile, finishTile } from './roads.js';
+import { trafficLight, lampSet, showLamps } from './gear.js';
 
 const smooth = THREE.MathUtils.smoothstep;
 const V2 = (x, z) => new THREE.Vector2(x, z);
@@ -16,28 +17,56 @@ const lane = (f, n = 24) => Array.from({ length: n + 1 }, (_, i) => f(i / n));
 
 // ---------- 4車線（中央分離帯）: 12 long, 16 wide (lanes ±2.05 inner, ±4.65 outer) ----------
 export const LANES4 = { inner: 0.75 + LANE / 2, outer: 0.75 + LANE * 1.5, edge: 0.75 + LANE * 2 };
-export function straight4(opts = {}) {
+// crossing: a Signals controller → a signalled pedestrian crossing across the middle (cars stop at red; people cross on 'ns')
+// medianGap: no median (a break where cars may turn across, e.g. into a rental-car office)
+export function straight4({ crossing = null, medianGap = false, ...opts } = {}) {
   const g = new THREE.Group();
-  const E = LANES4.edge;
+  const E = LANES4.edge, X = 1.4; // half-width of the crossing's gap in the median
   g.add(asphalt(TILE, E * 2));
-  // the median: kerbed, planted with low shrubs
-  g.add(strip(-H, -0.75, H, 0.75, CURB + 0.05, M.walk));
-  g.add(strip(-H, -0.6, H, 0.6, CURB + 0.08, M.grass));
-  const shrub = mat(0x5f9446, { roughness: 1 });
-  for (let x = -5; x <= 5; x += 2.5) g.add(mesh(new THREE.SphereGeometry(0.42, 10, 8).scale(1, 0.7, 1), shrub, x, 0.4, 0));
+  const median = (x0, x1) => {
+    g.add(strip(x0, -0.75, x1, 0.75, CURB + 0.05, M.walk));
+    g.add(strip(x0 + 0.15, -0.6, x1 - 0.15, 0.6, CURB + 0.08, M.grass));
+    const shrub = mat(0x5f9446, { roughness: 1 });
+    for (let x = x0 + 1; x < x1 - 0.5; x += 2.5) g.add(mesh(new THREE.SphereGeometry(0.42, 10, 8).scale(1, 0.7, 1), shrub, x, 0.4, 0));
+  };
+  if (crossing) { median(-H, -X); median(X, H); }
+  else if (!medianGap) median(-H, H);
   for (const s of [1, -1]) {
     g.add(strip(-H, s * E, H, s * (E + 1.5), CURB, M.walk));
     g.add(strip(-H, s * (E + 1.5), H, s * 8, CURB - 0.02, M.grass));
     stripe(g, TILE, 0.1, 0, s * (E - 0.18));
-    stripe(g, TILE, 0.1, 0, s * 0.92);
-    for (let x = -5; x < 6; x += 2) stripe(g, 1.0, 0.1, x, s * (0.75 + LANE)); // lane divider
+    if (!medianGap) for (const [a, b] of crossing ? [[-H, -X], [X, H]] : [[-H, H]]) stripe(g, b - a, 0.1, (a + b) / 2, s * 0.92);
+    else stripe(g, TILE, 0.12, 0, s * 0.12, 0, M.yellow); // a yellow centre line where the median breaks
+    for (let x = -5; x < 6; x += 2) if (!crossing || Math.abs(x) > 2.5) stripe(g, 1.0, 0.1, x, s * (0.75 + LANE)); // lane divider
   }
   const local = [];
-  for (const z of [LANES4.inner, LANES4.outer]) {
-    local.push({ pts: lane((t) => V2(-H + t * TILE, -z)) });
-    local.push({ pts: lane((t) => V2(H - t * TILE, z)) });
+  if (crossing) {
+    for (let z = -E + 0.45; z < E; z += 0.8) stripe(g, 2.2, 0.42, 0, z); // zebra across the whole road
+    stripe(g, 0.3, E - 0.75, -X - 0.15, -(E + 0.75) / 2); // stop lines before it, on each side's lanes
+    stripe(g, 0.3, E - 0.75, X + 0.15, (E + 0.75) / 2);
+    // lanes in two halves: the second half carries the signal, so cars stop at the line
+    for (const z of [LANES4.inner, LANES4.outer]) {
+      local.push({ pts: lane((t) => V2(-H + t * (H - X), -z), 8) }, { pts: lane((t) => V2(-X + t * (H + X), -z), 12), group: 'ew' });
+      local.push({ pts: lane((t) => V2(H - t * (H - X), z), 8) }, { pts: lane((t) => V2(X - t * (H + X), z), 12), group: 'ew' });
+    }
+    // a light for each direction on its far-left corner, with lamps shared by both
+    const set = lampSet();
+    for (const [x, z, ry] of [[X + 0.6, -(E + 0.9), Math.PI], [-X - 0.6, E + 0.9, 0]]) {
+      const l = trafficLight(set, { arm: E - 1.2 });
+      l.position.set(x, CURB, z); l.rotation.y = ry;
+      g.add(l);
+    }
+    g.userData.crossingLamps = set;
+  } else {
+    for (const z of [LANES4.inner, LANES4.outer]) {
+      local.push({ pts: lane((t) => V2(-H + t * TILE, -z)) });
+      local.push({ pts: lane((t) => V2(H - t * TILE, z)) });
+    }
   }
-  return finishTile(g, 'straight4', local, opts);
+  const lamps = g.userData.crossingLamps;
+  const t = finishTile(g, 'straight4', local, { ...opts, signals: crossing });
+  if (crossing) t.userData.updateLights = (time) => { const car = crossing.state('ew'), walk = crossing.state('ns'); showLamps(lamps, car, walk === 'green' ? 'walk' : walk === 'yellow' ? 'blink' : 'stop', time); };
+  return t;
 }
 
 // ---------- 4→2 車線のすりつけ: 4 lanes at the west end, 2 at the east ----------
