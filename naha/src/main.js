@@ -4,7 +4,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { BLOCK, seabed, bedTexture, cutFaces, bedHeight } from './terrain.js';
 import { Ripples, waterSurface, waterCutMaterial, earthCutMaterial, withCaustics, shared } from './water.js';
 import { person, PALETTE, mat } from '../../airport/src/parts.js';
-import { populate } from './sealife.js';
+import { populate, CLIP } from './sealife.js';
+import { Spray, waveHeight } from './waves.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -155,6 +156,7 @@ props.add(ring);
 // ---------- sea life (the shared library in ../sealife) ----------
 
 const sea = populate(scene, { swimmer, coralSpots });
+const spray = new Spray(scene, { clip: CLIP }); // white drops off the waves breaking on the reef edge
 
 // ---------- interaction: click the water to make ripples ----------
 
@@ -191,7 +193,7 @@ function applyLook() {
 }
 applyLook();
 const slider = (id, fn) => { const el = $(id); const go = () => fn(Number(el.value)); el.addEventListener('input', go); go(); };
-slider('wave', (v) => { water.material.uniforms.uWave.value = v; });
+slider('wave', (v) => { shared.uWave.value = v; });
 slider('clarity', (v) => { water.material.uniforms.uClarity.value = v; });
 slider('caustic', (v) => { shared.uCaustic.value = v; });
 $('look').addEventListener('click', (e) => {
@@ -256,9 +258,12 @@ renderer.setAnimationLoop(() => {
   if (Math.random() < dt * 1.2) ripples.drop((swimmer.position.x + BLOCK.w / 2) / BLOCK.w, (BLOCK.d / 2 - swimmer.position.z) / BLOCK.d, 0.012, 0.25);
   ripples.step(2);
 
-  const bob = Math.sin(t * 1.4) * 0.06;
+  // the swimmer rides the waves
+  const bob = waveHeight(swimmer.position.x, swimmer.position.z, t, shared.uWave.value) + Math.sin(t * 1.4) * 0.02;
   swimmer.position.y = -0.75 + bob;
   ring.position.y = 0.05 + bob;
+  ring.rotation.set(Math.PI / 2 + (waveHeight(-4, 9.4, t, shared.uWave.value) - waveHeight(-4, 8.6, t, shared.uWave.value)) * 0.8, 0, 0);
+  spray.update(t, dt, shared.uWave.value, renderer.domElement.height / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))));
   for (const p of beachPeople) p.userData.update(t);
   sea.update(t, dt);
   if ((uiT -= dt) <= 0) { uiT = 0.5; showEvents(); }

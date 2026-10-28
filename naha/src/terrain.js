@@ -96,7 +96,7 @@ function edgeShapes(samples, profile) {
     const sh = new THREE.Shape();
     sh.moveTo(r[0][0], 0);
     for (const [s, h] of r) sh.lineTo(s, h);
-    sh.lineTo(r.at(-1)[0], 0);
+    for (let i = r.length - 1; i >= 1; i--) sh.lineTo(r[i][0], 0); // the top edge, in steps, so it can follow the waves
     return sh;
   });
   return { earth, waterShapes };

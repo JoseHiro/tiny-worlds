@@ -3,16 +3,9 @@
 // that any underwater material can take on.
 import * as THREE from 'three';
 import { BLOCK } from './terrain.js';
+import { WAVES_GLSL } from './waves.js';
 
 const N = 256; // ripple grid
-
-// Small swell that is always there, in world xz (shared by the vertex and fragment shaders).
-const SWELL = /* glsl */ `
-  float swell(vec2 p, float t) {
-    return sin(p.x * 0.35 + t * 1.1) * 0.05 + sin(p.y * 0.5 - t * 0.9) * 0.04
-         + sin((p.x + p.y) * 0.8 + t * 1.7) * 0.02 + sin((p.x - p.y) * 1.9 - t * 2.3) * 0.008;
-  }
-`;
 
 // The classic "water turbulence" caustic: bright moving web lines.
 export const CAUSTICS = /* glsl */ `
@@ -35,6 +28,7 @@ export const shared = {
   uTime: { value: 0 },
   uCaustic: { value: 1.0 },
   uCutAlpha: { value: 0.86 }, // the water's cut faces; lower = see in, like aquarium glass
+  uWave: { value: 1.0 }, // the wave-height knob (waves.js)
 };
 
 // Give a standard material the caustic light pattern wherever it is under water.
@@ -131,7 +125,7 @@ export function waterSurface({ ripples, bedTex, refractTex }) {
     tBed: { value: bedTex },
     tRefract: { value: refractTex },
     uRes: { value: new THREE.Vector2(1, 1) },
-    uWave: { value: 1.0 },
+    uWave: shared.uWave,
     uClarity: { value: 0.6 },
     uRipple: { value: 0.35 },
     cShallow: { value: new THREE.Color('#5fe2d6') },
@@ -149,11 +143,11 @@ export function waterSurface({ ripples, bedTex, refractTex }) {
     vertexShader: /* glsl */ `
       uniform sampler2D tHeight; uniform float uTime, uWave, uRipple;
       varying vec3 vW; varying vec4 vClip;
-      ${SWELL}
+      ${WAVES_GLSL}
       ${toUv}
       void main() {
         vec4 w = modelMatrix * vec4(position, 1.0);
-        w.y += texture2D(tHeight, toUv(w.xz)).r * uRipple + swell(w.xz, uTime) * uWave;
+        w.y += texture2D(tHeight, toUv(w.xz)).r * uRipple + waveH(w.xz, uTime);
         vW = w.xyz;
         vClip = projectionMatrix * viewMatrix * w;
         gl_Position = vClip;
@@ -163,9 +157,9 @@ export function waterSurface({ ripples, bedTex, refractTex }) {
       uniform float uTime, uWave, uClarity, uRipple;
       uniform vec3 cShallow, cMid, cDeep, cSky, sunDir, sunColor;
       varying vec3 vW; varying vec4 vClip;
-      ${SWELL}
+      ${WAVES_GLSL}
       ${toUv}
-      float H(vec2 p) { return texture2D(tHeight, toUv(p)).r * uRipple + swell(p, uTime) * uWave; }
+      float H(vec2 p) { return texture2D(tHeight, toUv(p)).r * uRipple + waveH(p, uTime); }
       void main() {
         float e = 0.3;
         vec3 n = normalize(vec3(-(H(vW.xz + vec2(e, 0.0)) - H(vW.xz - vec2(e, 0.0))) / (2.0 * e), 1.0,
@@ -194,11 +188,14 @@ export function waterSurface({ ripples, bedTex, refractTex }) {
         vec3 R = reflect(-sunDir, n);
         col += sunColor * pow(max(dot(R, V), 0.0), 220.0) * 1.6;
 
-        // foam where the water thins out over the sand, and a soft line along the reef edge
-        float wob = sin(uTime * 1.6 + vW.x * 1.1 + vW.z * 0.6) * 0.5 + 0.5;
-        float foam = smoothstep(0.32, 0.02, depth) * (0.55 + 0.45 * wob);
-        float reef = smoothstep(0.35, 0.0, abs(bed + 1.55)) * smoothstep(-1.2, -1.9, bed) * 0.35 * (0.5 + 0.5 * sin(uTime * 0.9 + vW.x * 0.7));
-        col = mix(col, vec3(1.0), clamp(foam * 0.75 + reef, 0.0, 1.0));
+        // foam: at the water's edge (it rides up the beach with each wave), and the white water of the
+        // waves breaking on the reef edge, broken into patches that drift with the water
+        float grain = wNoise(vW.xz * 3.2 + vec2(0.0, uTime * 0.6)) * 0.55 + wNoise(vW.xz * 9.0 - vec2(uTime * 0.3, 0.0)) * 0.45;
+        float edge = smoothstep(0.07, 0.0, depth) * 0.9 + smoothstep(0.45, 0.4, depth * (0.6 + grain)) * 0.55; // a bright wash line, then lace
+        float white = waveFoam(vW.xz, uTime);
+        white = smoothstep(0.3, 0.55, white * (0.35 + 1.15 * grain));
+        col = mix(col, vec3(1.0), clamp(edge * 0.8 + white * 0.92, 0.0, 1.0));
+        col += vec3(0.06) * clamp(white * 2.0, 0.0, 1.0) * smoothstep(-1.0, 1.0, n.y);
 
         gl_FragColor = vec4(col, 1.0);
         #include <tonemapping_fragment>
@@ -216,13 +213,22 @@ export function waterCutMaterial() {
     uniforms: {
       uTime: shared.uTime,
       uAlpha: shared.uCutAlpha,
+      uWave: shared.uWave,
       cShallow: { value: new THREE.Color('#7fe3d6') },
       cDeep: { value: new THREE.Color('#13557f') },
     },
     transparent: true,
     side: THREE.DoubleSide,
     depthWrite: false,
-    vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
+    vertexShader: /* glsl */ `
+      uniform float uTime, uWave; varying vec3 vW;
+      ${WAVES_GLSL}
+      void main() {
+        vec4 w = modelMatrix * vec4(position, 1.0);
+        if (position.y > -0.001) w.y += waveH(w.xz, uTime); // the top edge rides the waves
+        vW = w.xyz;
+        gl_Position = projectionMatrix * viewMatrix * w;
+      }`,
     fragmentShader: /* glsl */ `
       uniform float uTime, uAlpha; uniform vec3 cShallow, cDeep; varying vec3 vW;
       void main() {
@@ -243,7 +249,15 @@ export function waterCutMaterial() {
 export function earthCutMaterial() {
   return new THREE.ShaderMaterial({
     side: THREE.DoubleSide,
-    vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
+    vertexShader: /* glsl */ `
+      uniform float uTime, uWave; varying vec3 vW;
+      ${WAVES_GLSL}
+      void main() {
+        vec4 w = modelMatrix * vec4(position, 1.0);
+        if (position.y > -0.001) w.y += waveH(w.xz, uTime); // the top edge rides the waves
+        vW = w.xyz;
+        gl_Position = projectionMatrix * viewMatrix * w;
+      }`,
     fragmentShader: /* glsl */ `
       varying vec3 vW;
       void main() {
