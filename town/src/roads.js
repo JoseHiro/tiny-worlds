@@ -6,9 +6,9 @@ import { mat, mesh, box } from '../../airport/src/parts.js';
 import { bakeStatic } from '../../airport/src/merge.js';
 
 export const TILE = 12, LANE = 2.6, WALK = 1.5, CURB = 0.12;
-const H = TILE / 2, R0 = LANE, R1 = LANE + WALK; // carriageway half width, outer edge of the sidewalk
+export const H = TILE / 2, R0 = LANE, R1 = LANE + WALK; // carriageway half width, outer edge of the sidewalk
 const COL = { asphalt: 0x50545b, walk: 0xddd6c8, grass: 0x9fc47c, white: 0xf4f0e8, yellow: 0xf2b84b };
-const M = {
+export const M = {
   asphalt: mat(COL.asphalt, { roughness: 0.95 }),
   walk: mat(COL.walk, { roughness: 0.9 }),
   grass: mat(COL.grass, { roughness: 1 }),
@@ -22,13 +22,13 @@ const KINDS = { straight: ['W', 'E'], curve: ['W', 'S'], tee: ['W', 'E', 'S'], c
 
 // ---------- surface pieces ----------
 
-const raised = (shape, m, h) => {
+export const raised = (shape, m, h) => {
   const g = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false, curveSegments: 12 }).rotateX(Math.PI / 2);
   g.translate(0, h, 0);
   return mesh(g, m);
 };
 // shapes are drawn in (x, z) with Shape's y as z; rotateX(+π/2) maps shape y → +z
-const rect = (x0, z0, x1, z1) => { const s = new THREE.Shape(); s.moveTo(x0, z0); s.lineTo(x1, z0); s.lineTo(x1, z1); s.lineTo(x0, z1); s.closePath(); return s; };
+export const rect = (x0, z0, x1, z1) => { const s = new THREE.Shape(); s.moveTo(x0, z0); s.lineTo(x1, z0); s.lineTo(x1, z1); s.lineTo(x0, z1); s.closePath(); return s; };
 // the corner of a junction in quadrant (sx, sz): an L of sidewalk with a rounded kerb, and the verge behind it
 function corner(sx, sz, r = 1.2) {
   const P = (a, b) => [sx * a, sz * b];
@@ -46,11 +46,11 @@ function corner(sx, sz, r = 1.2) {
 
 // ---------- markings ----------
 
-const stripe = (g, w, d, x, z, ry = 0, m = M.white) => { const b = mesh(new THREE.BoxGeometry(w, 0.012, d, Math.ceil(w), 1, 1), m, x, 0.006, z); b.rotation.y = ry; b.castShadow = false; g.add(b); };
+export const stripe = (g, w, d, x, z, ry = 0, m = M.white) => { const b = mesh(new THREE.BoxGeometry(w, 0.012, d, Math.ceil(w), 1, 1), m, x, 0.006, z); b.rotation.y = ry; b.castShadow = false; g.add(b); };
 // a straight strip along x, subdivided so a slope can bend it
-const strip = (x0, z0, x1, z1, h, m) => mesh(new THREE.BoxGeometry(x1 - x0, h, Math.abs(z1 - z0), 12, 1, 1), m, (x0 + x1) / 2, h / 2, (z0 + z1) / 2);
+export const strip = (x0, z0, x1, z1, h, m) => mesh(new THREE.BoxGeometry(x1 - x0, h, Math.abs(z1 - z0), 12, 1, 1), m, (x0 + x1) / 2, h / 2, (z0 + z1) / 2);
 // dashed centre line along an arm, from distance a to b out from the tile centre in direction (dx, dz)
-function dashes(g, dx, dz, a, b) {
+export function dashes(g, dx, dz, a, b) {
   for (let s = a + 0.5; s < b - 0.4; s += 2) stripe(g, Math.abs(dx) ? 1.0 : 0.12, Math.abs(dz) ? 1.0 : 0.12, dx * (s + 0.5), dz * (s + 0.5));
 }
 // zebra crossing across the arm going out in direction (dx, dz), and the stop line before it on the incoming lane
@@ -62,7 +62,7 @@ function crossing(g, dx, dz) {
 
 // ---------- lane paths ----------
 
-const LEFT = (d) => new THREE.Vector2(d.y, -d.x); // left of a heading (x, z) — we drive on the left
+export const LEFT = (d) => new THREE.Vector2(d.y, -d.x); // left of a heading (x, z) — we drive on the left
 function lanePath(a, b) {
   // centre line from port a to port b (straight, or a quarter circle round the shared tile corner), offset to the left lane
   const A = PORTS[a], B = PORTS[b];
@@ -181,36 +181,51 @@ export function tile(kind, { at = [0, 0], turns = 0, y = 0, rise = 0, signals = 
       crossing(g, d.x, d.y);
     }
   }
+  const local = [];
+  for (const a of ports) for (const b of ports) {
+    if (a === b) continue;
+    const lp = lanePath(a, b);
+    local.push({ pts: lp.pts, turn: lp.turn, group: signals && kind === 'cross' ? (a === 'E' || a === 'W' ? 'ew' : 'ns') : null });
+  }
+  return finishTile(g, kind, local, { at, turns, y, rise, signals });
+}
+
+// Bend for a slope, bake, place and turn the tile, and turn its local lanes into world paths that know
+// which other lanes they cross. local: [{ pts: [Vector2 (x, z) | Vector3], turn, group, priority, busOnly, stop }]
+export function finishTile(g, kind, local, { at = [0, 0], turns = 0, y = 0, rise = 0, signals = null } = {}) {
+  const lift = (x) => rise * THREE.MathUtils.smoothstep(x, -H, H);
   if (rise) for (const m of g.children) { // bend everything up the slope (smooth at both ends)
+    if (!m.geometry) continue;
     const pos = m.geometry.attributes.position;
     m.updateMatrix();
     const v = new THREE.Vector3();
     for (let i = 0; i < pos.count; i++) {
       v.fromBufferAttribute(pos, i).applyMatrix4(m.matrix);
-      const k = THREE.MathUtils.smoothstep(v.x, -H, H);
-      pos.setY(i, pos.getY(i) + rise * k / Math.max(1e-6, m.scale.y));
+      pos.setY(i, pos.getY(i) + lift(v.x) / Math.max(1e-6, m.scale.y));
     }
     m.geometry.computeVertexNormals();
   }
-  for (const m of g.children) m.receiveShadow = true;
+  g.traverse((m) => { if (m.isMesh) m.receiveShadow = true; });
   bakeStatic(g);
   g.position.set(at[0] * TILE, y, at[1] * TILE);
   g.rotation.y = -turns * Math.PI / 2;
-  // lane paths, in world space
   g.updateMatrixWorld(true);
-  const paths = [];
-  for (const a of ports) for (const b of ports) {
-    if (a === b) continue;
-    const lp = lanePath(a, b);
-    const pts = lp.pts.map((p) => {
-      const k = THREE.MathUtils.smoothstep(p.x, -H, H);
-      return new THREE.Vector3(p.x, 0.02 + rise * k, p.y).applyMatrix4(g.matrixWorld);
-    });
-    const sig = signals && kind === 'cross' ? { ctrl: signals, group: a === 'E' || a === 'W' ? 'ew' : 'ns' } : null;
-    paths.push(new Path(pts, { turn: lp.turn, signal: sig }));
-  }
-  // which lanes cross or merge inside this tile (lanes from the same entry just follow each other)
-  // (and for each, how far along the other lane the shared zone ends: a car past it is no longer in the way)
+  const paths = local.map((l) => {
+    const pts = l.pts.map((p) => (p.isVector3 ? p.clone() : new THREE.Vector3(p.x, 0.02 + lift(p.x), p.y)).applyMatrix4(g.matrixWorld));
+    const path = new Path(pts, { turn: l.turn ?? null, signal: l.group && signals ? { ctrl: signals, group: l.group } : null });
+    if (l.priority) path.priority = l.priority;
+    if (l.busOnly) path.busOnly = true;
+    if (l.stop != null) path.stop = l.stop;
+    return path;
+  });
+  linkConflicts(paths);
+  g.userData = { kind: 'tile', type: kind, paths, signals };
+  return g;
+}
+
+// which lanes cross or merge inside a tile (lanes from the same entry just follow each other), and for each,
+// how far along the other lane the shared zone ends: a car past it is no longer in the way
+export function linkConflicts(paths) {
   for (const a of paths) for (const b of paths) {
     if (a === b || a.start.distanceTo(b.start) < 0.1) continue;
     let end = -1;
@@ -219,8 +234,6 @@ export function tile(kind, { at = [0, 0], turns = 0, y = 0, rise = 0, signals = 
     a.conflicts.push(b);
     a.clearAt.set(b, b.end.distanceTo(a.end) < 0.1 ? b.len - 3 : end); // merging lanes: past the merge you just follow
   }
-  g.userData = { kind: 'tile', type: kind, paths, signals };
-  return g;
 }
 
 // ---------- the network ----------
@@ -245,21 +258,32 @@ export class Network {
 const _p = new THREE.Vector3(), _t = new THREE.Vector3(), _d = new THREE.Vector3();
 export class Traffic {
   constructor(net, { speed = 4.2 } = {}) { this.net = net; this.cars = []; this.speed = speed; this.n = 0; }
-  add(obj, path, s = 0, { speed = this.speed * (0.85 + Math.random() * 0.25), len = 2.4 } = {}) {
-    const c = { obj, path, s, v: speed * 0.5, vmax: speed, len, next: null, id: this.n++, fwd: new THREE.Vector3(1, 0, 0), braking: false };
+  // bus: takes bus bays and stops at them (dwell seconds)
+  add(obj, path, s = 0, { speed = this.speed * (0.85 + Math.random() * 0.25), len = 2.4, bus = false, dwell = 6 } = {}) {
+    const c = { obj, path, s, v: speed * 0.5, vmax: speed, len, bus, dwell, stopped: 0, served: null, next: null, id: this.n++, fwd: new THREE.Vector3(1, 0, 0), braking: false };
     this.cars.push(c);
     this.place(c);
     return c;
   }
-  pickNext(c) {
-    const opts = this.net.after(c.path);
-    if (!opts.length) return null;
+  pickNext(c) { return this.pickAfter(c.path, c); }
+  pickAfter(path, c) {
+    let opts = this.net.after(path).filter((p) => !p.busOnly || c.bus);
+    if (!opts.length) return this.wrap?.(path) ?? null; // an open road's end: samples can send cars back to the start
+    if (c.bus && opts.some((p) => p.busOnly)) return opts.find((p) => p.busOnly); // buses always call at the stop
     // mostly straight on, sometimes turn
     const straight = opts.filter((p) => !p.turn);
     return straight.length && Math.random() < 0.55 ? straight[0] : opts[Math.floor(Math.random() * opts.length)];
   }
-  mustYield(c) {
-    const E = c.next, myLeft = c.path.len - c.s;
+  // before entering a junction: can we get in — and, when another junction follows straight after,
+  // through that one too? (otherwise we'd stop inside the first and block it)
+  blockedAhead(c, left) {
+    if (this.mustYield(c, c.next, left)) return true;
+    const E2 = c.next2;
+    if (!E2 || !E2.conflicts.length) return false;
+    if (E2.signal && E2.signal.ctrl.state(E2.signal.group) !== 'green') return true;
+    return this.mustYield(c, E2, left + c.next.len);
+  }
+  mustYield(c, E, myLeft) {
     const out = _t.subVectors(E.end, E.pts.at(-2)).normalize();
     for (const o of this.cars) {
       if (o === c) continue;
@@ -271,7 +295,7 @@ export class Traffic {
       }
       for (const P of E.conflicts) {
         if (o.path === P && o.s - o.len / 2 < E.clearAt.get(P)) return true; // someone is (still) in the way
-        if (o.next === P && !o.waiting && !o.holding) {
+        if (o.next === P && !o.waiting && !o.holding && !(o.lead && o.gap < 2)) { // (a car stuck in a queue isn't coming yet)
           const oLeft = o.path.len - o.s;
           if (oLeft > 7) continue;
           if (P.priority > E.priority) return true;
@@ -307,9 +331,24 @@ export class Traffic {
     for (const c of cars) if (c.lead && c.lead.lead === c && c.id < c.lead.id) { c.lead = null; c.gap = Infinity; } // two blocking each other: lower id goes
     for (const c of cars) {
       c.next ??= this.pickNext(c);
+      if (c.next && c.next2 === undefined) c.next2 = this.pickAfter(c.next, c);
       const left = c.path.len - c.s;
       let want = c.vmax * (c.path.turn ? 0.5 : 1);
       if (c.next?.turn) want = Math.min(want, c.vmax * 0.5 + left * 0.35);
+      // a bus calls at its stop: pull up, wait, go
+      if (c.bus && c.path.stop != null && c.served !== c.path) {
+        const d = c.path.stop - c.s;
+        if (d < 0.15 && c.v < 0.2) { c.stopped += dt; want = 0; if (c.stopped > c.dwell) { c.served = c.path; c.stopped = 0; } }
+        else want = Math.min(want, Math.sqrt(2 * 4 * Math.max(0, d)));
+        c.obj.userData.doorOpen = c.stopped > 0.6 && c.stopped < c.dwell - 0.8;
+      }
+      // pulling out of a bay: give way to traffic coming along the road
+      const rj = c.path.rejoin;
+      const nose = rj ? rj.sSelf - c.len / 2 - 0.3 : 0; // hold with the front short of the merge
+      if (rj && c.s < nose + 0.5 && c.s > nose - 8) {
+        const coming = this.cars.some((o) => o !== c && ((o.path === rj.other && o.s > rj.sOther - 10 && o.s < rj.sOther + (o.len + c.len) / 2) || (o.next === rj.other && o.path.len - o.s < 10 - rj.sOther)));
+        if (coming) { want = Math.min(want, Math.sqrt(2 * 5 * Math.max(0, nose - c.s))); c.holding = true; }
+      }
       // the light ahead (only when not already in the junction)
       c.waiting = false;
       if (c.next?.signal && !c.path.signal) {
@@ -319,7 +358,7 @@ export class Traffic {
       }
       // right of way: don't enter a lane that crosses one with a car in it, or one a car with priority is about to take
       c.holding = false;
-      if (c.next && left < 7 && c.next.conflicts.length && this.mustYield(c)) {
+      if (c.next && left < 7 && c.next.conflicts.length && (c.path.conflicts.length ? this.mustYield(c, c.next, left) : this.blockedAhead(c, left))) {
         const stopAt = left - c.len / 2 - 0.25;
         want = Math.min(want, Math.sqrt(2 * 5 * Math.max(0, stopAt)));
         c.holding = true;
@@ -330,10 +369,14 @@ export class Traffic {
       c.v = Math.max(0, c.v + dv);
       c.s += c.v * dt;
       while (c.s >= c.path.len) {
+        // jumping to an unconnected lane (an open road's end sending cars back round): check again now
+        if (c.next && this.wrap && c.next.start.distanceTo(c.path.end) > 0.5) { c.next = this.wrap(c.path); c.next2 = undefined; }
         if (!c.next) { c.s = c.path.len; c.v = 0; break; }
         c.s -= c.path.len;
         c.path = c.next;
-        c.next = this.pickNext(c);
+        c.served = null; // a bus calls again next time round
+        c.next = c.next2 ?? this.pickNext(c);
+        c.next2 = c.next ? this.pickAfter(c.next, c) : null;
       }
       this.place(c);
       const ud = c.obj.userData;

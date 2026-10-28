@@ -486,6 +486,17 @@ const ROLES = {
   barista: { top: PALETTE.white, vest: PALETTE.brown, legs: PALETTE.ink, hat: 'baseball', capColor: PALETTE.brown },
   serviceAgent: { top: PALETTE.navy, legs: PALETTE.navy, hat: 'long', scarf: PALETTE.red },
   officer: { top: PALETTE.navy, legs: PALETTE.ink, hat: 'cap', tie: PALETTE.sky }, // immigration
+  // town people (town/DESIGN.md §2.6)
+  clerk: { top: PALETTE.white, vest: PALETTE.teal, legs: PALETTE.navy, hat: 'hair' },
+  police: { top: PALETTE.sky, vest: PALETTE.navy, legs: PALETTE.navy, hat: 'cap', tie: PALETTE.navy },
+  worker: { top: PALETTE.navy, vest: PALETTE.yellow, legs: PALETTE.darkGrey, hat: 'helmet' },
+  student: { top: PALETTE.white, legs: PALETTE.navy, hat: 'hair', backpack: PALETTE.navy, tie: PALETTE.red },
+  farmer: { top: PALETTE.cream, legs: PALETTE.darkGrey, hat: 'straw', pace: 0.8 },
+  jogger: { top: PALETTE.orange, legs: PALETTE.ink, hat: 'baseball', capColor: PALETTE.white, pace: 1.7 },
+  kariyushi: { top: PALETTE.sky, legs: PALETTE.cream, hat: 'grey', pace: 0.8 }, // an islander in a kariyushi shirt
+  tourist: { top: PALETTE.pink, legs: PALETTE.white, hat: 'straw', handbag: PALETTE.yellow },
+  rider: { top: PALETTE.red, legs: PALETTE.navy, hat: 'bike', capColor: PALETTE.white },
+  busDriver: { top: PALETTE.sky, legs: PALETTE.navy, hat: 'cap', tie: PALETTE.navy },
 };
 
 export const PASSENGER_TYPES = ['passenger', 'woman', 'backpacker', 'business', 'child', 'senior'];
@@ -597,6 +608,13 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     const fringe = dome(0.216, PALETTE.brown, 0.0, Math.PI * 0.3);
     fringe.rotation.z = -0.5;
     head.add(fringe);
+  } else if (cfg.hat === 'straw') { // a wide straw hat
+    head.add(cyl(0.34, 0.34, 0.02, mat(0xe0c27a, { roughness: 0.9 }), 0, 0.12, 0, 20));
+    head.add(dome(0.2, 0xe0c27a, 0.1));
+    head.add(cyl(0.2, 0.2, 0.04, mat(PALETTE.red), 0, 0.14, 0, 18));
+  } else if (cfg.hat === 'bike') { // a bicycle / scooter helmet
+    head.add(dome(0.225, cfg.capColor, 0.02));
+    head.add(box(0.05, 0.02, 0.3, mat(PALETTE.ink), 0.2, 0.06, 0));
   } else if (cfg.hat === 'baseball') {
     head.add(dome(0.214, cfg.capColor, 0.02));
     head.add(rbox(0.16, 0.025, 0.24, 0.012, mat(cfg.capColor), 0.2, 0.04, 0));
