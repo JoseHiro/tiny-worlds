@@ -90,10 +90,10 @@ export function createWorld({ shadow = 62, target = [0, 0, 0], views, follow = n
   const life = [], people = [], stills = [], steps = [];
 
   // ---------- panel: views, seasons, time, follow ----------
-  let look = look0, fly = null, following = false;
+  let look = look0, fly = null, following = false, storyCam = null;
   const VIEWS = views;
   function goView(k) {
-    following = false; $('follow')?.classList.remove('on');
+    following = false; storyCam = null; $('follow')?.classList.remove('on');
     const [, p, t] = VIEWS[k];
     fly = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: p.clone(), t1: t.clone() };
     [...$('views').children].forEach((b) => b.classList.toggle('on', b.dataset.v === k));
@@ -115,7 +115,10 @@ export function createWorld({ shadow = 62, target = [0, 0, 0], views, follow = n
     [...$('time').children].forEach((b) => b.classList.toggle('on', b.dataset.v === look));
   }
   for (const b of $('time').children) b.onclick = () => { look = b.dataset.v; applyLook(); };
-  if (follow) $('follow').onclick = () => { following = !following; $('follow').classList.toggle('on', following); fly = null; [...$('views').children].forEach((b) => b.classList.remove('on')); };
+  // the story's camera: fly to a set-up shot, or keep a person in view
+  function cam(p, t) { following = false; storyCam = null; fly = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: p.clone(), t1: t.clone() }; [...$('views').children].forEach((b) => b.classList.remove('on')); }
+  function track(agent, offset = [4, 4.5, 6]) { fly = null; following = false; storyCam = { agent, offset }; [...$('views').children].forEach((b) => b.classList.remove('on')); }
+  if (follow) $('follow').onclick = () => { storyCam = null; following = !following; $('follow').classList.toggle('on', following); fly = null; [...$('views').children].forEach((b) => b.classList.remove('on')); };
 
   function resize() { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
   addEventListener('resize', resize);
@@ -143,6 +146,10 @@ export function createWorld({ shadow = 62, target = [0, 0, 0], views, follow = n
         camera.position.lerpVectors(fly.p0, fly.p1, k);
         controls.target.lerpVectors(fly.t0, fly.t1, k);
         if (fly.t >= 1) fly = null;
+      } else if (storyCam) {
+        const P = storyCam.agent.p.position, o = storyCam.offset;
+        camera.position.lerp(v3(P.x + o[0], P.y + o[1], P.z + o[2]), Math.min(1, dt * 1.5));
+        controls.target.lerp(v3(P.x, P.y + 0.9, P.z), Math.min(1, dt * 2.5));
       } else if (following) {
         const [p, tg] = followCam();
         camera.position.lerp(p, Math.min(1, dt * 1.5));
@@ -157,11 +164,17 @@ export function createWorld({ shadow = 62, target = [0, 0, 0], views, follow = n
       renderer, scene, camera, controls, people, VIEWS, goView, setSeason,
       setLook: (k) => { look = k; applyLook(); },
       view(k) { const [, p, t] = VIEWS[k]; fly = null; following = false; camera.position.copy(p); controls.target.copy(t); controls.update(); },
+      settle() { // (debug) put the camera where the story wants it now, without waiting for the flight
+        if (fly) { camera.position.copy(fly.p1); controls.target.copy(fly.t1); fly = null; }
+        else if (storyCam) { const P = storyCam.agent.p.position, o = storyCam.offset; camera.position.set(P.x + o[0], P.y + o[1], P.z + o[2]); controls.target.set(P.x, P.y + 0.9, P.z); }
+        controls.update();
+      },
       follow() { following = true; const [p, t] = followCam(); camera.position.copy(p); controls.target.copy(t); controls.update(); },
       advance(sec) { for (let k = 0; k < sec * 20; k++) { simT += 1 / 20; step(timer.elapsedTime + simT, 1 / 20); } },
       snapshot(w = 1440, h = 900) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.render(scene, camera); const url = renderer.domElement.toDataURL('image/jpeg', 0.88); resize(); return url; },
       info: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, heapMB: (performance.memory?.usedJSHeapSize ?? 0) / 1e6 | 0 }),
     };
   }
-  return { renderer, scene, camera, controls, slab, paved, life, people, stills, steps, start, get look() { return look; } };
+  const setLook = (k) => { look = k; applyLook(); };
+  return { renderer, scene, camera, controls, slab, paved, life, people, stills, steps, start, cam, track, setLook, get look() { return look; } };
 }

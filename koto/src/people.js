@@ -10,7 +10,10 @@ export const FACE = { up: Math.PI / 2, down: -Math.PI / 2, east: 0, west: Math.P
 export class Agent {
   // route: [{ jump: [x, z] } | { to: [x, z], label? } | { do: mode, dur, face, label? } | { hide: dur }] — loops
   // (hide: gone indoors for a while) · { until: () => bool, face?, label? }: wait (idle) until it is true
-  constructor(scene, role, route, { heightAt, speed = 1.0, delay = 0, phase = 0 } = {}) {
+  // · { swap: role }: change clothes (a new figure in the same place) · on a 'do' step, lift raises the figure (a seat)
+  // onStep(step) is called once as each step begins (the story uses it for its lines, camera and events)
+  constructor(scene, role, route, { heightAt, speed = 1.0, delay = 0, phase = 0, onStep = null } = {}) {
+    this.onStep = onStep; this.entered = -1;
     this.p = person(role, { mode: 'idle' });
     this.p.userData.phase = phase;
     this.route = route; this.heightAt = heightAt; this.speed = speed;
@@ -23,7 +26,15 @@ export class Agent {
   place(x, z) { this.p.position.set(x, this.heightAt(x, z), z); }
   update(t, dt) {
     if (this.t < 0) { this.t += dt; this.p.visible = this.t >= 0; if (this.t < 0) return; }
-    const s = this.route[this.i], ud = this.p.userData;
+    let s = this.route[this.i];
+    if (this.entered !== this.i) { this.entered = this.i; this.onStep?.(s); }
+    if (s.swap) {
+      const q = person(s.swap, { mode: 'idle' }); q.userData.phase = this.p.userData.phase;
+      q.position.copy(this.p.position); q.rotation.copy(this.p.rotation); q.visible = this.p.visible;
+      this.p.parent.add(q); this.p.removeFromParent(); this.p = q;
+      this.next(); s = this.route[this.i]; this.entered = this.i; this.onStep?.(s);
+    }
+    const ud = this.p.userData;
     if (s.label) this.label = s.label;
     if (s.jump) { this.place(...s.jump); this.next(); }
     else if (s.until) { ud.mode = 'idle'; if (s.face !== undefined) this.p.rotation.y = s.face; if (s.until()) this.next(); }
@@ -37,12 +48,14 @@ export class Agent {
     } else {
       ud.mode = s.do;
       if (s.face !== undefined) this.p.rotation.y = s.face;
+      if (s.lift !== undefined) this.p.position.y = this.heightAt(this.p.position.x, this.p.position.z) + s.lift;
       this.t += dt;
       if (this.t >= s.dur) this.next();
     }
     ud.update(t);
   }
   next() { this.i = (this.i + 1) % this.route.length; this.t = 0; }
+  remove() { this.p.removeFromParent(); }
 }
 
 // ---------- routes ----------

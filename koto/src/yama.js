@@ -11,6 +11,7 @@ import { rickshaw } from '../../town/src/koto-ride.js';
 import { momiji, sakura, bamboo, sugiForest, mossPatch, Falling } from '../../town/src/seasons.js';
 import { Agent, group, still, yawTo, FACE } from './people.js';
 import { createWorld, v3 } from './world.js';
+import { story } from './story.js';
 
 // ---------- the land: flat in front (the bamboo), a hill rising behind to 9 ----------
 const X0 = -26, X1 = 26, Z0 = -40, Z1 = 40;
@@ -197,4 +198,45 @@ steps.push((t, dt) => {
   rk.userData.speed = rkStopped ? 0 : RK.v;
   rk.userData.update(t, dt);
 });
+// ---------- the story, chapter 2: by rickshaw through the grove to the shrine, and a little way up the torii ----------
+const srk = rickshaw({ riders: ['kimonoKid', 'baaKimono'], hood: 'down' }); srk.visible = false; scene.add(srk);
+const ride = { on: false, s: 0, wait: 0, stopped: false, done: false, said: false };
+let say = null;
+steps.push((t, dt) => {
+  if (!srk.visible) return;
+  if (ride.on) {
+    const mid = RK.L * 0.45;
+    if (!ride.said && ride.s >= mid) { ride.said = true; ride.stopped = true; ride.wait = 0; say?.('車夫さん「この竹は高さが10メートルもあるんですよ」ふたりは竹を見上げます'); world.cam(v3(-3, 2.2, 22.5), v3(2.5, 7.5, 18)); }
+    if (ride.stopped && (ride.wait += dt) > 6.5) { ride.stopped = false; world.track({ p: srk }, [3.5, 3.6, 6.5]); }
+    if (!ride.stopped) ride.s = Math.min(RK.L - 0.6, ride.s + 1.4 * dt);
+    if (ride.s >= RK.L - 0.6 && !ride.done) { ride.done = true; ride.on = false; }
+  }
+  const u = Math.max(0.002, ride.s / RK.L), p = D.getPointAt(u), T = D.getTangentAt(u);
+  srk.position.set(p.x + T.z * 0.4, 0.02, p.z - T.x * 0.4); srk.rotation.y = Math.atan2(-T.z, T.x);
+  srk.userData.speed = ride.on && !ride.stopped ? 1.4 : 0; srk.userData.update(t, dt);
+});
+const tale = story(world, { no: 2, heightAt, setup: () => { rk.visible = false; Object.assign(ride, { on: false, s: 0, wait: 0, stopped: false, done: false, said: false }); srk.visible = false; },
+  route: (who) => {
+    const o = who * 0.55, end = D.getPointAt(1);
+    return [
+      { jump: [0.9 + o, 38.6], say: '竹林の入り口。ここから人力車に乗ります', shot: [[5.5, 3.2, 44.5], [0, 1.3, 38]], call: () => { srk.visible = true; ride.s = 0.4; } },
+      { do: 'idle', dur: 3, face: FACE.west },
+      { hide: () => ride.done, say: '車夫さんの引く人力車で、竹林の小径へ', call: () => { ride.on = true; world.track({ p: srk }, [3.5, 3.6, 6.5]); } },
+      { jump: [end.x + 1.0 + o, end.z + 0.6], say: '稲荷の大きな鳥居の前で降りました', shot: [[6, 4.2, 22], [0, 3, 12]], call: () => { srk.visible = false; } },
+      { do: 'idle', dur: 2, face: FACE.up },
+      { to: [0.2 + o, 14.0] }, { do: 'bow', dur: 1.3, face: FACE.up, say: '鳥居をくぐる前に一礼' },
+      { to: [-6 + o, 9.6], say: '拝殿へ', shot: { track: [3.5, 4.2, 6.5] } },
+      { do: 'bow', dur: 1.1, face: FACE.up }, { do: 'pray', dur: 3, face: FACE.up, say: '鈴を鳴らして、手を合わせます', shot: [[-1, 4.5, 15], [-6, 2.5, 6]] }, { do: 'bow', dur: 1.1, face: FACE.up },
+      { to: [P[0][0] + 0.5 + o * 0.5, P[0][1] + 1.6], say: 'いよいよ千本鳥居へ', shot: { track: [3, 4, 6] } },
+      ...walk(pre, { side: 0.3 - o * 0.6, to: 0.55 }).map((q, i) => (i === 1 ? { to: q, say: '朱の鳥居がどこまでも続きます', shot: { track: [0.15, 0.95, 3.2] } } : { to: q })),
+      { do: 'photo', dur: 3, face: yawAlong(pre, 0.5) + Math.PI, say: '振り返って、鳥居のトンネルを写真に', shot: [VIEWS.tunnel[1].toArray(), VIEWS.tunnel[2].toArray()] },
+      { do: 'look', dur: 2.5, face: yawAlong(pre, 0.5) + Math.PI },
+      ...walk(pre, { side: -0.3 + o * 0.6, to: 0.55 }).reverse().map((q, i) => (i === 0 ? { to: q, say: '石段を下りて…', shot: { track: [3, 4, 6] } } : { to: q })),
+      { to: [1.5, 9] }, { do: 'idle', dur: 2, face: FACE.down },
+      { until: () => false, say: '「次は電車で海へ行こうか」', end: true },
+    ];
+  } });
+say = (t) => { document.getElementById('storyLine').textContent = t; };
+void tale;
+
 world.start();

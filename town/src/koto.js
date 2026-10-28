@@ -15,8 +15,8 @@ export const M = (c, o = {}) => mat(c, { roughness: 0.85, ...o });
 export const finish = (g, kind, extra = {}) => { const ud = { kind: 'building', building: kind, ...extra }; bakeStatic(g); g.userData = { ...g.userData, ...ud }; return g; };
 
 // ---------- 京町家 (a narrow, deep townhouse) ----------
-// shop: 'sweets' | 'tea' | 'craft' | 'home' · lattice: 'wood' | 'bengara' (red-brown)
-const SHOPS = { sweets: ['和菓子', '#2f4a6b'], tea: ['お茶', '#4f6b3a'], craft: ['扇子', '#7a2f3a'], home: null };
+// shop: 'sweets' | 'tea' | 'craft' | 'kimono' (rental) | 'home' · lattice: 'wood' | 'bengara' (red-brown)
+const SHOPS = { sweets: ['和菓子', '#2f4a6b'], tea: ['お茶', '#4f6b3a'], craft: ['扇子', '#7a2f3a'], kimono: ['着物', '#7a2f5a'], home: null };
 export function machiya({ w = 5.4, d = 11, shop = 'sweets', lattice = 'wood' } = {}) {
   const g = new THREE.Group();
   const H1 = 2.9, H2 = 2.1, front = d / 2;

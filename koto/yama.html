@@ -27,6 +27,9 @@
     .scenes a.on { background: var(--accent); color: #fff; }
     .hint { font-size: 11px; color: var(--muted); }
     .follow { font-size: 11.5px; border-left: 2px solid var(--accent); padding-left: 8px; }
+    .story { font-size: 11.5px; border-left: 2px solid #c9a24a; padding-left: 8px; }
+    .story a[hidden] { display: none; }
+    .story a { display: block; margin-top: 6px; color: #b5452b; font-weight: 600; text-decoration: none; }
     a { color: inherit; }
     @media (max-width: 720px) { .brand h1 { font-size: 40px; } .brand p { display: none; } .panel { left: 12px; right: 12px; width: auto; } }
   </style>
@@ -50,6 +53,8 @@
     <div class="seg" id="time"><button data-v="day" class="on">昼</button><button data-v="dusk">夕方</button><button data-v="night">夜</button></div>
     <div class="follow"><b>参拝について行く</b> <span id="followLine">竹林から稲荷へ、千本鳥居を山頂まで。</span>
       <div class="seg" style="margin-top:6px"><button id="follow">ついて行く</button></div></div>
+    <div class="story"><b>物語：ハナとおばあちゃん</b> <span id="storyTitle"></span><br><span id="storyLine">着物で古都をめぐる一日。</span>
+      <div class="seg" style="margin-top:6px"><button id="storyBtn">物語を見る</button></div><a id="storyNext" hidden></a></div>
     <div class="hint">ドラッグで回転 · ホイールでズーム · <a href="./parts.html">古都のパーツ</a> · <a href="../">Tiny Worlds</a></div>
   </aside>
   <script type="module" src="./src/yama.js"></script>

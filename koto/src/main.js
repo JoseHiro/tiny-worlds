@@ -7,11 +7,12 @@ import { roof } from '../../town/src/roofs.js';
 import { machiya, hondo, KOTO, M } from '../../town/src/koto.js';
 import { sanmon, gojunoto, shoro, temizuya, karesansui, pondBridge, ishidan, ishigaki, bochi } from '../../town/src/koto-temples.js';
 import { chaya, miyageya, kura, ryokan, kominkaCafe } from '../../town/src/koto-town.js';
-import { toro, andon, chochin, michishirube, takegaki, cat, pigeon, sagi, tobi } from '../../town/src/koto-props.js';
+import { toro, andon, chochin, michishirube, takegaki, omikujiRack, cat, pigeon, sagi, tobi } from '../../town/src/koto-props.js';
 import { rickshaw } from '../../town/src/koto-ride.js';
 import { sakura, momiji, matsu, ume, tsubaki, bamboo, mossPatch, Falling } from '../../town/src/seasons.js';
 import { Agent, worshipRoute, strollRoute, sweepRoute, group, still, yawTo, FACE } from './people.js';
 import { createWorld, v3 } from './world.js';
+import { story } from './story.js';
 
 const VIEWS = {
   all: ['全体', v3(70, 62, 78), v3(0, 2, -9)],
@@ -51,7 +52,7 @@ const town = new THREE.Group(); scene.add(town);
 const at = (obj, x, z, yaw = 0, y = null) => { obj.position.set(x, y ?? heightAt(x, z), z); obj.rotation.y = yaw; town.add(obj); return obj; };
 // shops along each side: [make, frontage, depth, how far the shop front reaches out]
 const LEFT = [
-  [() => machiya({ shop: 'sweets', d: 9 }), 5.4, 9, 0.6], [() => miyageya(), 5.4, 8, 1.7], [() => chaya(), 6, 5, 1.7],
+  [() => machiya({ shop: 'kimono', d: 9 }), 5.4, 9, 0.6], [() => miyageya(), 5.4, 8, 1.7], [() => chaya(), 6, 5, 1.7],
   [() => machiya({ shop: 'tea', d: 9, lattice: 'bengara' }), 5.4, 9, 0.6], [() => kura(), 5, 8, 1.3], [() => machiya({ shop: 'home', d: 9 }), 5.4, 9, 0.6],
 ];
 const RIGHT = [
@@ -104,6 +105,7 @@ const pond = at(pondBridge({ w: 10, d: 8 }), -16, -45.5, 0, T); life.push(pond);
 at(bochi({ n: 6 }), 20, -49, 0, T);
 for (const z of [-14, -20, -26, -32]) for (const s of [1, -1]) at(toro(), s * 2.8, z, 0, T);
 at(takegaki({ kind: 'koetsu', length: 6 }), -15, -24.6, 0, T);
+at(omikujiRack(), -11, -36.5, Math.PI / 2, T);
 plant(bamboo({ w: 40, d: 4, n: 90, h: 10, seed: 9 }), 0, -54);
 [[-6, -11, 'sakura', 5, true], [6.5, -10.5, 'sakura', 6], [-22, -40, 'momiji', 4], [-9, -50, 'momiji', 5], [9.5, -50, 'momiji', 6], [-22, -26, 'matsu', 7], [12, -14, 'ume', 2], [22, -38, 'sakura', 7], [-23, -16, 'momiji', 7], [23, -20, 'tsubaki', 5]].forEach(([x, z, k, s, w]) => plant(k === 'sakura' ? sakura({ seed: s, weeping: !!w }) : k === 'momiji' ? momiji({ seed: s }) : k === 'matsu' ? matsu({ seed: s, lean: 0.7 }) : k === 'ume' ? ume({ seed: s }) : tsubaki({ seed: s }), x, z, s));
 for (const [x, z] of [[-9, -22], [-21, -33], [10, -40], [-5, -40]]) plant(mossPatch({ seed: x }), x, z);
@@ -148,10 +150,52 @@ for (const [k, x] of [[0, -16], [1, -14.2]]) stills.push(still(scene, k ? 'kimon
 const ch = shops.find((s) => s.b.userData.building === 'chaya');
 const seatAt = (b, [lx, ly, lz]) => new THREE.Vector3(lx, ly, lz).applyMatrix4(b.matrixWorld);
 { ch.b.updateMatrixWorld(true); const yaw = ch.b.rotation.y - Math.PI / 2;
-  for (const [i, s] of ch.b.userData.seats.entries()) { const p = seatAt(ch.b, s); stills.push(still(scene, i ? 'yukataGirl' : 'kimonoWoman', 'sit', [p.x, p.y - 0.3, p.z], yaw)); }
+  { const p = seatAt(ch.b, ch.b.userData.seats[1]); stills.push(still(scene, 'yukataGirl', 'sit', [p.x, p.y - 0.3, p.z], yaw)); } // (the other bench is kept for the story)
   const w = seatAt(ch.b, [2.2, 0.1, 3.6]); stills.push(still(scene, 'teaStaff', 'idle', [w.x, w.y, w.z], ch.b.rotation.y - Math.PI / 2)); }
 // two neighbours talking in front of the house at the top
 { const h = shops.at(5); stills.push(still(scene, 'obaachan', 'idle', [-3.0, Hs(h.z - 0.6), h.z - 0.6], yawTo(0.4, 1))); stills.push(still(scene, 'senior', 'idle', [-2.6, Hs(h.z + 0.6), h.z + 0.6], yawTo(-0.4, -1))); }
+
+// ---------- the story, chapter 1: Hana and Grandma arrive at the foot of the street, change into kimono, and visit ----------
+{
+  const rental = shops[0].b; rental.updateMatrixWorld(true);
+  const door = new THREE.Vector3(1.62, 0, 4.5 + 0.6).applyMatrix4(rental.matrixWorld);
+  const seat = seatAt(ch.b, ch.b.userData.seats[0]);
+  const Y = (x, z, dy) => heightAt(x, z) + dy;
+  story(world, { no: 1, heightAt, cast: ['child', 'obaachan'], route: (who) => {
+    const o = who * 0.55;
+    return [
+      { jump: [-1.6 - o, 35.6], say: 'ハナとおばあちゃんは駅から歩いて、参道の坂の下に着きました', shot: [[3.5, 4.4, 41], [-3, 1.6, 30]] },
+      { to: [-1.8 - o, door.z + 1.4] },
+      { to: [door.x + 0.2, door.z + o * 0.6], say: 'まずは着物レンタルのお店へ', shot: [[1.8, Y(0, door.z, 3.4), door.z + 4.5], [door.x, Y(0, door.z, 1.2), door.z]] },
+      { hide: 6 + o },
+      { swap: who ? 'baaKimono' : 'kimonoKid' },
+      { to: [-2.0 - o, door.z - 0.8], say: '着物に着替えて出てきました！ ハナは桜色、おばあちゃんは藤色' },
+      { do: 'idle', dur: 2.5, face: FACE.east },
+      { to: [-2.0 - o, seat.z + 2.2], say: '石畳の坂をゆっくり上ります', shot: { track: [3.2, 3.6, 6.5] } },
+      { to: [seat.x + 0.3, seat.z + (who ? 0.42 : -0.42)], say: '茶屋でひと休み' },
+      { do: 'sit', lift: 0.3, dur: 8, face: FACE.east, say: 'お団子とお茶をいただきます。「おいしいね」', shot: [[1.2, Y(0, seat.z, 2.6), seat.z + 3.6], [seat.x, Y(0, seat.z, 0.9), seat.z]] },
+      { to: [-1.8 - o, seat.z - 1.6], say: '坂の上の石段へ', shot: { track: [3.2, 4, 6.5] } },
+      { to: [-0.6 - o * 0.6, -3.3] },
+      { do: 'bow', dur: 1.3, face: FACE.up, say: '山門の前で一礼', shot: [[2.6, 6.2, 3.5], [0, 4.6, -5]] },
+      { to: [-0.5 - o * 0.6, -12], say: '山門をくぐって境内へ' },
+      { to: [4.7, -14.3 - o], say: '手水舎で手と口を清めます', shot: [[0.5, 6.5, -8.5], [6, 3.8, -15]] },
+      { do: 'hold', dur: 3, face: FACE.east },
+      { to: [-0.3 - o, -35.6], say: '本堂へ', shot: { track: [4, 5, 7] } },
+      { do: 'bow', dur: 1.2, face: FACE.up, say: '一礼して…', shot: [[5, 7.5, -27], [-0.5, 5, -37]] },
+      { do: 'pray', dur: 3.2, face: FACE.up, say: 'お賽銭を入れて、手を合わせます' },
+      { do: 'bow', dur: 1.2, face: FACE.up },
+      { to: [-6.5, -34.4] },
+      { to: [-10.1, -36.2 - o], say: 'おみくじを引いてみよう', shot: [[-5.2, 6.2, -31], [-10.6, 4.4, -36.6]] },
+      { do: 'hold', dur: 2.6, face: FACE.west },
+      { do: 'look', dur: 1.6, face: FACE.west, say: 'ドキドキ… ハナのおみくじは——' },
+      { do: who ? 'idle' : 'armsUp', dur: 2.6, face: FACE.east, say: '大吉！ ハナは両手を上げて大喜び' },
+      { do: 'hold', dur: 2.6, face: FACE.west, say: 'おみくじを結んで、願いごとを' },
+      { to: [-6.5, -33] }, { to: [-8 - o, -20.5], say: 'ゴーン……と鐘楼の鐘の音', shot: [[-4.5, 7.5, -8.5], [-13, 5, -15]] },
+      { do: 'look', dur: 3.5, face: yawTo(-5, 5) },
+      { until: () => false, say: 'さあ、次は人力車で竹林へ。', end: true },
+    ];
+  } });
+}
 
 // the rickshaw: up the left lane, round at the top, down the right lane, round at the foot
 const rk = rickshaw({ riders: ['kimonoWoman', 'kimonoMan'] }); scene.add(rk);

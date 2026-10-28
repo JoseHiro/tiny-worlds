@@ -10,6 +10,7 @@ import { rickshaw } from '../../town/src/koto-ride.js';
 import { sakura, momiji, matsu, yanagi, tsubaki, bamboo, mossPatch, Falling } from '../../town/src/seasons.js';
 import { Agent, group, still, FACE } from './people.js';
 import { createWorld, v3 } from './world.js';
+import { story } from './story.js';
 
 // the rows along the lane, north of the canal: [make, frontage, depth, how far the front reaches past the house]
 const LEFT = [
@@ -158,4 +159,32 @@ steps.push((t, dt) => {
   walker.position.x = -19 + k * 12; walker.rotation.y = u < 1 ? 0 : Math.PI;
   walker.userData.mode = Math.abs(Math.sin(t * 0.3)) < 0.2 ? 'sit' : 'walk';
 });
+// ---------- the story, chapter 4: the lane at dusk, two maiko passing, the bridge and the shrine, and night falls ----------
+let pass = [];
+story(world, { no: 4, heightAt, speed: 0.75, setup: () => {
+  world.setLook('dusk');
+  for (const a of pass) { a.remove(); people.splice(people.indexOf(a), 1); }
+  pass = [];
+}, route: (who) => {
+  const o = who * 0.5;
+  return [
+    { jump: [-1.1 - o, 34.2], say: '夕暮れの花街。提灯に灯りがともりはじめました', shot: [VIEWS.lane[1].toArray(), VIEWS.lane[2].toArray()] },
+    { to: [-1.1 - o, 20], say: '格子の続く石畳を、ゆっくり歩きます', shot: { track: [0.3, 4.2, 7] } },
+    { to: [-1.1 - o, 14], call: () => { // two maiko come up the lane toward them
+      pass = group(scene, ['maiko', 'maiko'], [{ jump: [1.0, -4] }, { to: [1.0, 9.6] }, { do: 'bow', dur: 1.8, face: FACE.west }, { to: [1.0, 37] }, { until: () => false }], { heightAt, speed: 0.55 });
+      people.push(...pass);
+    } },
+    { to: [-1.1 - o, 10.2], say: '向こうから、舞妓さんがふたり…', shot: [[-0.3, 3.4, 1.5], [0, 1.4, 11]] },
+    { until: () => pass[0] && pass[0].p.position.z > 8.6, face: FACE.east },
+    { do: 'bow', dur: 1.9, face: FACE.east, say: 'すれ違いざまに、ハナがそっと会釈。舞妓さんもにっこり' },
+    { to: [-1.1 - o, CANAL + 3], say: '白川へ', shot: { track: [0.3, 4.2, 7] } },
+    { to: [-0.9 - o * 0.4, CANAL + 0.2] },
+    { do: 'look', dur: 4.5, face: FACE.east, say: '石橋の上から。柳がゆれて、水に提灯の灯りが映ります', shot: [[-7.5, 2.6, CANAL + 1.2], [1, 0.8, CANAL]] },
+    { to: [-0.8, CANAL + 3] }, { to: [2.6, CANAL + 6.4 + o * 0.6], say: '橋のたもとの小さな祠に、手を合わせて', shot: [[-1.5, 3.2, CANAL + 9.5], [4.5, 1, CANAL + 6.4]] },
+    { do: 'pray', dur: 3.2, face: FACE.east },
+    { do: 'look', dur: 5, face: FACE.up, say: 'すっかり夜。路地いっぱいに提灯の灯り', call: () => world.setLook('night'), shot: [[0.4, 4.4, CANAL - 6], [0, 2, 12]] },
+    { until: () => false, say: '「また来ようね」——ハナとおばあちゃんの古都の一日、おしまい', end: true },
+  ];
+} });
+
 world.start();

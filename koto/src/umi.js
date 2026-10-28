@@ -14,6 +14,7 @@ import { sakura, momiji, matsu, ume, ajisai, tsubaki, sugiForest, Falling } from
 import { person } from '../../airport/src/parts.js';
 import { Agent, group, still, yawTo, FACE } from './people.js';
 import { createWorld, v3 } from './world.js';
+import { story } from './story.js';
 
 // ---------- the land ----------
 const X0 = -28, X1 = 28, Z0 = -44, Z1 = 44;
@@ -229,5 +230,30 @@ steps.push((t, dt) => {
     ud.braking = stop; ud.update(dt);
   }
 });
+// ---------- the story, chapter 3: off the tram at はせ, up the street to the Buddha, and down to the sea at sundown ----------
+story(world, { no: 3, heightAt, setup: () => world.setLook('day'), route: (who) => {
+  const o = who * 0.55, noCars = () => !cars.some((c) => Math.abs(c.userData.x) < 5);
+  return [
+    { jump: [-17.5 - o, TRACK - 2.0], say: '電車に乗って、海辺の駅「はせ」へ', shot: [VIEWS.station[1].toArray(), VIEWS.station[2].toArray()] },
+    { hide: () => tramAtStation && !tramMoving },
+    { do: 'idle', dur: 2.5, face: FACE.down, say: '着物のふたりが電車から降りてきました' },
+    { to: [-13 - o * 0.3, 3.6 - o * 0.4] }, { to: [-1.2 - o, 3.6 - o * 0.4], say: '長谷の通りを大仏へ', shot: { track: [1.2, 6, 8] } },
+    { to: [-1.2 - o, GATE + 3.2] }, { do: 'bow', dur: 1.3, face: FACE.up, say: '山門で一礼', shot: [[2.4, 2.8, GATE + 9.5], [0, 2.6, GATE]] },
+    { to: [-0.6 - o * 0.5, GATE - 4] },
+    { to: [-2.2 - o, -23.2], say: '大仏さま！', shot: [[-7, 2.6, -17.5], [0, 5.2, -30]] },
+    { do: 'look', dur: 3.5, face: yawTo(2.2, -8), say: '「大きい！」ハナは思わず見上げます' },
+    { do: 'photo', dur: 2.6, face: yawTo(2.2, -8), say: 'おばあちゃんとならんで、写真を一枚' },
+    { to: [-0.9 + o * 0.8, -24.3], say: '香炉の前で手を合わせます', shot: [[-4, 3.2, -19], [0, 1.6, -25.5]] },
+    { do: 'pray', dur: 3, face: FACE.up },
+    { to: [0.9 + o * 0.6, GATE - 4], say: '海へ下りてみよう', shot: { track: [1.2, 6.5, 8.5] } }, { to: [1.2 + o, GATE + 3.2] }, { to: [1.2 + o, TRACK - 2.4] },
+    { until: gateOpen, face: FACE.down, say: 'カンカンカン… 踏切で電車を待ちます' },
+    { to: [1.2 + o, TRACK + 2.4] }, { to: [0.6 + o, ROAD[0] - 0.4] }, { until: noCars, face: FACE.down }, { to: [0.6 + o, ROAD[1] + 0.4], say: '横断歩道を渡って浜へ' },
+    { to: [0.6 + o, WALL + 0.1] }, { to: [0.6 + o, STEPS.z + 0.6] }, { to: [2.2 + o, 22.6] },
+    { do: 'look', dur: 4, face: FACE.down, say: '砂浜から海を眺めます', shot: [[-3.5, 2.2, 15.5], [5, 0.6, 30]] },
+    { do: 'look', dur: 4, face: FACE.down, say: '日が傾いて、海がだんだん金色に', call: () => world.setLook('dusk') },
+    { until: () => false, say: '「暗くなる前に、花街の路地も歩いてみようか」', end: true },
+  ];
+} });
+
 world.start();
 window.__umi = { crossing: () => ({ shut: gateShut, closed, tramX, tramMoving }) };
