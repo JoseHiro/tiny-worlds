@@ -511,6 +511,22 @@ const ROLES = {
   // 舞妓さん: the long hanging obi (だらり), tall clogs (おこぼ), the big hairdo with flower pins — shown plainly, without white make-up
   maiko: { robe: 0x7a2f5a, pattern: 'sakura', obi: 0x1f2a3a, darari: true, okobo: true, hat: 'maiko', kanzashi: 0xf2a3c4, collarColor: 0xc8283a, stride: 0.2, pace: 0.6, longSleeve: true },
   baaKimono: { robe: 0x8a7aa8, pattern: 'kiku', obi: 0xc9b48a, otaiko: true, hat: 'grey', shoes: 0x5a4a5a, stride: 0.3, pace: 0.65 }, // Hana's grandmother in a wisteria kimono
+  // café people (cafe/DESIGN.md §5)
+  barista: { top: 0xf2ede2, apron: 0x4a5f7a, legs: 0x3a3f4a, hat: 'bun', hair: 0x6b4a35, shoes: 0x6b4a35 },
+  barista2: { top: 0x2a2a2c, apron: 0x8a5a3a, legs: 0x3a3f4a, hat: 'baseball', capColor: 0x2a2a2c },
+  macWorker: { top: 0x8a9aa8, legs: 0x2f3e57, hat: 'hair', glasses: true, carry: 'mug' },
+  callWorker: { top: 0x2f3e57, legs: 0x3a3f4a, hat: 'long', hair: 0x2a2018, headphones: 0xf2ede2, carry: 'mug' },
+  designer: { top: 0xd9a441, legs: 0x3a3f4a, hat: 'beret', capColor: 0xc9714a, hair: 0x2a2018, carry: 'mug' },
+  studentA: { top: 0xe2a9a0, legs: 0x2f3e57, hat: 'bob', backpack: 0x9db59a },
+  studentB: { top: 0xf6f1e6, legs: 0x5a6b7a, hat: 'hair', glasses: true, headphones: 0x2a2a2c },
+  reader: { top: 0x9db59a, legs: 0x6b5a48, hat: 'long', hair: 0x6b4a35, glasses: true, carry: 'mug' },
+  chatA: { top: 0xc9714a, legs: 0x2f3e57, hat: 'long', hair: 0x2a2018, carry: 'mug' },
+  chatB: { top: 0xf3ead8, legs: 0x6b5a48, hat: 'bun', hair: 0x8a6a4a, carry: 'mug' },
+  oldman: { top: 0x7a6a58, legs: 0x4a4038, hat: 'flatcap', capColor: 0x6b5a48, pace: 0.6, carry: 'mug' },
+  parent: { top: 0x2f3e57, legs: 0x6b5a48, hat: 'long', hair: 0x4a3426, carry: 'mug' },
+  rainKid: { top: 0xf2c94c, legs: 0x2f3e57, hat: 'rainhat', capColor: 0xf2c94c, scale: 0.7, shoes: 0xf2c94c },
+  rainComer: { top: 0x5f6b5a, legs: 0x2f3e57, hat: 'hair', carry: 'umbrella' },
+  regular: { top: 0xc9714a, legs: 0x3a3f4a, hat: 'hair', glasses: true, carry: 'mug' },
   okami: { robe: 0x5a4a5a, pattern: 'plain', obi: 0xc9b48a, otaiko: true, hat: 'updo', shoes: 0x2a2018, stride: 0.3, pace: 0.7 }, // the mistress of a teahouse (女将)
   // monks, shrine priest and shrine maiden
   monkBroom: { robe: 0x6b5a48, pattern: 'plain', obi: 0x6b5a48, hat: 'bald', shoes: 0xf2ede2, carry: 'broom', stride: 0.35, pace: 0.6 }, // a monk in work clothes (作務衣) sweeping
@@ -534,7 +550,7 @@ const ROLES = {
 };
 // things carried in the right hand (s = 1 arm); the arm holds still while the other swings
 // how far forward the carrying arm is held
-const HOLD = { wagasa: 0.6, uchiwa: 1.1, broom: 0.5, bowl: 1.2, tray: 1.3, shears: 0.4, flag: 0.9, camera: 1.3, basket: 0.25 };
+const HOLD = { umbrella: 0.6, mug: 0.25, wagasa: 0.6, uchiwa: 1.1, broom: 0.5, bowl: 1.2, tray: 1.3, shears: 0.4, flag: 0.9, camera: 1.3, basket: 0.25 };
 const KOTO_GOLD = 0xc9a24a;
 function carryItem(kind) {
   const g = new THREE.Group();
@@ -550,6 +566,10 @@ function carryItem(kind) {
   else if (kind === 'flag') { g.add(cyl(0.01, 0.01, 0.9, mat(0xc9ccd1), 0, 0.4, 0, 4)); g.add(box(0.02, 0.18, 0.26, mat(0xf2c94c), 0, 0.75, 0.14)); }
   else if (kind === 'camera') { g.add(box(0.08, 0.06, 0.12, mat(0x1d1f23), 0.06, 0.02, 0)); g.add(cyl(0.025, 0.025, 0.05, mat(0x3a3f4a), 0.11, 0.02, 0, 8)).children.at(-1).rotation.z = Math.PI / 2; }
   else if (kind === 'basket') { g.add(cyl(0.1, 0.08, 0.1, mat(0xb89a6a), 0, -0.1, 0, 10)); g.add(mesh(new THREE.TorusGeometry(0.08, 0.008, 4, 10, Math.PI), mat(0xb89a6a), 0, -0.05, 0)); }
+  else if (kind === 'umbrella') { // a western umbrella, open
+    g.add(cyl(0.012, 0.012, 1.0, mat(0x2a2a2c), 0, 0.45, 0, 5));
+    g.add(mesh(new THREE.SphereGeometry(0.55, 16, 6, 0, Math.PI * 2, 0, Math.PI / 2.6), mat(0x2f3e57, { side: THREE.DoubleSide, roughness: 0.6 }), 0, 0.72, 0));
+  } else if (kind === 'mug') { g.add(cyl(0.045, 0.04, 0.09, mat(0xf6f1e6), 0.03, 0.02, 0, 10)); g.add(mesh(new THREE.TorusGeometry(0.025, 0.008, 4, 8), mat(0xf6f1e6), 0.03, 0.02, 0.05)); }
   void paper;
   return g;
 }
@@ -697,8 +717,8 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     head.add(rbox(0.14, 0.02, 0.24, 0.01, mat(PALETTE.ink), 0.2, 0.1, 0));
     head.add(box(0.02, 0.04, 0.08, mat(PALETTE.yellow, { metalness: 0.6 }), 0.2, 0.18, 0));
   } else if (cfg.hat === 'bun') {
-    head.add(dome(0.212, PALETTE.brown, 0.0, Math.PI * 0.55));
-    head.add(mesh(new THREE.SphereGeometry(0.09, 12, 10), mat(PALETTE.brown), -0.17, 0.12, 0));
+    head.add(dome(0.212, cfg.hair ?? PALETTE.brown, 0.0, Math.PI * 0.55));
+    head.add(mesh(new THREE.SphereGeometry(0.09, 12, 10), mat(cfg.hair ?? PALETTE.brown), -0.17, 0.12, 0));
   } else if (cfg.hat === 'long') {
     const hc = cfg.hair ?? PALETTE.brown;
     head.add(dome(0.214, hc, 0.0, Math.PI * 0.55));
@@ -741,6 +761,16 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     head.add(box(0.06, 0.05, 0.12, mat(0xc8283a), -0.06, 0.32, 0)); // the red silk in it
     for (let k = 0; k < 5; k++) head.add(mesh(new THREE.SphereGeometry(0.035, 6, 5), mat([cfg.kanzashi, 0xf6f4ee, 0xf2c94c][k % 3]), 0.02 - k * 0.02, 0.22 - (k % 2) * 0.04, 0.12 + k * 0.012)); // flower pins
     for (let k = 0; k < 3; k++) head.add(box(0.012, 0.12, 0.02, mat(0xf2c94c, { metalness: 0.5 }), 0.03, 0.1 - k * 0.0, 0.17 + k * 0.025)); // dangling strands
+  } else if (cfg.hat === 'beret') {
+    head.add(dome(0.212, cfg.hair ?? PALETTE.ink, 0.0, Math.PI * 0.55));
+    const b2 = mesh(new THREE.SphereGeometry(0.2, 14, 8), mat(cfg.capColor)); b2.scale.set(1.05, 0.35, 1.05); b2.position.set(-0.02, 0.17, 0.02); b2.rotation.x = 0.25; head.add(b2);
+  } else if (cfg.hat === 'flatcap') { // a flat cap (ハンチング)
+    head.add(dome(0.21, 0xd9d6d0, 0.0, Math.PI * 0.5));
+    const c2 = mesh(new THREE.SphereGeometry(0.22, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat(cfg.capColor)); c2.scale.y = 0.45; c2.position.y = 0.08; head.add(c2);
+    head.add(rbox(0.14, 0.02, 0.26, 0.01, mat(cfg.capColor), 0.2, 0.09, 0));
+  } else if (cfg.hat === 'rainhat') { // a rain hat with a wide brim
+    head.add(dome(0.215, cfg.capColor, 0.02));
+    head.add(cyl(0.3, 0.3, 0.02, mat(cfg.capColor), 0, 0.05, 0, 18));
   } else if (cfg.hat === 'straw') { // a wide straw hat
     head.add(cyl(0.34, 0.34, 0.02, mat(0xe0c27a, { roughness: 0.9 }), 0, 0.12, 0, 20));
     head.add(dome(0.2, 0xe0c27a, 0.1));
@@ -753,7 +783,7 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     head.add(rbox(0.16, 0.025, 0.24, 0.012, mat(cfg.capColor), 0.2, 0.04, 0));
     head.add(mesh(new THREE.SphereGeometry(0.025, 8, 6), mat(cfg.capColor), 0, 0.235, 0));
   } else {
-    const hair = dome(0.212, cfg.hat === 'grey' ? 0xd9d6d0 : PALETTE.ink, 0.0, Math.PI * 0.5);
+    const hair = dome(0.212, cfg.hat === 'grey' ? 0xd9d6d0 : cfg.hair ?? PALETTE.ink, 0.0, Math.PI * 0.5);
     hair.rotation.z = 0.25;
     head.add(hair);
     if (cfg.hat === 'grey') {
@@ -764,6 +794,14 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
       }
       head.add(box(0.01, 0.008, 0.07, mat(PALETTE.ink), 0.198, 0.02, 0));
     }
+  }
+  if (cfg.glasses && cfg.hat !== 'grey') {
+    for (const s of [1, -1]) { const lens = mesh(new THREE.TorusGeometry(0.038, 0.007, 6, 16), mat(PALETTE.ink), 0.19, 0.01, s * 0.075); lens.rotation.y = Math.PI / 2; head.add(lens); }
+    head.add(box(0.01, 0.008, 0.07, mat(PALETTE.ink), 0.198, 0.02, 0));
+  }
+  if (cfg.headphones) { // a band over the head, cups on the ears
+    const band = mesh(new THREE.TorusGeometry(0.215, 0.018, 6, 18, Math.PI), mat(cfg.headphones)); band.rotation.y = Math.PI / 2; head.add(band);
+    for (const s of [1, -1]) head.add(cyl(0.06, 0.06, 0.05, mat(cfg.headphones), 0, 0, s * 0.215, 12)).children.at(-1).rotation.x = Math.PI / 2;
   }
   body.add(head);
 
@@ -783,7 +821,34 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     const m = ud.mode;
     const phase = t * 7 * (cfg.pace ?? 1) + (ud.phase ?? 0);
     head.rotation.y = 0; head.rotation.z = 0; body.rotation.z = 0;
-    if (m === 'bow' || m === 'pray' || m === 'photo' || m === 'look' || m === 'sweep') { // temple and shrine gestures
+    if (m.startsWith('sit') && m !== 'sit') { // seated at a table: typing, sipping, reading, writing, thinking, a stretch
+      for (const l of legs) l.rotation.z = Math.PI / 2;
+      body.position.y = 0;
+      const ph = ud.phase ?? 0;
+      arms[0].rotation.x = arms[1].rotation.x = 0;
+      if (m === 'sitType') {
+        arms[0].rotation.z = 1.2 + Math.max(0, Math.sin(t * 13 + ph)) * 0.1; arms[1].rotation.z = 1.2 + Math.max(0, Math.sin(t * 11 + 1.7 + ph)) * 0.1;
+        arms[0].rotation.x = 0.25; arms[1].rotation.x = -0.25; head.rotation.z = -0.12 + Math.sin(t * 0.3 + ph) * 0.04;
+      } else if (m === 'sitSip') { // the cup to the mouth, slowly
+        const k = (Math.sin(t * 0.8 + ph) + 1) / 2;
+        arms[0].rotation.z = 1.2 + k * 1.15; arms[0].rotation.x = 0.35; arms[1].rotation.z = 0.7; head.rotation.z = k * 0.12;
+      } else if (m === 'sitRead') {
+        arms[0].rotation.z = arms[1].rotation.z = 1.05; arms[0].rotation.x = 0.4; arms[1].rotation.x = -0.4; head.rotation.z = -0.3;
+        if (Math.sin(t * 0.25 + ph) > 0.97) arms[0].rotation.x = 0.9; // turning a page
+      } else if (m === 'sitWrite') {
+        arms[0].rotation.z = 1.05 + Math.sin(t * 6 + ph) * 0.05; arms[0].rotation.x = 0.3 + Math.sin(t * 9 + ph) * 0.06; arms[1].rotation.z = 0.95; arms[1].rotation.x = -0.35; head.rotation.z = -0.32;
+      } else if (m === 'sitThink') { // chin on a hand, gazing
+        arms[1].rotation.z = 2.0; arms[1].rotation.x = -0.55; arms[0].rotation.z = 0.9; arms[0].rotation.x = 0.3; head.rotation.z = 0.05; head.rotation.y = Math.sin(t * 0.3 + ph) * 0.35;
+      } else if (m === 'sitStretch') {
+        const k = Math.min(1, (Math.sin(t * 0.7 + ph) + 1.2) / 1.6);
+        arms[0].rotation.x = -2.7 * k; arms[1].rotation.x = 2.7 * k; arms[0].rotation.z = arms[1].rotation.z = 0.3 * (1 - k); head.rotation.z = 0.25 * k;
+      } else { arms[0].rotation.z = arms[1].rotation.z = 0.6; head.rotation.y = Math.sin(t * 0.5 + ph) * 0.4; } // sitChat
+    } else if (m === 'pour' || m === 'wipe') { // the barista at work
+      for (const l of legs) l.rotation.z = 0;
+      body.position.y = 0; arms[0].rotation.x = arms[1].rotation.x = 0;
+      if (m === 'pour') { arms[0].rotation.z = 1.3 + Math.sin(t * 1.4) * 0.15; arms[0].rotation.x = 0.35; arms[1].rotation.z = 1.25; arms[1].rotation.x = -0.35; head.rotation.z = -0.3; }
+      else { arms[0].rotation.z = 1.0; arms[0].rotation.x = 0.3 + Math.sin(t * 4) * 0.4; arms[1].rotation.z = 0.2; head.rotation.z = -0.2; }
+    } else if (m === 'bow' || m === 'pray' || m === 'photo' || m === 'look' || m === 'sweep') { // temple and shrine gestures
       for (const l of legs) l.rotation.z = 0;
       body.position.y = 0;
       arms[0].rotation.x = arms[1].rotation.x = 0;
@@ -847,6 +912,12 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     }
   };
   const baseUpdate = ud.update;
-  if (ud.item) ud.update = (t) => { baseUpdate(t); if (ud.mode === 'idle' || ud.mode === 'walk') arms[0].rotation.z = HOLD[cfg.carry] ?? 0.5; ud.item.rotation.z = -arms[0].rotation.z; };
+  if (ud.item) ud.update = (t) => {
+    baseUpdate(t);
+    if (ud.mode === 'idle' || ud.mode === 'walk') arms[0].rotation.z = HOLD[cfg.carry] ?? 0.5;
+    ud.item.rotation.z = -arms[0].rotation.z;
+    if (cfg.carry === 'mug') ud.item.visible = ud.mode === 'sitSip' || ud.mode === 'walk' || ud.mode === 'idle'; // otherwise it is on the table
+    if (cfg.carry === 'umbrella') ud.item.visible = ud.umbrella !== false;
+  };
   return compactRig(g);
 }

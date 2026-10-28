@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Café Parts — Tiny Worlds</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg: #eef1ea; --card: #e1e8df; --line: #cad5c6; --ink: #1c2232; --muted: #66705f; --accent: #d9482b; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 Inter, system-ui, sans-serif; }
+    #stage { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+    header { padding: 40px 32px 8px; max-width: 1400px; margin: 0 auto; }
+    .eyebrow { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+    h1 { font: italic 400 56px/1 'Instrument Serif', serif; margin: 6px 0 10px; }
+    h1 span { color: var(--accent); }
+    .lede { color: var(--muted); max-width: 640px; margin: 0; }
+    nav#tabs { max-width: 1400px; margin: 18px auto 0; padding: 0 32px; display: flex; flex-wrap: wrap; gap: 6px; }
+    nav#tabs button { margin: 0; border-color: var(--line); background: var(--card); }
+    nav#tabs button.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+    .seasons { max-width: 1400px; margin: 8px auto 0; padding: 0 32px; display: flex; gap: 6px; }
+    .seasons button { margin: 0; }
+    .seasons button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    main { max-width: 1400px; margin: 0 auto; padding: 24px 32px 64px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; cursor: pointer; }
+    .card:hover { border-color: var(--ink); }
+    .card.wide { grid-column: 1 / -1; }
+    .view { aspect-ratio: 4 / 3; }
+    .card.wide .view { aspect-ratio: 21 / 9; }
+    .meta { padding: 10px 14px 12px; border-top: 1px solid var(--line); }
+    .meta span { color: var(--muted); font-size: 12px; }
+    .meta small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+    #detail { position: fixed; inset: 0; z-index: 1; background: var(--bg); display: none; grid-template-columns: 1fr 300px; }
+    #detail.open { display: grid; }
+    #detail aside { border-left: 1px solid var(--line); padding: 32px 24px; display: flex; flex-direction: column; gap: 12px; }
+    #detail h2 { font: italic 400 34px/1.05 'Instrument Serif', serif; margin: 0; }
+    #detail p { color: var(--muted); margin: 0; }
+    button { font: 500 12px Inter, sans-serif; color: var(--ink); background: transparent; border: 1px solid var(--ink); border-radius: 8px; padding: 7px 12px; cursor: pointer; margin-top: auto; }
+    a { color: inherit; }
+    @media (max-width: 720px) { header, main, nav#tabs { padding-left: 16px; padding-right: 16px; } #detail { grid-template-columns: 1fr; grid-template-rows: 1fr auto; } .card.wide .view { aspect-ratio: 4 / 3; } }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
+  </script>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <header>
+    <div class="eyebrow">Tiny Worlds · World 04 · Parts v0.1</div>
+    <h1>Café<span>.</span></h1>
+    <p class="lede">カフェの部品のカタログです。店の殻（近い壁が消えるドールハウス）、カウンターとエスプレッソマシン、窓際の席、椅子とテーブル、ソファ、照明、植物、カップと湯気、ノートPC、カフェの人たち、雨の窓。<br><a href="./nordic.html">北欧のカフェ</a> · <a href="../">Tiny Worlds</a> · <a href="https://github.com/JoseHiro/tiny-worlds/blob/main/cafe/DESIGN.md">設計書</a></p>
+  </header>
+  <nav id="tabs"></nav>
+  <nav id="seasons" class="seasons"></nav>
+  <main id="grid"></main>
+  <section id="detail">
+    <div id="detailView"></div>
+    <aside><div class="eyebrow">Café</div><h2 id="dName"></h2><p id="dNote"></p><p style="font-size:11px">ドラッグで回転 · ホイールでズーム · Esc で戻る</p><button id="close">← 一覧に戻る</button></aside>
+  </section>
+  <script type="module" src="./src/parts.js"></script>
+</body>
+</html>

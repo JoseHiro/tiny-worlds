@@ -11,7 +11,8 @@ import { setSeason, onSeason, SEASONS } from '../../town/src/seasons.js';
 const $ = (id) => document.getElementById(id);
 export const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
-const LOOKS = {
+export const LOOKS = {
+  morning: { hemi: [1.2, '#fff3e0', '#c9c4b4'], sun: [2.0, '#ffe2b8', [60, 25, -10]], lamps: 0.3, sky: '#f2e6d6' },
   day: { hemi: [1.4, '#fffaf0', '#c9c4b4'], sun: [2.5, '#fff4e0', [40, 60, 30]], lamps: 0 },
   dusk: { hemi: [1.1, '#ffe0cc', '#8a7a8a'], sun: [1.1, '#ff9a5a', [70, 22, 10]], lamps: 1, sky: '#d9a88a' },
   night: { hemi: [0.42, '#8a9ad0', '#2a2434'], sun: [0.35, '#a9b8e8', [-30, 50, 20]], lamps: 1.4, sky: '#1c2236' }, // moonlight
@@ -103,8 +104,8 @@ export function createWorld({ shadow = 62, target = [0, 0, 0], views, follow = n
   camera.position.copy(VIEWS[first][1]); controls.target.copy(VIEWS[first][2]);
   $('views').children[0].classList.add('on');
   let season = 'spring';
-  for (const [k, S] of Object.entries(SEASONS)) { const b = document.createElement('button'); b.textContent = S.ja; b.dataset.v = k; b.onclick = () => { setSeason(k); season = k; [...$('seasons').children].forEach((x) => x.classList.toggle('on', x === b)); }; $('seasons').appendChild(b); }
-  $('seasons').children[0].classList.add('on');
+  if ($('seasons')) for (const [k, S] of Object.entries(SEASONS)) { const b = document.createElement('button'); b.textContent = S.ja; b.dataset.v = k; b.onclick = () => { setSeason(k); season = k; [...$('seasons').children].forEach((x) => x.classList.toggle('on', x === b)); }; $('seasons').appendChild(b); }
+  $('seasons')?.children[0]?.classList.add('on');
   onSeason((name, S) => { grass.color.set(S.grass); if (look === 'day') scene.background.set(S.sky); });
   function applyLook() {
     const L = LOOKS[look];
@@ -116,7 +117,7 @@ export function createWorld({ shadow = 62, target = [0, 0, 0], views, follow = n
   }
   for (const b of $('time').children) b.onclick = () => { look = b.dataset.v; applyLook(); };
   // the story's camera: fly to a set-up shot, or keep a person in view
-  function cam(p, t) { following = false; storyCam = null; fly = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: p.clone(), t1: t.clone() }; [...$('views').children].forEach((b) => b.classList.remove('on')); }
+  function cam(p, t, dur = 1.6) { following = false; storyCam = null; fly = { t: 0, dur, p0: camera.position.clone(), t0: controls.target.clone(), p1: p.clone(), t1: t.clone() }; [...$('views').children].forEach((b) => b.classList.remove('on')); }
   function track(agent, offset = [4, 4.5, 6]) { fly = null; following = false; storyCam = { agent, offset }; [...$('views').children].forEach((b) => b.classList.remove('on')); }
   if (follow) $('follow').onclick = () => { storyCam = null; following = !following; $('follow').classList.toggle('on', following); fly = null; [...$('views').children].forEach((b) => b.classList.remove('on')); };
 
@@ -141,7 +142,7 @@ export function createWorld({ shadow = 62, target = [0, 0, 0], views, follow = n
       step(t, dt);
       if ((uiT -= dt) <= 0) { uiT = 0.4; if (following) $('followLine').textContent = follow.agent().label || follow.idle; }
       if (fly) {
-        fly.t = Math.min(1, fly.t + dt / 1.6);
+        fly.t = Math.min(1, fly.t + dt / (fly.dur ?? 1.6));
         const k = fly.t * fly.t * (3 - 2 * fly.t);
         camera.position.lerpVectors(fly.p0, fly.p1, k);
         controls.target.lerpVectors(fly.t0, fly.t1, k);
@@ -176,5 +177,5 @@ export function createWorld({ shadow = 62, target = [0, 0, 0], views, follow = n
     };
   }
   const setLook = (k) => { look = k; applyLook(); };
-  return { renderer, scene, camera, controls, slab, paved, life, people, stills, steps, start, cam, track, setLook, get look() { return look; } };
+  return { renderer, scene, camera, controls, slab, paved, life, people, stills, steps, start, cam, track, setLook, hemi, sun, get look() { return look; }, get flying() { return !!fly; } };
 }
