@@ -177,10 +177,10 @@ const bambooMats = {};
 export function bamboo({ w = 8, d = 8, n = 90, h = 9, seed = 3 } = {}) {
   const geo = once(`bamboo:${h}`, () => {
     const culm = [part(new THREE.CylinderGeometry(0.06, 0.075, h, 7).translate(0, h / 2, 0), (p) => (Math.sin(p.y * 3) > 0.96 ? '#a8c27a' : '#7fa05a'))];
-    for (let y = 0.5; y < h; y += 0.55) culm.push(part(new THREE.TorusGeometry(0.068, 0.012, 3, 8).rotateX(Math.PI / 2), '#c9d69a', { pos: [0, y, 0] }));
+    for (let y = 0.5; y < h; y += 0.8) culm.push(part(new THREE.CylinderGeometry(0.075, 0.075, 0.04, 6, 1, true), '#c9d69a', { pos: [0, y, 0] })); // the nodes
     const leaves = [];
     const r = seeded(9);
-    for (let k = 0; k < 14; k++) { const y = h * 0.55 + r() * h * 0.45, a = r() * 6.28; leaves.push(part(ellipsoid(0.55, 0.12, 0.25, 6), shades(0.7, 1), { pos: [Math.cos(a) * 0.4, y, Math.sin(a) * 0.4], rot: [0, -a, 0.3] })); }
+    for (let k = 0; k < 9; k++) { const y = h * 0.55 + r() * h * 0.45, a = r() * 6.28; leaves.push(part(new THREE.OctahedronGeometry(1, 0).scale(0.6, 0.12, 0.28), shades(0.7, 1), { pos: [Math.cos(a) * 0.4, y, Math.sin(a) * 0.4], rot: [0, -a, 0.3] })); }
     return { culm: assemble(culm), leaves: assemble(leaves) };
   });
   bambooMats.culm ??= swimMaterial({ mode: 'sway', amp: 0.25, freq: 0.6, waves: 0.05, z0: 1, len: h }, { roughness: 0.6 });

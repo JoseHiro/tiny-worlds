@@ -40,26 +40,40 @@ export function roof({ kind = 'gable', w = 8, d = 6, h = 2.5, sori = 0, corner =
     y += corner * (az * Math.min(1, ax / hw)) ** 4;
     return { y, across };
   };
-  // top surface: a grid with rippled tile rows; bottom: the same, lowered; then the edge between them
-  const nx = segX || Math.round(w / 0.12), nz = segZ || Math.round(d / 0.12);
+  // top surface: a grid with rippled tile channels; underside: a coarse grid, lowered; then the edge between them.
+  // The channels run down the slope: a gable only needs the fine step across it (along X); down the slope a coarse
+  // grid is enough for the curve. Hip-type roofs have channels both ways, so they get a middle step both ways.
+  // Bark and thatch ripple too little to see, so they stay coarse.
+  const smooth = M.ripple < 0.01, along = kind === 'gable' || kind === 'nagare';
+  const fine = smooth ? 0.3 : Math.min(0.12, M.step / 2.05), mid = smooth ? 0.3 : Math.max(fine, M.step / 1.6);
+  const nx = segX || Math.round(w / (along ? fine : mid)), nz = segZ || Math.round(d / (along ? 0.35 : mid));
   const T = M.thick ?? 0.14;
   const verts = [], idx = [];
-  const at = (i, j, top) => {
-    const x = -hw + (i / nx) * w, z = -hd + (j / nz) * d;
+  const pt = (x, z, top) => {
     const { y, across } = f(x, z);
     const rip = top ? M.ripple * Math.abs(Math.sin(((across ? x : z) / M.step) * Math.PI)) : 0;
     return [x, y + rip - (top ? 0 : T), z];
   };
-  for (const top of [true, false]) for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) verts.push(...at(i, j, top));
-  const row = nx + 1, layer = row * (nz + 1);
-  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
-    const a = j * row + i, b = a + 1, c = a + row, e = c + 1;
-    idx.push(a, c, b, b, c, e); // top, facing up
-    idx.push(layer + a, layer + b, layer + c, layer + b, layer + e, layer + c); // underside, facing down
-  }
-  const rim = (k0, k1) => { idx.push(k0, k1, layer + k0, k1, layer + k1, layer + k0); };
-  for (let i = 0; i < nx; i++) { rim(i + 1, i); rim(nz * row + i, nz * row + i + 1); }
-  for (let j = 0; j < nz; j++) { rim(j * row, (j + 1) * row); rim((j + 1) * row + nx, j * row + nx); }
+  const grid = (cx, cz, top) => { // a (cx × cz) grid; returns the index of its first vertex
+    const base = verts.length / 3, row = cx + 1;
+    for (let j = 0; j <= cz; j++) for (let i = 0; i <= cx; i++) verts.push(...pt(-hw + (i / cx) * w, -hd + (j / cz) * d, top));
+    for (let j = 0; j < cz; j++) for (let i = 0; i < cx; i++) {
+      const a = base + j * row + i, b = a + 1, c = a + row, e = c + 1;
+      if (top) idx.push(a, c, b, b, c, e); else idx.push(a, b, c, b, e, c);
+    }
+    return base;
+  };
+  grid(nx, nz, true);
+  grid(Math.max(2, Math.round(w / 0.6)), Math.max(2, Math.round(d / 0.6)), false);
+  // the rim: walk the top grid's edge, drop each point by the thickness
+  const edge = [];
+  for (let i = 0; i <= nx; i++) edge.push([i, 0]);
+  for (let j = 1; j <= nz; j++) edge.push([nx, j]);
+  for (let i = nx - 1; i >= 0; i--) edge.push([i, nz]);
+  for (let j = nz - 1; j >= 0; j--) edge.push([0, j]);
+  const r0 = verts.length / 3;
+  for (const [i, j] of edge) { const x = -hw + (i / nx) * w, z = -hd + (j / nz) * d; verts.push(...pt(x, z, true), ...pt(x, z, false)); }
+  for (let k = 0; k < edge.length - 1; k++) { const a = r0 + k * 2, b = a + 2; idx.push(a, b, a + 1, b, b + 1, a + 1); }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
   geo.setIndex(idx);

@@ -511,6 +511,7 @@ const ROLES = {
   // 舞妓さん: the long hanging obi (だらり), tall clogs (おこぼ), the big hairdo with flower pins — shown plainly, without white make-up
   maiko: { robe: 0x7a2f5a, pattern: 'sakura', obi: 0x1f2a3a, darari: true, okobo: true, hat: 'maiko', kanzashi: 0xf2a3c4, collarColor: 0xc8283a, stride: 0.2, pace: 0.6, longSleeve: true },
   // monks, shrine priest and shrine maiden
+  monkBroom: { robe: 0x6b5a48, pattern: 'plain', obi: 0x6b5a48, hat: 'bald', shoes: 0xf2ede2, carry: 'broom', stride: 0.35, pace: 0.6 }, // a monk in work clothes (作務衣) sweeping
   monk: { robe: 0x1f2228, pattern: 'plain', obi: 0x1f2228, kesa: 0x8e6a3a, hat: 'bald', shoes: 0xf2ede2, stride: 0.35, pace: 0.75 },
   takuhatsu: { robe: 0x1f2228, pattern: 'plain', obi: 0x1f2228, kesa: 0x5a4636, hat: 'ajiro', shoes: 0xf2ede2, carry: 'bowl', stride: 0.35, pace: 0.6 },
   kannushi: { robe: 0xf6f4ee, pattern: 'plain', obi: 0xf6f4ee, hakama: 0x7fb6c4, hat: 'eboshi', shoes: 0x1d1f23, stride: 0.35, pace: 0.7 },
@@ -779,8 +780,18 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
   ud.update = (t) => {
     const m = ud.mode;
     const phase = t * 7 * (cfg.pace ?? 1) + (ud.phase ?? 0);
-    head.rotation.y = 0;
-    if (m === 'sit') {
+    head.rotation.y = 0; head.rotation.z = 0; body.rotation.z = 0;
+    if (m === 'bow' || m === 'pray' || m === 'photo' || m === 'look' || m === 'sweep') { // temple and shrine gestures
+      for (const l of legs) l.rotation.z = 0;
+      body.position.y = 0;
+      arms[0].rotation.x = arms[1].rotation.x = 0;
+      arms[0].rotation.z = arms[1].rotation.z = 0.05;
+      if (m === 'bow') { body.rotation.z = -0.42; arms[0].rotation.z = arms[1].rotation.z = 0.25; } // 一礼
+      else if (m === 'pray') { arms[0].rotation.z = arms[1].rotation.z = 1.25; arms[0].rotation.x = 1.0; arms[1].rotation.x = -1.0; head.rotation.z = -0.15; } // 合掌
+      else if (m === 'photo') { arms[0].rotation.z = arms[1].rotation.z = 1.75; arms[0].rotation.x = 0.7; arms[1].rotation.x = -0.7; head.rotation.z = 0.2; }
+      else if (m === 'look') { head.rotation.z = 0.5; head.rotation.y = Math.sin(t * 0.4 + (ud.phase ?? 0)) * 0.3; }
+      else { arms[0].rotation.z = 0.45; arms[0].rotation.x = Math.sin(t * 3 + (ud.phase ?? 0)) * 0.45; body.rotation.z = -0.12; } // sweeping with a broom
+    } else if (m === 'sit') {
       for (const l of legs) l.rotation.z = Math.PI / 2;
       arms[0].rotation.x = -0.05;
       arms[1].rotation.x = 0.05;

@@ -305,7 +305,7 @@ export function pondBridge({ w = 10, d = 8 } = {}) {
     const f = new THREE.Group();
     const b = mesh(new THREE.SphereGeometry(0.16, 10, 6), M(c)); b.scale.set(1.8, 0.45, 0.6); f.add(b);
     const tail = mesh(new THREE.ConeGeometry(0.1, 0.22, 4), M(c)); tail.rotation.z = Math.PI / 2; tail.position.x = -0.35; tail.scale.z = 0.3; f.add(tail);
-    f.userData = { r: 1.2 + i * 0.45, w: 0.18 + i * 0.03, ph: i * 1.3, tail };
+    f.userData = { r: 1.2 + i * 0.45, w: 0.18 + i * 0.03, ph: i * 1.3, tail, dynamic: true };
     g.add(f); return f;
   });
   g.userData.update = (t) => koi.forEach((f) => { const u = f.userData, a = t * u.w + u.ph; f.position.set(Math.cos(a) * u.r * w / 8, -0.12, Math.sin(a) * u.r * d / 10); f.rotation.y = Math.atan2(-Math.cos(a) * d, -Math.sin(a) * w * 1.25); u.tail.rotation.y = Math.sin(t * 6 + u.ph) * 0.5; });
