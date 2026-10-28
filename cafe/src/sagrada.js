@@ -26,6 +26,15 @@ const mosaic = (() => {
   for (let r = 0; r < 16; r++) for (let k = 0; k < 16; k++) { x.fillStyle = cols[(r * 5 + k * 3 + ((r * k) % 3)) % cols.length]; x.fillRect(k * 8 + 1, r * 8 + 1, 7, 7); }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 3); t.colorSpace = THREE.SRGBColorSpace; return t;
 })();
+// the Nativity's weathered sandstone: warm ochre, darker in the crevices, with streaks running down (it repeats)
+const nativityTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+  x.fillStyle = '#a58c68'; x.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 900; i++) { const v = 52 + ((i * 37) % 23); x.fillStyle = `hsla(34, 24%, ${v}%, 0.35)`; x.beginPath(); x.arc((i * 73) % 256, (i * 151) % 256, 2 + (i % 5), 0, 7); x.fill(); }
+  for (let i = 0; i < 70; i++) { const px = (i * 97) % 256, py = (i * 53) % 256, len = 20 + (i % 7) * 12; const gr = x.createLinearGradient(0, py, 0, py + len); gr.addColorStop(0, 'rgba(60,45,30,0.45)'); gr.addColorStop(1, 'rgba(60,45,30,0)'); x.fillStyle = gr; x.fillRect(px, py, 2 + (i % 3), len); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 6); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+export const NATIVITY = new THREE.MeshStandardMaterial({ map: nativityTex, roughness: 0.95, flatShading: true });
 export const MOSAIC = new THREE.MeshStandardMaterial({ map: mosaic, roughness: 0.25, metalness: 0.25 });
 const STAR = new THREE.MeshStandardMaterial({ color: 0xf6f8ff, emissive: 0xdfe8ff, emissiveIntensity: 0.3, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.92 });
 export function setNight(k) { STAR.emissiveIntensity = 0.3 + k * 2.5; }
@@ -52,7 +61,7 @@ function louvres(rAt, y0, y1, { rows = 4, step = 2.0, w = 0.45, h = 1.1 } = {}) 
 export function apostleTower({ h = 100, r = 3.6, foot = 0.3, stone = STONE.old, plan = 'circle' } = {}) {
   const g = new THREE.Group();
   const y0 = h * foot, yTop = h * 0.8; // shaft from the façade to where the pinnacle begins
-  g.add(box(r * 2.3, y0, r * 2.3, stone, 0, y0 / 2, 0)); // the square foot (hidden in the façade)
+  g.add(box(r * 1.9, y0, r * 1.9, stone, 0, y0 / 2, 0)); // the square foot (it stands in the façade)
   const prof = parabola(r, r * 0.42, y0, yTop);
   const shaft = mesh(lathe(prof, 24), stone);
   const rAt = (y) => { const t = (y - y0) / (yTop - y0); return r * 0.42 + (r - r * 0.42) * (1 - t ** 1.7); };
@@ -187,7 +196,7 @@ export function basilica() {
   const cl = (x0, x1, z0, z1) => g.add(box(Math.abs(x1 - x0) || 3, 7, Math.abs(z1 - z0) || 3, S, (x0 + x1) / 2, 3.5, (z0 + z1) / 2));
   cl(px - 6, nx + 6, az - 8, az - 8); cl(px - 6, px - 6, az - 8, gz - 4); cl(nx + 6, nx + 6, az - 8, gz - 4);
   // the transept fronts (placeholders until the façades are modelled): the Nativity in old dark stone, the Passion pale
-  block(nx - 3, nx + 3, -th - 6, th + 6, 34, O);
+  block(nx - 4, nx + 1, -th - 6, th + 6, 30, O); // (behind the Nativity façade, which is modelled on its own)
   block(px - 3, px + 3, -th - 6, th + 6, 34, STONE.pale);
   bakeStatic(g);
   g.userData = { kind: 'basilica' };
@@ -198,7 +207,7 @@ export function towers() {
   const g = new THREE.Group();
   const { nativityX: nx, passionX: px } = PLAN;
   // Nativity (north-east): Barnabas, Simon, Jude, Matthias — the outer pair taller (≈107 m), the inner ≈98.5 m
-  [[-17.5, 107, 'マティア'], [-6, 98.5, 'ユダ'], [6, 98.5, 'シモン'], [17.5, 107, 'バルナバ']].forEach(([z, h, name]) => { const t = apostleTower({ h, r: 3.6, stone: STONE.old }); t.position.set(nx + 1.5, 0, z); t.userData.name = name; g.add(t); });
+  [[-18.5, 107, 'マティア'], [-7, 98.5, 'ユダ'], [7, 98.5, 'シモン'], [18.5, 107, 'バルナバ']].forEach(([z, h, name]) => { const t = apostleTower({ h, r: 3.6, stone: NATIVITY }); t.position.set(nx + 1.5, 0, z); t.userData.name = name; g.add(t); });
   // Passion (west / south-west): James the Less, Bartholomew, Thomas, Philip — elliptical plan, paler stone
   [[-17.5, 112, 'ヤコブ（小）'], [-6, 107, 'バルトロマイ'], [6, 107, 'トマス'], [17.5, 112, 'フィリポ']].forEach(([z, h, name]) => { const t = apostleTower({ h, r: 3.6, stone: STONE.new, plan: 'ellipse' }); t.position.set(px - 1.5, 0, z); t.userData.name = name; g.add(t); });
   // the four evangelists around the crossing, Mary over the apse, Jesus in the middle
@@ -233,3 +242,110 @@ export function gloryWorks() {
   g.userData = { kind: 'gloryWorks', update: (t, dt = 0) => cranes.forEach((j, i) => { j.rotation.y += dt * (i ? -0.02 : 0.025); }) };
   return g;
 }
+
+// ---------- the Nativity façade (north-east, +X): the most detailed part, seen from the café across Plaça de Gaudí ----------
+// Three portals between the four tower feet — Hope (+Z, left as you face it), Charity in the middle (the widest and
+// tallest), Faith (−Z) — each a deep parabolic opening with stepped archivolts and green bronze doors, under a tall
+// gable of "melting" stone: drips, leaves and groups of figures. On the middle gable the cypress, the Tree of Life,
+// green with white doves. Two columns stand between the portals on turtles (a sea turtle on the sea side, a tortoise
+// on the mountain side); chameleons on the corners; angels with trumpets; the star over the Nativity.
+export function nativityFacade() {
+  const g = new THREE.Group();
+  const X = PLAN.nativityX + 3.4; // the front face of the façade wall
+  const portals = [{ z: 0, hw: 3.4, h: 21, top: 52, name: '愛' }, { z: 12.75, hw: 2.4, h: 15, top: 40, name: '希望' }, { z: -12.75, hw: 2.4, h: 15, top: 40, name: '信仰' }];
+  const stone = NATIVITY, light = mat(0xc4ad88, { roughness: 0.95, flatShading: true }), dark = mat(0x2a221a, { roughness: 1 });
+  const pb = (hw, h, y0 = 0) => (z) => y0 + h * (1 - (z / hw) ** 2); // a parabolic arch
+  // the wall: an organic, bumpy surface (a displaced grid), lumpier toward the top as it melts into sculpture
+  const W = 46, H = 34, wall = new THREE.PlaneGeometry(W, H, 92, 68).rotateY(Math.PI / 2), wp = wall.attributes.position;
+  for (let i = 0; i < wp.count; i++) {
+    const z = wp.getZ(i), y = wp.getY(i) + H / 2, k = 0.3 + 0.7 * (y / H);
+    const d = k * (0.45 * Math.sin(z * 1.7 + y * 0.6) * Math.sin(y * 1.3 - z * 0.4) + 0.3 * Math.max(0, Math.sin(z * 3.1 + Math.sin(y * 0.8) * 2)) * (1 + Math.sin(y * 0.4)));
+    wp.setXYZ(i, d, y, z);
+  }
+  wall.computeVertexNormals();
+  g.add(mesh(wall, stone, X, 0, 0));
+  g.add(box(4, H, W, stone, X - 2.2, H / 2, 0)); // its thickness, behind
+  // each portal
+  const drips = [], figs = [], leaves = [];
+  const cone = new THREE.ConeGeometry(0.22, 1.1, 5).rotateX(Math.PI); // a drip of stone, point down
+  for (const P of portals) {
+    const arch = pb(P.hw, P.h);
+    // the opening (dark), the bronze doors inside it
+    const shape = new THREE.Shape(); const N = 24;
+    for (let i = 0; i <= N; i++) { const z = -P.hw + (2 * P.hw * i) / N; i ? shape.lineTo(z, arch(z)) : shape.moveTo(z, arch(z)); }
+    shape.lineTo(P.hw, 0); shape.lineTo(-P.hw, 0);
+    const open = mesh(new THREE.ShapeGeometry(shape), dark, X + 0.5, 0, P.z); open.rotation.y = Math.PI / 2; g.add(open);
+    const door = mesh(new THREE.PlaneGeometry(P.hw * 1.1, Math.min(7, P.h * 0.4)), BRONZE, X + 0.55, Math.min(7, P.h * 0.4) / 2, P.z); door.rotation.y = Math.PI / 2; g.add(door);
+    // stepped archivolts: three parabolic rolls standing out from the wall
+    for (let k = 1; k <= 3; k++) {
+      const s = 1 + k * 0.16, pts = [];
+      for (let i = 0; i <= 30; i++) { const z = -P.hw * s + (2 * P.hw * s * i) / 30; pts.push(new THREE.Vector3(X + 0.4 + k * 0.45, P.h * s * (1 - (z / (P.hw * s)) ** 2), P.z + z)); }
+      g.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.32 + k * 0.05, 6), k === 2 ? light : stone));
+    }
+    // the gable above: a tall pointed mass rising to P.top, drips hanging from its edges, figures and leaves on it
+    const gw = P.hw * 1.75, gy = P.h * 1.42, edge = (z) => gy + (P.top - gy) * (1 - Math.abs(z / gw) ** 1.6);
+    const gs = new THREE.Shape(); for (let i = 0; i <= N; i++) { const z = -gw + (2 * gw * i) / N; i ? gs.lineTo(z, edge(z)) : gs.moveTo(z, edge(z)); } gs.lineTo(gw, gy - 3); gs.lineTo(-gw, gy - 3);
+    const gab = mesh(new THREE.ExtrudeGeometry(gs, { depth: 2.2, bevelEnabled: false }), stone, X - 0.6, 0, P.z); gab.rotation.y = Math.PI / 2; g.add(gab); // its body
+    g.add(mesh(gableSkin(gw, gy - 3, P.top, edge), stone, X + 1.6, 0, P.z)); // its lumpy, melting face
+    for (let y = gy; y < P.top - 3; y += 3.2) for (let z = -gw + 0.4; z < gw; z += 0.7) if (edge(z) > y + 1) drips.push(cone.clone().scale(1.1, 0.8 + ((Math.round(z * 7 + y) % 5) + 5) % 5 * 0.35, 1.1).translate(X + 2.6, y, P.z + z)); // rows of stone icicles
+    for (let i = 0; i <= 22; i++) { const z = -gw + (2 * gw * i) / 22; drips.push(cone.clone().scale(1, 0.7 + ((i * 7) % 5) * 0.25, 1).translate(X + 2.0, edge(z) - 0.6, P.z + z)); }
+    // the stone melting down over the archivolts
+    for (let i = 0; i < 26; i++) { const z = -P.hw * 1.5 + (3 * P.hw * i) / 25, y = P.h * 1.5 * (1 - (z / (P.hw * 1.5)) ** 2); if (y > 0.5) drips.push(cone.clone().scale(1.3, 1.2 + ((i * 5) % 4) * 0.4, 1.3).translate(X + 2.2, y + 0.2, P.z + z)); }
+    // figure groups: little standing figures (capsules) in rows on the gable — the scenes of the portal
+    const rows = P.z === 0 ? [[gy + 0.5, 5], [gy + 6.5, 4], [gy + 12.5, 3]] : [[gy + 0.5, 3], [gy + 5.5, 2]];
+    for (const [y, n] of rows) for (let j = 0; j < n; j++) { const z = (j - (n - 1) / 2) * 1.5; figs.push(new THREE.CapsuleGeometry(0.4, 1.2, 3, 6).translate(X + 2.9, y, P.z + z)); figs.push(new THREE.SphereGeometry(0.38, 6, 5).translate(X + 2.9, y + 1.1, P.z + z)); }
+    for (let j = 0; j < 40; j++) { const a = j * 2.4, rr = 0.6 + (j % 5) * 0.5, y = P.h + 1 + (j * 0.73) % (P.top - P.h - 6); leaves.push(new THREE.SphereGeometry(0.5, 5, 4).scale(1.3, 0.5, 1).translate(X + 2.0 + Math.sin(a) * 0.4, y, P.z + Math.cos(a) * rr * P.hw * 0.4)); }
+  }
+  // over the top of the wall: a fringe of drips
+  for (let z = -W / 2; z < W / 2; z += 0.8) drips.push(cone.clone().scale(1, 1 + ((z * 13) % 3), 1).translate(X + 0.9, H - 0.6, z));
+  g.add(mesh(mergeGeometries(drips), stone), mesh(mergeGeometries(figs), light), mesh(mergeGeometries(leaves), mat(0x9a8a62, { roughness: 1, flatShading: true })));
+  // the Tree of Life: a green cypress on the middle gable, white doves on it and around, a cross at its tip
+  const cy = portals[0].top - 2, cyp = [];
+  for (let k = 0; k < 8; k++) cyp.push(new THREE.ConeGeometry(3.4 - k * 0.38, 3.2, 10).translate(0, cy + 1.6 + k * 1.75, 0));
+  g.add(mesh(mergeGeometries(cyp), mat(0x3f6a3a, { roughness: 0.8, flatShading: true }), X + 0.8, 0, 0));
+  const doves = [];
+  for (let k = 0; k < 18; k++) { const a = k * 1.9, y = cy + 1.5 + (k * 0.83) % 13, rr = 3.2 - (y - cy) * 0.2; doves.push(new THREE.SphereGeometry(0.42, 6, 5).scale(1.6, 0.8, 0.8).translate(X + 0.8 + Math.cos(a) * rr, y, Math.sin(a) * rr)); }
+  g.add(mesh(mergeGeometries(doves), STONE.white));
+  g.add(box(0.4, 2.4, 0.4, mat(0xc8283a), X + 0.8, cy + 16.4, 0)); g.add(box(0.4, 0.4, 1.6, mat(0xc8283a), X + 0.8, cy + 16.9, 0)); // the cross
+  // the two columns between the portals, on their turtles; palm-leaf capitals
+  for (const [s, sea] of [[1, true], [-1, false]]) {
+    const z = s * 7.2;
+    g.add(cyl(0.6, 0.75, 17, light, X + 3.2, 1.2 + 8.5, z, 12));
+    for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; const leaf = box(0.2, 2.2, 0.8, mat(0x9a8a62), X + 3.2 + Math.cos(a) * 0.9, 18.6, z + Math.sin(a) * 0.9); leaf.rotation.set(Math.sin(a) * 0.6, 0, -Math.cos(a) * 0.6); g.add(leaf); }
+    const tm = mat(sea ? 0x6f7f74 : 0x7a7462, { roughness: 0.9, flatShading: true }), sh = mesh(new THREE.SphereGeometry(1.5, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), tm, X + 3.2, 0.1, z); sh.scale.set(1.3, 0.75, 1.1); g.add(sh);
+    g.add(mesh(new THREE.SphereGeometry(0.45, 8, 6), tm, X + 5.0, 0.5, z));
+    for (const [dx, dz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { const f = mesh(new THREE.SphereGeometry(0.45, 6, 4), tm, X + 3.2 + dx * 1.3, 0.25, z + dz * 1.1); f.scale.set(sea ? 1.8 : 0.9, 0.3, sea ? 0.7 : 0.9); g.add(f); } // flippers or feet
+  }
+  // chameleons on the corners, angels with trumpets, the star over the middle doorway
+  for (const s of [1, -1]) { const c = new THREE.Group(); c.add(mesh(new THREE.SphereGeometry(0.6, 8, 6), mat(0x6f8a4a), 0, 0, 0)); c.children[0].scale.set(2, 0.8, 0.8); c.add(mesh(new THREE.TorusGeometry(0.35, 0.12, 4, 8, Math.PI * 1.5), mat(0x6f8a4a), -1.3, -0.3, 0)); c.position.set(X + 0.9, 9.5, s * 22.3); c.rotation.z = -1.1; g.add(c); }
+  const gold = mat(0xd9b860, { metalness: 0.5, roughness: 0.35 });
+  for (const z of [-18.5, -7, 7, 18.5]) { const a = new THREE.Group(); a.add(mesh(new THREE.CapsuleGeometry(0.55, 1.6, 4, 8), STONE.pale, 0, 0, 0)); a.add(mesh(new THREE.SphereGeometry(0.45, 8, 6), STONE.pale, 0, 1.3, 0)); for (const w of [1, -1]) { const wing = mesh(new THREE.SphereGeometry(0.9, 8, 5), STONE.pale, -0.4, 0.6, w * 0.8); wing.scale.set(0.5, 1.4, 0.3); a.add(wing); } const tr = mesh(new THREE.ConeGeometry(0.25, 1.8, 8).rotateZ(-Math.PI / 2 - 0.5), gold, 1.0, 1.4, 0); a.add(tr); a.position.set(X + 2.4, 26.5, z); g.add(a); }
+  const star = new THREE.Shape(); for (let k = 0; k < 10; k++) { const a = (k / 10) * Math.PI * 2 - Math.PI / 2, r = k % 2 ? 0.6 : 1.4; k ? star.lineTo(Math.cos(a) * r, -Math.sin(a) * r) : star.moveTo(Math.cos(a) * r, -Math.sin(a) * r); }
+  const st = mesh(new THREE.ExtrudeGeometry(star, { depth: 0.3, bevelEnabled: false }), gold, X + 2.8, portals[0].h * 1.42 - 1.6, 0); st.rotation.y = Math.PI / 2; g.add(st);
+  bakeStatic(g);
+  g.userData = { kind: 'facade', facade: 'nativity', portals };
+  return g;
+}
+// the face of a gable: a displaced grid clipped to the gable's outline (only the faces fully inside are kept)
+function gableSkin(gw, y0, top, edge) {
+  const nz = 30, ny = 46, pos = [], idx = [], inside = [];
+  for (let j = 0; j <= ny; j++) for (let i = 0; i <= nz; i++) {
+    const z = -gw + (2 * gw * i) / nz, y = y0 + ((top - y0) * j) / ny;
+    const d = 0.55 * Math.sin(z * 2.1 + y * 0.9) * Math.sin(y * 1.7 - z) + 0.45 * Math.max(0, Math.sin(y * 2.2 + Math.sin(z * 1.3) * 2)) + 0.25 * Math.sin(z * 5 + y * 4);
+    pos.push(d, y, z); inside.push(y <= edge(z) + 0.2);
+  }
+  const row = nz + 1;
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nz; i++) { const a = j * row + i, b = a + 1, c = a + row, e = c + 1; if (inside[a] && inside[b] && inside[c] && inside[e]) idx.push(a, b, c, b, e, c); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+  const uv = new Float32Array((pos.length / 3) * 2); for (let k = 0; k < pos.length / 3; k++) { uv[k * 2] = pos[k * 3 + 2] / 8; uv[k * 2 + 1] = pos[k * 3 + 1] / 8; } geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  return geo;
+}
+// green bronze doors covered in leaves and little creatures (a canvas pattern)
+const BRONZE = (() => {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 256; const x = c.getContext('2d');
+  x.fillStyle = '#4f7a62'; x.fillRect(0, 0, 128, 256);
+  for (let i = 0; i < 160; i++) { const px = (i * 41) % 128, py = (i * 97) % 256, a = i * 0.7; x.fillStyle = i % 9 === 0 ? '#c9a24a' : `hsl(${140 + (i % 20)}, 30%, ${30 + (i % 4) * 6}%)`; x.save(); x.translate(px, py); x.rotate(a); x.beginPath(); x.ellipse(0, 0, 8, 3.5, 0, 0, 7); x.fill(); x.restore(); }
+  x.fillStyle = '#2a3a30'; x.fillRect(62, 0, 4, 256);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.MeshStandardMaterial({ map: t, roughness: 0.5, metalness: 0.45 });
+})();
