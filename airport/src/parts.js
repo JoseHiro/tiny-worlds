@@ -506,7 +506,50 @@ const ROLES = {
   kimonoWoman2: { robe: 0x6f8fb8, pattern: 'kiku', obi: 0xf2ede2, otaiko: true, hat: 'updo', kanzashi: 0xf2c94c, shoes: 0x2f4a6b, stride: 0.3, pace: 0.8 },
   kimonoMan: { robe: 0x3a3f4a, pattern: 'plain', obi: 0x8e7a5a, haori: 0x1f2228, hat: 'hair', shoes: 0x2a2018, stride: 0.38, pace: 0.85 },
   yukataGirl: { robe: 0xf2ede2, pattern: 'stripe', obi: 0xd9482b, otaiko: true, hat: 'updo', kanzashi: 0xe9a3b4, shoes: 0x8a6a4a, stride: 0.3, scale: 0.72 },
+  furisode: { robe: 0xc8283a, pattern: 'kiku', obi: 0xc9a24a, otaiko: true, longSleeve: true, hat: 'updo', kanzashi: 0xf2ede2, shoes: 0xc9a24a, stride: 0.28, pace: 0.75 },
+  kimonoKid: { robe: 0xe8673c, pattern: 'sakura', obi: 0xf2c94c, otaiko: true, hat: 'updo', kanzashi: 0xd9482b, shoes: 0xc8283a, stride: 0.32, scale: 0.7 },
+  // 舞妓さん: the long hanging obi (だらり), tall clogs (おこぼ), the big hairdo with flower pins — shown plainly, without white make-up
+  maiko: { robe: 0x7a2f5a, pattern: 'sakura', obi: 0x1f2a3a, darari: true, okobo: true, hat: 'maiko', kanzashi: 0xf2a3c4, collarColor: 0xc8283a, stride: 0.2, pace: 0.6, longSleeve: true },
+  // monks, shrine priest and shrine maiden
+  monk: { robe: 0x1f2228, pattern: 'plain', obi: 0x1f2228, kesa: 0x8e6a3a, hat: 'bald', shoes: 0xf2ede2, stride: 0.35, pace: 0.75 },
+  takuhatsu: { robe: 0x1f2228, pattern: 'plain', obi: 0x1f2228, kesa: 0x5a4636, hat: 'ajiro', shoes: 0xf2ede2, carry: 'bowl', stride: 0.35, pace: 0.6 },
+  kannushi: { robe: 0xf6f4ee, pattern: 'plain', obi: 0xf6f4ee, hakama: 0x7fb6c4, hat: 'eboshi', shoes: 0x1d1f23, stride: 0.35, pace: 0.7 },
+  miko: { robe: 0xfafaf6, pattern: 'plain', obi: 0xfafaf6, hakama: 0xc8283a, hat: 'long', hair: 0x1d1f23, hairTie: true, shoes: 0xfafaf6, carry: 'broom', stride: 0.35, pace: 0.8 },
+  // working people
+  shafu: { top: 0x2f4a6b, collar: 0xf2ede2, legs: 0x1d1f23, hat: 'hachimaki', shoes: 0x1d1f23, pace: 1.3 }, // the rickshaw puller: happi, tight trousers, split-toe boots
+  sendo: { top: 0x2f4a6b, collar: 0xf2ede2, legs: 0x3a3f4a, hat: 'sugegasa', shoes: 0x1d1f23 }, // the boatman
+  teaStaff: { top: 0x6b5a48, apron: 0x2f4a6b, legs: 0x6b5a48, hat: 'sankaku', shoes: 0x1d1f23, carry: 'tray' },
+  gardener: { top: 0x2f4a6b, collar: 0xf2ede2, legs: 0x3a3f4a, hat: 'hachimaki', shoes: 0x1d1f23, carry: 'shears' },
+  // school trip, visitors, locals
+  schoolBoy: { top: 0x1d1f23, legs: 0x1d1f23, hat: 'hair', buttons: true, backpack: 0x2f4a6b, scale: 0.85 },
+  schoolGirl: { top: 0xf6f4ee, sailor: 0x2c3a57, skirt: 0x2c3a57, legs: PALETTE.skin, hat: 'bob', backpack: 0x2c3a57, scale: 0.85 },
+  teacher: { top: 0x8a8f96, legs: 0x2c3a57, hat: 'hair', tie: 0x2f4a6b, carry: 'flag' },
+  visitor: { top: 0x2fa58f, legs: 0xc9b48a, hat: 'baseball', capColor: 0xe8673c, backpack: 0x3a3f4a, carry: 'camera' },
+  obaachan: { top: 0xf6f4ee, legs: 0x6b5a48, hat: 'grey', carry: 'basket', pace: 0.55, stride: 0.35 }, // a white 割烹着 apron-smock
+  jinbeiKid: { top: 0x6f8fb8, legs: 0x6f8fb8, hat: 'hair', collar: 0x2f4a6b, scale: 0.7, carry: 'uchiwa' },
+  umbrellaWoman: { robe: 0x2f4a6b, pattern: 'kiku', obi: 0xc9a24a, otaiko: true, hat: 'updo', kanzashi: 0xc9a24a, shoes: 0x2a2018, stride: 0.3, pace: 0.75, carry: 'wagasa' },
 };
+// things carried in the right hand (s = 1 arm); the arm holds still while the other swings
+// how far forward the carrying arm is held
+const HOLD = { wagasa: 0.6, uchiwa: 1.1, broom: 0.5, bowl: 1.2, tray: 1.3, shears: 0.4, flag: 0.9, camera: 1.3, basket: 0.25 };
+const KOTO_GOLD = 0xc9a24a;
+function carryItem(kind) {
+  const g = new THREE.Group();
+  const wood = mat(0x8a6a4a), paper = mat(0xf6f2ea);
+  if (kind === 'wagasa') { // an open paper umbrella held over the head
+    g.add(cyl(0.012, 0.012, 1.0, wood, 0, 0.45, 0, 5));
+    g.add(mesh(new THREE.ConeGeometry(0.55, 0.2, 16, 1, true), mat(0xc8283a, { side: THREE.DoubleSide, roughness: 0.8 }), 0, 0.95, 0));
+  } else if (kind === 'uchiwa') { g.add(cyl(0.01, 0.01, 0.12, wood, 0, 0.06, 0, 4)); g.add(mesh(new THREE.CircleGeometry(0.09, 12).rotateY(Math.PI / 2), mat(0x7fb6c4, { side: THREE.DoubleSide }), 0, 0.2, 0)); }
+  else if (kind === 'broom') { g.add(cyl(0.012, 0.012, 1.1, mat(0xc9b07a), 0.05, -0.05, 0, 5)); g.add(mesh(new THREE.ConeGeometry(0.12, 0.35, 8), mat(0x8a7a4a), 0.05, -0.65, 0)); }
+  else if (kind === 'bowl') { g.add(cyl(0.07, 0.05, 0.06, mat(0x1d1f23), 0.06, 0.02, 0, 10)); }
+  else if (kind === 'tray') { g.add(box(0.22, 0.02, 0.3, mat(0x2a2018), 0.1, 0.02, 0)); g.add(cyl(0.035, 0.03, 0.06, mat(0x7fa05a), 0.1, 0.06, 0.07, 8)); for (let k = 0; k < 3; k++) g.add(mesh(new THREE.SphereGeometry(0.022, 6, 4), mat([0xf2c4cf, 0xf2ede2, 0x8fb06a][k]), 0.1, 0.05, -0.05 - k * 0.04)); }
+  else if (kind === 'shears') { for (const s of [1, -1]) { const b = box(0.02, 0.3, 0.02, mat(0x8a8f96, { metalness: 0.5 }), 0.06, -0.12, s * 0.02); b.rotation.x = s * 0.2; g.add(b); } }
+  else if (kind === 'flag') { g.add(cyl(0.01, 0.01, 0.9, mat(0xc9ccd1), 0, 0.4, 0, 4)); g.add(box(0.02, 0.18, 0.26, mat(0xf2c94c), 0, 0.75, 0.14)); }
+  else if (kind === 'camera') { g.add(box(0.08, 0.06, 0.12, mat(0x1d1f23), 0.06, 0.02, 0)); g.add(cyl(0.025, 0.025, 0.05, mat(0x3a3f4a), 0.11, 0.02, 0, 8)).children.at(-1).rotation.z = Math.PI / 2; }
+  else if (kind === 'basket') { g.add(cyl(0.1, 0.08, 0.1, mat(0xb89a6a), 0, -0.1, 0, 10)); g.add(mesh(new THREE.TorusGeometry(0.08, 0.008, 4, 10, Math.PI), mat(0xb89a6a), 0, -0.05, 0)); }
+  void paper;
+  return g;
+}
 
 // robe patterns, drawn once each on a canvas and shared
 const robeTex = new Map();
@@ -549,7 +592,7 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     const hip = new THREE.Group();
     hip.position.set(0, 0.32, s * 0.08);
     hip.add(mesh(new THREE.CapsuleGeometry(0.07, 0.18, 4, 10), mat(cfg.legs), 0, -0.16, 0));
-    hip.add(rbox(0.16, 0.06, 0.1, 0.03, mat(cfg.shoes ?? PALETTE.ink), 0.03, -0.29, 0)); // shoe
+    hip.add(rbox(0.16, cfg.okobo ? 0.12 : 0.06, 0.1, 0.03, mat(cfg.shoes ?? (cfg.okobo ? 0xc9a87c : PALETTE.ink)), 0.03, cfg.okobo ? -0.3 : -0.29, 0)); // shoe (おこぼ: a tall wooden clog)
     legs.push(hip);
     body.add(hip);
   }
@@ -557,17 +600,24 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
   if (cfg.robe) { // kimono: the robe hangs from the chest to the ankles; the legs move inside it
     const rm = robeMat(cfg.robe, cfg.pattern ?? 'plain');
     body.add(mesh(new THREE.CapsuleGeometry(0.17, 0.16, 6, 14), rm, 0, 0.55, 0));
-    body.add(mesh(new THREE.CylinderGeometry(0.175, 0.2, 0.5, 18), rm, 0, 0.3, 0));
-    body.add(cyl(0.18, 0.18, 0.15, mat(cfg.obi), 0, 0.5, 0, 18)); // the obi
+    if (cfg.hakama) body.add(cyl(0.19, 0.24, 0.5, mat(cfg.hakama), 0, 0.3, 0, 18)); // 袴: pleated trousers-skirt, wider at the hem
+    else body.add(mesh(new THREE.CylinderGeometry(0.175, 0.2, 0.5, 18), rm, 0, 0.3, 0));
+    body.add(cyl(0.18, 0.18, 0.15, mat(cfg.hakama ?? cfg.obi), 0, 0.5, 0, 18)); // the obi
     if (cfg.otaiko) body.add(rbox(0.1, 0.18, 0.3, 0.03, mat(cfg.obi), -0.19, 0.52, 0)); // its bow at the back
+    if (cfg.darari) { body.add(rbox(0.12, 0.2, 0.32, 0.03, mat(cfg.obi), -0.19, 0.55, 0)); for (const zz of [0.08, -0.08]) body.add(box(0.03, 0.5, 0.13, mat(cfg.obi), -0.21, 0.24, zz)); } // だらりの帯: long ends hanging to the hem
     if (cfg.haori) body.add(mesh(new THREE.CapsuleGeometry(0.182, 0.1, 6, 14), mat(cfg.haori), 0, 0.6, 0));
-    for (const zz of [1, -1]) { const col = box(0.02, 0.2, 0.05, mat(PALETTE.white), 0.168, 0.71, zz * 0.04); col.rotation.x = zz * 0.45; body.add(col); } // the crossed collar
+    if (cfg.kesa) { const k = box(0.36, 0.09, 0.4, mat(cfg.kesa), 0, 0.62, 0); k.rotation.x = 0.7; body.add(k); body.add(box(0.03, 0.24, 0.3, mat(cfg.kesa), 0.17, 0.6, 0.02)); } // 袈裟 over one shoulder
+    for (const zz of [1, -1]) { const col = box(0.02, 0.2, 0.05, mat(cfg.collarColor ?? PALETTE.white), 0.168, 0.71, zz * 0.04); col.rotation.x = zz * 0.45; body.add(col); } // the crossed collar
   } else body.add(mesh(new THREE.CapsuleGeometry(0.17, 0.16, 6, 14), mat(cfg.top), 0, 0.55, 0));
   if (cfg.vest) {
     body.add(mesh(new THREE.CapsuleGeometry(0.177, 0.1, 6, 14), mat(cfg.vest), 0, 0.57, 0));
     body.add(box(0.02, 0.03, 0.3, mat(0xeeeeee, { emissive: 0x888888, emissiveIntensity: 0.4 }), 0.172, 0.55, 0));
   }
   if (cfg.skirt) body.add(cyl(0.15, 0.24, 0.26, mat(cfg.skirt), 0, 0.33, 0, 16));
+  if (cfg.collar) for (const zz of [1, -1]) { const col = box(0.02, 0.3, 0.05, mat(cfg.collar), 0.168, 0.6, zz * 0.06); col.rotation.x = zz * 0.25; body.add(col); } // happi / jinbei lapels
+  if (cfg.apron) body.add(box(0.03, 0.42, 0.3, mat(cfg.apron), 0.17, 0.4, 0)); // 前掛け
+  if (cfg.sailor) { body.add(box(0.2, 0.03, 0.36, mat(cfg.sailor), -0.08, 0.76, 0)); for (const zz of [1, -1]) { const c = box(0.02, 0.2, 0.06, mat(cfg.sailor), 0.165, 0.7, zz * 0.06); c.rotation.x = zz * 0.4; body.add(c); } body.add(box(0.03, 0.06, 0.06, mat(PALETTE.red), 0.18, 0.62, 0)); } // sailor collar and scarf
+  if (cfg.buttons) for (let k = 0; k < 4; k++) body.add(mesh(new THREE.SphereGeometry(0.014, 6, 4), mat(KOTO_GOLD, { metalness: 0.6 }), 0.172, 0.46 + k * 0.08, 0)); // 詰襟 buttons
   if (cfg.tie) {
     body.add(box(0.02, 0.2, 0.08, mat(PALETTE.white), 0.16, 0.66, 0)); // shirt front
     body.add(box(0.02, 0.17, 0.035, mat(cfg.tie), 0.172, 0.65, 0));
@@ -596,7 +646,8 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     const sh = new THREE.Group();
     sh.position.set(0, 0.72, s * 0.21);
     sh.add(mesh(new THREE.CapsuleGeometry(0.055, 0.16, 4, 10), cfg.robe ? robeMat(cfg.robe, cfg.pattern ?? 'plain') : mat(cfg.top), 0, -0.13, 0));
-    if (cfg.robe) sh.add(box(0.2, 0.26, 0.04, cfg.haori ? mat(cfg.haori) : robeMat(cfg.robe, cfg.pattern ?? 'plain'), -0.03, -0.24, s * 0.03)); // the hanging sleeve (袂)
+    if (cfg.robe) { const L = cfg.longSleeve ? 0.46 : 0.26; sh.add(box(0.2, L, 0.04, cfg.haori ? mat(cfg.haori) : robeMat(cfg.robe, cfg.pattern ?? 'plain'), -0.03, -0.11 - L / 2, s * 0.03)); } // the hanging sleeve (袂; 振袖 long)
+    if (cfg.carry && s > 0) { const it = carryItem(cfg.carry); it.position.set(0, -0.3, 0); sh.add(it); ud.item = it; }
     sh.add(mesh(new THREE.SphereGeometry(0.055, 10, 8), mat(PALETTE.skin), 0, -0.28, 0));
     if (cfg.stripes) sh.add(mesh(new THREE.CylinderGeometry(0.058, 0.058, 0.025, 10), mat(PALETTE.yellow, { metalness: 0.5 }), 0, -0.2, 0));
     if (cfg.wands) {
@@ -646,17 +697,47 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     head.add(dome(0.212, PALETTE.brown, 0.0, Math.PI * 0.55));
     head.add(mesh(new THREE.SphereGeometry(0.09, 12, 10), mat(PALETTE.brown), -0.17, 0.12, 0));
   } else if (cfg.hat === 'long') {
-    head.add(dome(0.214, PALETTE.brown, 0.0, Math.PI * 0.55));
-    const back = mesh(new THREE.CapsuleGeometry(0.15, 0.16, 6, 14), mat(PALETTE.brown), -0.08, -0.1, 0);
+    const hc = cfg.hair ?? PALETTE.brown;
+    head.add(dome(0.214, hc, 0.0, Math.PI * 0.55));
+    const back = mesh(new THREE.CapsuleGeometry(0.15, 0.16, 6, 14), mat(hc), -0.08, -0.1, 0);
     back.scale.set(0.8, 1, 1.3);
     head.add(back);
-    const fringe = dome(0.216, PALETTE.brown, 0.0, Math.PI * 0.3);
+    if (cfg.hairTie) head.add(box(0.05, 0.06, 0.16, mat(0xf6f4ee), -0.2, -0.02, 0)); // the white paper tie (檀紙)
+    const fringe = dome(0.216, hc, 0.0, Math.PI * 0.3);
     fringe.rotation.z = -0.5;
     head.add(fringe);
   } else if (cfg.hat === 'updo') { // hair put up for a kimono, with a hairpin
     head.add(dome(0.214, PALETTE.ink, 0.0, Math.PI * 0.55));
     head.add(mesh(new THREE.SphereGeometry(0.1, 12, 10), mat(PALETTE.ink), -0.1, 0.2, 0));
     if (cfg.kanzashi) { head.add(mesh(new THREE.SphereGeometry(0.04, 8, 6), mat(cfg.kanzashi), -0.06, 0.24, 0.1)); head.add(box(0.015, 0.015, 0.16, mat(PALETTE.yellow, { metalness: 0.5 }), -0.08, 0.22, 0.06)); }
+  } else if (cfg.hat === 'bald') { // a shaven head
+    head.add(dome(0.203, 0xe0b898, 0.0, Math.PI * 0.5));
+  } else if (cfg.hat === 'ajiro') { // 網代笠: a wide woven hat over the eyes
+    head.add(dome(0.205, 0xe0b898, 0.0, Math.PI * 0.5));
+    head.add(mesh(new THREE.ConeGeometry(0.42, 0.22, 20, 1, true), mat(0xc9a86a, { roughness: 1, side: THREE.DoubleSide }), 0, 0.12, 0));
+  } else if (cfg.hat === 'sugegasa') { // 菅笠: a conical sedge hat
+    head.add(dome(0.212, PALETTE.ink, 0.0, Math.PI * 0.5));
+    head.add(mesh(new THREE.ConeGeometry(0.36, 0.2, 18, 1, true), mat(0xd8c48a, { roughness: 1, side: THREE.DoubleSide }), 0, 0.26, 0));
+  } else if (cfg.hat === 'eboshi') { // a priest's tall black cap
+    head.add(dome(0.212, PALETTE.ink, 0.0, Math.PI * 0.5));
+    const e = mesh(new THREE.CapsuleGeometry(0.11, 0.18, 4, 10), mat(0x1d1f23, { roughness: 0.4 }), -0.04, 0.3, 0); e.scale.set(1, 1, 0.6); e.rotation.z = 0.3; head.add(e);
+  } else if (cfg.hat === 'hachimaki') { // short hair and a twisted headband
+    const hair = dome(0.212, PALETTE.ink, 0.0, Math.PI * 0.5); hair.rotation.z = 0.25; head.add(hair);
+    head.add(mesh(new THREE.TorusGeometry(0.205, 0.022, 6, 20).rotateX(Math.PI / 2), mat(0xf6f4ee), 0, 0.07, 0));
+    head.add(box(0.06, 0.05, 0.05, mat(0xf6f4ee), -0.21, 0.07, 0.04));
+  } else if (cfg.hat === 'sankaku') { // a white headscarf tied at the back
+    head.add(dome(0.214, 0xf6f4ee, 0.0, Math.PI * 0.52));
+    head.add(mesh(new THREE.ConeGeometry(0.05, 0.1, 4).rotateZ(Math.PI / 2), mat(0xf6f4ee), -0.23, 0.08, 0));
+  } else if (cfg.hat === 'bob') { // a schoolgirl's bob
+    head.add(dome(0.216, PALETTE.ink, 0.0, Math.PI * 0.62));
+    const back = mesh(new THREE.SphereGeometry(0.2, 14, 10), mat(PALETTE.ink), -0.05, -0.04, 0); back.scale.set(0.9, 0.9, 1.08); head.add(back);
+  } else if (cfg.hat === 'maiko') { // the maiko's swept-up hair with silk flowers and dangling pins
+    head.add(dome(0.216, PALETTE.ink, 0.0, Math.PI * 0.56));
+    for (const zz of [1, -1]) { const w = mesh(new THREE.SphereGeometry(0.11, 12, 8), mat(PALETTE.ink), -0.06, 0.12, zz * 0.17); w.scale.set(1, 0.8, 0.6); head.add(w); } // the side wings
+    head.add(mesh(new THREE.SphereGeometry(0.13, 12, 10), mat(PALETTE.ink), -0.1, 0.25, 0)); // the top knot
+    head.add(box(0.06, 0.05, 0.12, mat(0xc8283a), -0.06, 0.32, 0)); // the red silk in it
+    for (let k = 0; k < 5; k++) head.add(mesh(new THREE.SphereGeometry(0.035, 6, 5), mat([cfg.kanzashi, 0xf6f4ee, 0xf2c94c][k % 3]), 0.02 - k * 0.02, 0.22 - (k % 2) * 0.04, 0.12 + k * 0.012)); // flower pins
+    for (let k = 0; k < 3; k++) head.add(box(0.012, 0.12, 0.02, mat(0xf2c94c, { metalness: 0.5 }), 0.03, 0.1 - k * 0.0, 0.17 + k * 0.025)); // dangling strands
   } else if (cfg.hat === 'straw') { // a wide straw hat
     head.add(cyl(0.34, 0.34, 0.02, mat(0xe0c27a, { roughness: 0.9 }), 0, 0.12, 0, 20));
     head.add(dome(0.2, 0xe0c27a, 0.1));
@@ -732,7 +813,7 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
       const st = cfg.stride ?? 0.55; // kimono: small steps
       legs[0].rotation.z = Math.sin(phase) * st;
       legs[1].rotation.z = -Math.sin(phase) * st;
-      arms[0].rotation.z = -Math.sin(phase) * 0.45;
+      arms[0].rotation.z = ud.item ? HOLD[cfg.carry] ?? 0.5 : -Math.sin(phase) * 0.45;
       arms[1].rotation.z = Math.sin(phase) * 0.45;
       arms[0].rotation.x = arms[1].rotation.x = 0;
       body.position.y = Math.abs(Math.cos(phase)) * 0.03;
@@ -752,5 +833,7 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
       head.rotation.y = Math.sin(t * 0.7 + (ud.phase ?? 0)) * 0.3;
     }
   };
+  const baseUpdate = ud.update;
+  if (ud.item) ud.update = (t) => { baseUpdate(t); if (ud.mode === 'idle' || ud.mode === 'walk') arms[0].rotation.z = HOLD[cfg.carry] ?? 0.5; ud.item.rotation.z = -arms[0].rotation.z; };
   return compactRig(g);
 }

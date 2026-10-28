@@ -12,17 +12,19 @@ export const ROOF_MATERIALS = {
   ichimonji: { color: 0x5d6168, roughness: 0.7, ripple: 0.03, step: 0.2 }, // 一文字瓦 (the straight eave of a machiya)
 };
 
-// kind: gable | hip | irimoya | hogyo · w × d: the eave footprint · h: height of the ridge above the eaves
+// kind: gable | hip | irimoya | hogyo | nagare (a shrine's 流造: the front slope runs on, longer than the back) · w × d: the eave footprint · h: height of the ridge above the eaves
 // sori: how much the eaves curve up (0 for a townhouse, 0.3–0.6 for a temple) · corner: extra lift at the corners
 export function roof({ kind = 'gable', w = 8, d = 6, h = 2.5, sori = 0, corner = 0, material = 'kawara', ridge = true, onigawara = true, segX = 0, segZ = 0 } = {}) {
   const M = ROOF_MATERIALS[material];
   const hw = w / 2, hd = d / 2;
+  const zr = kind === 'nagare' ? -hd * 0.35 : 0; // where the ridge runs
   const gableEnd = kind === 'irimoya' ? hw - hd * 0.55 : hw; // where the upper gable of an irimoya stops
   // the height of the roof at (x, z), and which way its tile rows run
   const f = (x, z) => {
     const az = Math.abs(z) / hd, ax = Math.abs(x);
     let y, across; // across: true when we're on a front/back slope (rows run along X)
     if (kind === 'gable') { y = h * (1 - az); across = true; }
+    else if (kind === 'nagare') { y = h * (1 - (z > zr ? (z - zr) / (hd - zr) : (zr - z) / (hd + zr))); across = true; }
     else if (kind === 'hogyo') { const a = Math.max(az, ax / hw); y = h * (1 - a); across = az >= ax / hw; }
     else if (kind === 'hip') { // the end slopes come in from the short sides at the same pitch
       const e = Math.max(0, (ax - (hw - hd)) / hd);
@@ -33,7 +35,7 @@ export function roof({ kind = 'gable', w = 8, d = 6, h = 2.5, sori = 0, corner =
       else { const hy = h * 0.62 * (1 - (ax - gableEnd) / (hw - gableEnd)); y = Math.min(gy, hy); across = gy <= hy; }
     }
     // the eave curve: rises toward the edges, more at the corners
-    const edge = Math.max(az, Math.min(1, ax / hw));
+    const edge = Math.max(kind === 'nagare' && z < zr ? (zr - z) / (hd + zr) : kind === 'nagare' ? (z - zr) / (hd - zr) : az, Math.min(1, ax / hw));
     y += sori * h * THREE.MathUtils.smoothstep(edge, 0.55, 1) ** 2;
     y += corner * (az * Math.min(1, ax / hw)) ** 4;
     return { y, across };
@@ -69,8 +71,8 @@ export function roof({ kind = 'gable', w = 8, d = 6, h = 2.5, sori = 0, corner =
   const ridgeM = mat(material === 'copper' ? 0x4f8a7a : 0x55595f, { roughness: 0.7 });
   if (ridge) {
     const len = kind === 'hogyo' ? 0 : kind === 'hip' ? Math.max(0.01, w - d) : kind === 'irimoya' ? gableEnd * 2 : w;
-    if (len > 0.05) g.add(box(len + 0.1, 0.22, 0.26, ridgeM, 0, h + 0.1, 0));
-    if (onigawara && len > 0.05) for (const s of [1, -1]) { g.add(box(0.16, 0.42, 0.34, ridgeM, s * (len / 2 + 0.05), h + 0.2, 0)); g.add(box(0.12, 0.12, 0.38, ridgeM, s * (len / 2 + 0.05), h + 0.42, 0)); }
+    if (len > 0.05) g.add(box(len + 0.1, 0.22, 0.26, ridgeM, 0, h + 0.1, zr));
+    if (onigawara && len > 0.05) for (const s of [1, -1]) { g.add(box(0.16, 0.42, 0.34, ridgeM, s * (len / 2 + 0.05), h + 0.2, zr)); g.add(box(0.12, 0.12, 0.38, ridgeM, s * (len / 2 + 0.05), h + 0.42, zr)); }
     if (kind === 'hip' || kind === 'hogyo' || kind === 'irimoya') {
       // corner ridges: sample the surface along each diagonal and lay short pieces on it
       const from = kind === 'irimoya' ? [gableEnd, 0.38] : kind === 'hip' ? [hw - hd, 0] : [0, 0];

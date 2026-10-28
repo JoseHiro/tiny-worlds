@@ -11,8 +11,8 @@ export const KOTO = {
   wood: 0x5a3f2e, oldWood: 0x7a5a40, plainWood: 0xd8c4a0, plaster: 0xf2ede2, earth: 0xc9a87c, bengara: 0x8e3b2e,
   kawara: 0x6d7178, copper: 0x5f9a8a, shu: 0xd9482b, gold: 0xc9a24a, ai: 0x2f4a6b, stone: 0xa9a59a, moss: 0x6f8f4a,
 };
-const M = (c, o = {}) => mat(c, { roughness: 0.85, ...o });
-const finish = (g, kind, extra = {}) => { const ud = { kind: 'building', building: kind, ...extra }; bakeStatic(g); g.userData = { ...g.userData, ...ud }; return g; };
+export const M = (c, o = {}) => mat(c, { roughness: 0.85, ...o });
+export const finish = (g, kind, extra = {}) => { const ud = { kind: 'building', building: kind, ...extra }; bakeStatic(g); g.userData = { ...g.userData, ...ud }; return g; };
 
 // ---------- 京町家 (a narrow, deep townhouse) ----------
 // shop: 'sweets' | 'tea' | 'craft' | 'home' · lattice: 'wood' | 'bengara' (red-brown)
