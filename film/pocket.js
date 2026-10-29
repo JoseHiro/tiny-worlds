@@ -34,7 +34,7 @@ export const POCKETS = {
   barcelona: {
     bg: '#ece9e4', floor: [-1.62, 4000], near: 150, far: 2500,
     shots: [
-      { start: set('clear', 'day'), skip: 8, dur: 20, cam: { orbit: { center: [20, 30, 0], radius: [900, 800], height: [500, 430], from: 1.15, to: 1.95 } }, draw: label({ kicker: 'Café studies · no. 3', name: 'de la Plaça.', lines: ['A terrace café on a square in Barcelona,', 'across the pond from a basilica still being built.'] }) },
+      { start: set('clear', 'day'), skip: 8, dur: 20, cam: { orbit: { center: [42, 30, -20], radius: [1000, 890], height: [560, 480], from: 1.15, to: 1.95 } }, draw: label({ kicker: 'Café studies · no. 3', name: 'de la Plaça.', lines: ['A terrace café on a square in Barcelona, across the', 'pond from the basilica; flats, shops and a tree-lined avenue.'] }) },
     ],
   },
   airport: {

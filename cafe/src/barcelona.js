@@ -1,6 +1,8 @@
 // Cafè de la Plaça — the Barcelona terrace café (cafe/DESIGN.md §2.5, cafe/SAGRADA.md §3): a corner café on the far
 // side of Plaça de Gaudí, its terrace of rattan chairs and parasols on flower-tiled pavement, and across the plaza
 // and its pond, the Nativity façade of the Sagrada Família at true scale. When it rains, the terrace goes inside.
+// Round about (cafe/BARCELONA.md): the Eixample's chamfered blocks of flats with shops below, the start of Avinguda
+// de Gaudí running off diagonally from the plaza's north corner, and the plaza's paths, pond, ducks and playground.
 import * as THREE from 'three';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { bakeStatic } from '../../airport/src/merge.js';
@@ -10,20 +12,24 @@ import { createWorld, v3, LOOKS } from '../../koto/src/world.js';
 import { Agent, FACE, yawTo } from '../../koto/src/people.js';
 import { sedan, keiCar, taxi, tourBus, CAR_COLORS, KEI_COLORS } from '../../town/src/vehicles.js';
 import { streetLight } from '../../town/src/gear.js';
-import { streetTree, palm } from '../../town/src/nature.js';
+import { palm } from '../../town/src/nature.js';
 import { CAFE, M, setGlow, shell, cutaway, counter, espressoMachine, grinder, register, pastryCase, menuBoard, wallShelf, windowBar, stool, chair, roundTable, pendant, candle, stringLights, plant, door, awning, bladeSign, aFrame, umbrellaStand } from './furniture.js';
 import { cup, laptop, plate, phone, book, sketchbook, Steam } from './things.js';
 import { minaStory, holdWeather } from './mina.js';
 import { Weather, Rain, Wet, puddles, WindowDrops } from './rain.js';
 import { Ambience } from './sound.js';
 import { SAGRADA_SCALE, basilica, towers, gloryWorks, nativityFacade, passionFacade, setNight, nightLights } from './sagrada.js';
+import { Facades, block, row, building, plainShop, setNight as setCityNight } from './eixample.js';
+import { SHOPS, terrace, flowerKiosk, newsKiosk, pondEdge, ducks, path, playground, mosaicBench, fountain, falquesLamp, planeTree, treeGrate, bikeDock, containers, easel, bollards, CROSS } from './bcn.js';
 
 const VIEWS = {
   terrace: [['テラスから', 'From the terrace'], v3(138.0, 2.0, 7.4), v3(60, 20, 0.5)],
   cafe: [['カフェ', 'Café'], v3(126, 4.2, 18), v3(140, 1.4, 6)],
   pond: [['池', 'Pond'], v3(99, 3.2, 13), v3(40, 9, 1)],
   plaza: [['広場', 'Plaza'], v3(118, 26, 56), v3(70, 0, 0)],
-  all: [['全体', 'Overview'], v3(230, 150, 170), v3(50, 25, 0)],
+  avenue: [['ガウディ大通り', 'Avinguda de Gaudí'], v3(200, 5.5, -120), v3(160, 3, -80)],
+  street: [['マヨルカ通り', 'Carrer de Mallorca'], v3(60, 3.5, 56), v3(100, 6, 66)],
+  all: [['全体', 'Overview'], v3(250, 170, 190), v3(50, 25, -10)],
   facade: [['生誕のファサード', 'Nativity façade'], v3(62, 6, 4), v3(26, 24, 0)],
 };
 const world = createWorld({ views: VIEWS, shadow: 150, target: [60, 0, 0], look: 'day' });
@@ -37,22 +43,21 @@ const lift = (seat) => seat - 0.26;
 const wet = new Wet();
 const panotTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#9a958c'; x.fillRect(0, 0, 128, 128); for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) { const cx = k * 32 + 16, cy = r * 32 + 16; x.fillStyle = '#aaa59b'; x.fillRect(cx - 15, cy - 15, 30, 30); x.fillStyle = '#8a857c'; for (let p = 0; p < 4; p++) { const a = (p / 4) * Math.PI * 2; x.beginPath(); x.ellipse(cx + Math.cos(a) * 6, cy + Math.sin(a) * 6, 5, 3, a, 0, 7); x.fill(); } x.beginPath(); x.arc(cx, cy, 2.5, 0, 7); x.fill(); } const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t; })();
 const paveM = wet.add(new THREE.MeshStandardMaterial({ map: panotTex, roughness: 0.85 }));
-panotTex.repeat.set(110, 90);
-world.slab(-120, 160, -110, 110, () => 0, 1, 1, paveM);
+panotTex.repeat.set(128, 104);
+world.slab(-120, 205, -150, 110, () => 0, 1, 1, paveM);
 const flat = (w, d, x, z, m, y = 0.02) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2), m); p.position.set(x, y, z); p.receiveShadow = true; scene.add(p); return p; };
 const asphalt = wet.add(new THREE.MeshStandardMaterial({ color: 0x4a4d52, roughness: 0.9 }));
-flat(13, 220, 36.5, 0, asphalt); flat(13, 220, -36.5, 0, asphalt); flat(280, 12, 20, 54, asphalt); flat(280, 12, 20, -54, asphalt); // Marina, Sardenya, Mallorca, Provença
+flat(13, 260, 36.5, -20, asphalt); flat(13, 260, -36.5, -20, asphalt); flat(325, 12, 42.5, 54, asphalt); flat(325, 12, 42.5, -54, asphalt); // Marina, Sardenya, Mallorca, Provença
+flat(9, 90, 133.5, -105, asphalt); flat(9, 50, 133.5, 85, asphalt); // Lepant, either side of the plaza (in front of the café it is all pavement)
 for (let z = -46; z <= 46; z += 92) for (let k = 0; k < 7; k++) flat(1.2, 3.5, 31.5 + k * 1.7, z, M(0xeeeae2), 0.03); // zebra crossings over Marina
-// the plaza: gravel paths, lawns, the pond with a stone rim
-const gravel = wet.add(new THREE.MeshStandardMaterial({ color: 0xcbbfa6, roughness: 1 }));
+// the plaza: lawn, with curving paths of pale sand (sauló) across it and a sandy walk round the pond
+const gravel = wet.add(new THREE.MeshStandardMaterial({ color: 0x8fb06a, roughness: 1 }));
 flat(84, 94, 86, 0, gravel, 0.015);
-const lawn = new THREE.MeshStandardMaterial({ color: 0x8fb06a, roughness: 1 });
-for (const [w, d, x, z] of [[22, 30, 58, -28], [22, 30, 58, 30], [26, 26, 112, -30], [26, 26, 112, 30], [18, 18, 102, 4]]) flat(w, d, x, z, lawn, 0.025);
 const pondShape = new THREE.Shape(); { const N = 40; for (let i = 0; i <= N; i++) { const a = (i / N) * Math.PI * 2, r = 1 + 0.08 * Math.sin(a * 3) + 0.06 * Math.cos(a * 5); const p = [Math.cos(a) * 17 * r, Math.sin(a) * 10 * r]; i ? pondShape.lineTo(...p) : pondShape.moveTo(...p); } }
 const pond = new Reflector(new THREE.ShapeGeometry(pondShape).rotateX(-Math.PI / 2), { textureWidth: 512, textureHeight: 512, color: 0x8faab0 });
 pond.position.set(72, 0.06, 2); scene.add(pond);
-const rim = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pondShape.getSpacedPoints(60).map((p) => new THREE.Vector3(p.x, 0.15, -p.y)), true), 80, 0.45, 6, true), M(0xb8b2a6, { roughness: 0.9 }));
-rim.position.set(72, 0, 2); scene.add(rim);
+const rim = pondEdge(pondShape, { width: 1.0, bed: false }); rim.position.set(72, 0, 2); scene.add(rim);
+const duckLine = ducks(5, { rx: 13, rz: 6.5 }); duckLine.position.set(72, 0.06, 2); scene.add(duckLine); life.push(duckLine);
 
 // ---------- the Sagrada Família across Carrer de la Marina ----------
 const sf = new THREE.Group(); sf.scale.setScalar(SAGRADA_SCALE); scene.add(sf);
@@ -63,23 +68,62 @@ const flood = nightLights(scene);
 // ---------- the plaza's trees, benches, lamps ----------
 const outside = new THREE.Group(); scene.add(outside);
 const out = (o, x, z, yaw = 0, y = 0) => { o.position.set(x, y, z); o.rotation.y = yaw; outside.add(o); return o; };
-// plane trees (scaled to Barcelona's big ones) round the edge and through the gardens
-for (const [x, z] of [[50, -44], [62, -44], [74, -44], [86, -44], [98, -44], [110, -44], [122, -44], [50, 44], [62, 44], [74, 44], [86, 44], [98, 44], [110, 44], [122, 44], [46, -30], [46, -18], [46, 26], [46, 36], [126, -24], [126, 28], [108, -24], [110, 22], [96, -32], [96, 32], [66, -34], [66, 36], [116, -6]]) { const tr = streetTree({ seed: Math.abs(x * 3 + z) % 9 }); tr.scale.setScalar(2.6); out(tr, x, z, x); }
-for (const [x, z, w, d] of [[58, -28, 20, 1.2], [58, 30, 20, 1.2], [112, -30, 1.2, 24], [112, 30, 1.2, 24]]) out(box(w, 1.1, d, M(0x5f8a4a, { roughness: 1 })), x, z, 0, 0.55); // clipped hedges
-// the Eixample blocks round about: chamfered corners, balconies, shops below
-const blockTex = (() => { const c = document.createElement('canvas'); c.width = 128; c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#d9c8aa'; x.fillRect(0, 0, 128, 128); for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) { x.fillStyle = '#5a4a3a'; x.fillRect(k * 32 + 10, r * 32 + 6, 12, 18); x.fillStyle = '#2a2a2c'; x.fillRect(k * 32 + 6, r * 32 + 22, 20, 2); } const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t; })();
-const litTex = (() => { const c = document.createElement('canvas'); c.width = 128; c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, 128, 128); for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) if ((r * 5 + k * 3) % 4 !== 0) { x.fillStyle = (r + k) % 3 ? '#ffcf8a' : '#ffe6b8'; x.fillRect(k * 32 + 10, r * 32 + 6, 12, 18); } const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t; })();
-const blockMats = []; // their windows light up at night
-function eixample(w, d, h, x, z, tint) {
-  const ch = 10, sh = new THREE.Shape([new THREE.Vector2(-w / 2 + ch, -d / 2), new THREE.Vector2(w / 2 - ch, -d / 2), new THREE.Vector2(w / 2, -d / 2 + ch), new THREE.Vector2(w / 2, d / 2 - ch), new THREE.Vector2(w / 2 - ch, d / 2), new THREE.Vector2(-w / 2 + ch, d / 2), new THREE.Vector2(-w / 2, d / 2 - ch), new THREE.Vector2(-w / 2, -d / 2 + ch)]);
-  const geo = new THREE.ExtrudeGeometry(sh, { depth: h, bevelEnabled: false }).rotateX(-Math.PI / 2);
-  const t = blockTex.clone(); t.needsUpdate = true; t.repeat.set(w / 6, h / 6);
-  const lt = litTex.clone(); lt.needsUpdate = true; lt.repeat.copy(t.repeat);
-  const bm = new THREE.MeshStandardMaterial({ map: t, color: tint, roughness: 0.95, emissive: 0xffffff, emissiveMap: lt, emissiveIntensity: 0 }); blockMats.push(bm);
-  const m = new THREE.Mesh(geo, bm); m.position.set(x, 0, z); m.castShadow = true; m.receiveShadow = true; scene.add(m);
-}
-for (const [x, z, w, h, tint] of [[86, 86, 80, 21, 0xffffff], [86, -86, 80, 19, 0xf2e6d6], [0, 86, 56, 20, 0xf6ead8], [0, -86, 56, 22, 0xffffff], [-86, 0, 78, 20, 0xf2e6d6], [-86, 86, 78, 18, 0xffffff], [-86, -86, 78, 21, 0xf6ead8]]) eixample(w, x === -86 && z === 0 ? 84 : 46, h, x, z, tint);
-for (const [x, z] of [[58, -16], [88, -16], [58, 20], [90, 18], [100, -6]]) out(palm({ height: 9 + (x % 3), lean: 0.3, seed: x % 5 }), x, z);
+// plane trees round the plaza's edge and through the gardens (in their iron grates where they stand in paving)
+for (const [x, z] of [[50, -44], [62, -44], [74, -44], [86, -44], [98, -44], [110, -44], [122, -44], [50, 44], [62, 44], [74, 44], [86, 44], [98, 44], [110, 44], [122, 44], [46, -30], [46, -18], [46, 26], [46, 36], [126, -24], [126, 28], [108, -24], [96, -32], [96, 32], [66, -34], [66, 36]]) { out(planeTree({ seed: Math.abs(x * 3 + z) % 6, h: 9 + (x % 3) }), x, z, x); if (Math.abs(z) > 40) out(treeGrate(), x, z); }
+// and along the streets round about: Marina, Sardenya, Mallorca, Provença (on the pavements, every 12)
+for (let k = -140; k <= 100; k += 12) { if (Math.abs(k) > 50) for (const x of [28.6, 44.4, -28.6, -44.4]) { out(planeTree({ seed: (k + x) & 5, h: 8.5 }), x, k); out(treeGrate(), x, k); } }
+for (let k = -114; k <= 200; k += 12) { if (k > 30 && k < 44) continue; for (const z of [61.4, -61.4]) { if (k > 128 && z < 0) continue; out(planeTree({ seed: (k + z) & 5, h: 8.5 }), k, z); out(treeGrate(), k, z); } }
+for (const [x, z, w, d] of [[58, -28, 20, 1.2], [58, 30, 20, 1.2], [112, -30, 1.2, 24]]) out(box(w, 1.1, d, M(0x5f8a4a, { roughness: 1 })), x, z, 0, 0.55); // clipped hedges
+// ---------- the Eixample round about (cafe/BARCELONA.md §3.1, §4) ----------
+// chamfered blocks of flats, pavements 3–4 wide; the sides that face the plaza, the basilica or the avenue get real
+// shops, the rest ordinary ones. All the houses go into one Facades (instanced pieces, one mesh of walls).
+const F = new Facades(), slots = [];
+const B = (o, wide = false) => block(F, o).forEach((s) => slots.push({ ...s, wide }));
+B({ cx: 86, cz: 86, w: 80, d: 46, seed: 11, shopsOn: ['n'] }, true); B({ cx: 86, cz: -106.5, w: 80, d: 87, seed: 12, shopsOn: ['s'] }, true);
+B({ cx: 0, cz: 86, w: 54, d: 46, seed: 13, shopsOn: ['n'] }); B({ cx: 0, cz: -106.5, w: 54, d: 87, seed: 14, shopsOn: ['s'] });
+B({ cx: -82, cz: 0, w: 72, d: 90, seed: 15, shopsOn: ['e'] }); B({ cx: -82, cz: 86, w: 72, d: 46, seed: 16, shopsOn: ['n', 'e'] }); B({ cx: -82, cz: -106.5, w: 72, d: 87, seed: 17, shopsOn: ['s', 'e'] });
+B({ cx: 172, cz: 86, w: 62, d: 46, seed: 18, shopsOn: ['w', 'n'] });
+// the block the café is in: its plaza side is built round the café (which has its own flats on top)
+block(F, { cx: 172, cz: 0, w: 62, d: 90, seed: 19, shopsOn: [], skip: ['w'] });
+for (const [z0, len] of [[-34, 35], [15.2, 19]]) row(F, { x0: 141, z0, yaw: -Math.PI / 2, len, seed: 20 + z0, shops: true }).forEach((s) => slots.push({ ...s, wide: true }));
+// Avinguda de Gaudí: from the plaza's north corner (Lepant × Provença), running off at 45° between two rows of houses
+const AV = { x: 135, z: -54, w: 12 }, AD = new THREE.Vector3(1, 0, -1).normalize(), AN = new THREE.Vector3(1, 0, 1).normalize();
+const avAt = (t, side = 0) => [AV.x + AD.x * t + AN.x * side, AV.z + AD.z * t + AN.z * side];
+{ const [x0, z0] = avAt(82, AV.w); row(F, { x0, z0, yaw: -3 * Math.PI / 4, len: 42, seed: 31, shops: true }).forEach((s) => slots.push({ ...s, wide: true, avenue: true })); }
+{ const [x0, z0] = avAt(40, -AV.w); row(F, { x0, z0, yaw: Math.PI / 4, len: 65, seed: 32, shops: true }).forEach((s) => slots.push({ ...s, wide: true, avenue: true })); }
+row(F, { x0: 141, z0: -148, yaw: -Math.PI / 2, len: 56, seed: 33, shops: true }).forEach((s) => slots.push({ ...s })); // Lepant, north of the avenue
+row(F, { x0: 176, z0: -63, yaw: 0, len: 27, seed: 34 }); // Provença, east of it
+const avenue = new THREE.Mesh(new THREE.PlaneGeometry(AV.w * 2, 150).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xc9c2b4, roughness: 0.9 }));
+{ const [x, z] = avAt(70); avenue.position.set(x, 0.025, z); avenue.rotation.y = Math.PI / 4; avenue.receiveShadow = true; scene.add(avenue); }
+// the shops: a round of the six kinds, with an ordinary one now and then; tapas bars on the avenue and the plaza
+// spill out onto a terrace
+const ROUND = ['bakery', 'tapasBar', 'fruiteria', null, 'gelateria', 'pharmacy', 'souvenirs', null, 'tapasBar', 'fruiteria', 'bakery', null];
+const shopsByKind = {};
+slots.forEach((s, i) => {
+  const kind = ROUND[i % ROUND.length];
+  if (!kind) { plainShop(F, s); return; }
+  const shop = SHOPS[kind](); out(shop, s.x, s.z, s.yaw); (shopsByKind[kind] ??= []).push(s);
+  if (kind === 'tapasBar' && s.wide) out(terrace({ n: s.avenue ? 3 : 2 }), s.x + Math.sin(s.yaw) * 3.6, s.z + Math.cos(s.yaw) * 3.6, s.yaw);
+  if (shop.userData.update) life.push(shop);
+});
+const city = F.build(); scene.add(city);
+// the avenue's middle: two rows of plane trees, Falqués's lamps between them, benches, a kiosk at each corner
+for (let t = 18; t <= 140; t += 9) for (const sd of [-5, 5]) { const [x, z] = avAt(t, sd); out(planeTree({ seed: t % 6, h: 9 }), x, z); out(treeGrate(), x, z); }
+for (let t = 22; t <= 140; t += 18) { const [x, z] = avAt(t); out(falquesLamp(), x, z, Math.PI / 4); }
+for (let t = 31; t <= 130; t += 18) for (const sd of [-2, 2]) { const [x, z] = avAt(t, sd); out(bench(), x, z, sd > 0 ? -Math.PI / 4 : (3 * Math.PI) / 4); }
+{ const [x, z] = avAt(8, -2); out(bollards(6, 1.5), x, z, -Math.PI / 4); }
+out(flowerKiosk(), 145.5, -71, -Math.PI / 4); out(newsKiosk(), 166, -66.5, -Math.PI / 4);
+// on the pavements: bike-share docks, the big bins, street lamps
+out(bikeDock({ n: 6 }), 128.4, -36, -Math.PI / 2); out(bikeDock({ n: 5 }), 60, 63.5, Math.PI);
+for (const [x, z, r] of [[100, -63.6, 0], [-10, 63.6, Math.PI], [-46.5, -20, Math.PI / 2], [150, 63.6, Math.PI]]) out(containers(), x, z, r);
+// the plaza: curving paths of sand between the corners and round the pond, a playground, mosaic benches, a fountain
+{ const ring = []; for (let i = 0; i <= 24; i++) { const a = (i / 24) * Math.PI * 2; ring.push([72 + Math.cos(a) * 21.5, 2 + Math.sin(a) * 13.5]); } out(path(ring, 4.2, { kerb: false }), 0, 0); } // the walk round the pond
+for (const pts of [[[46, -46], [56, -30], [60, -16], [58, -6]], [[46, 46], [56, 30], [60, 18], [58, 10]], [[128, -46], [112, -36], [96, -18], [88, -8]], [[128, 46], [114, 36], [98, 20], [88, 12]], [[92, -12], [96, 0], [92, 14]], [[46, 0], [54, 2]], [[100, 0], [128, 4]]]) out(path(pts, 3.2), 0, 0);
+const play = playground(); out(play, 112, 30, Math.PI / 2); life.push(play);
+for (const [x, z, r] of [[96, -26, 0.6], [100, 26, -0.6], [56, -2, Math.PI / 2]]) out(mosaicBench({ len: 5 }), x, z, r);
+for (const [x, z] of [[124, -10], [48, -38]]) out(fountain(), x, z);
+out(easel(), 92.2, -9.6, -Math.PI / 2 - 0.3);
+for (const [x, z] of [[58, -16], [88, -18], [58, 20], [90, 20]]) out(palm({ height: 9 + (x % 3), lean: 0.3, seed: x % 5 }), x, z);
 function bench() { const g = new THREE.Group(); g.add(box(2.2, 0.06, 0.5, M(CAFE.walnut), 0, 0.42, 0)); g.add(box(2.2, 0.4, 0.06, M(CAFE.walnut), 0, 0.68, -0.24)); for (const x of [-0.9, 0.9]) g.add(box(0.08, 0.42, 0.5, M(CAFE.iron), x, 0.21, 0)); return g; }
 const BENCHES = [[60, -10, Math.PI / 2], [60, 14, Math.PI / 2], [84, -12, 0], [84, 16, Math.PI]];
 for (const [x, z, r] of BENCHES) out(bench(), x, z, r);
@@ -107,11 +151,10 @@ for (const x of [-4.1, 2.6, 4.8]) at(pendant({ kind: 'globe', drop: 1.3 }), x, x
 at(plant({ kind: 'monstera' }), 5.8, -4.0); at(umbrellaStand({ n: 2 }), -2.0, 4.0);
 const dr = at(door({ color: CAFE.terracotta }), -1.0, 4.45); life.push(dr);
 const lamps = [[0, 2.2, 0], [-4.1, 2.0, 3.5]].map(([x, y, z]) => { const l = new THREE.PointLight(0xffc27a, 4, 9, 1.4); l.position.set(x, y, z); cafe.add(l); return l; });
-// upstairs: an Eixample block of flats with iron balconies (only from street level, so it never hides the café)
-const flats = new THREE.Group(); flats.position.y = T; cafe.add(flats);
-{ const w = 13, d = 9, H = 15.6; flats.add(box(w, H, d, M(0xe0cfb4, { roughness: 0.95 }), 0, H / 2, 0)); flats.add(box(w + 0.4, 0.5, d + 0.4, M(0xc9b89c), 0, H + 0.25, 0));
-  for (let f = 0; f < 5; f++) for (let k = 0; k < 4; k++) { const x = -4.8 + k * 3.2, y = 1.2 + f * 3.1; flats.add(box(1.2, 2.0, 0.08, M(0x5a4a3a, { roughness: 0.5 }), x, y + 1, d / 2 + 0.05)); flats.add(box(1.8, 0.12, 0.7, M(0xc9b89c), x, y, d / 2 + 0.35)); for (let b = -0.8; b <= 0.81; b += 0.16) flats.add(box(0.03, 0.8, 0.03, M(CAFE.iron), x + b, y + 0.45, d / 2 + 0.68)); flats.add(box(1.8, 0.04, 0.04, M(CAFE.iron), x, y + 0.85, d / 2 + 0.68)); }
-  bakeStatic(flats); }
+// upstairs: an Eixample house standing on the café (only from street level, so it never hides the café). The café's
+// own frame has its front at local z 4.5; the house's front faces the same way.
+const flats = new THREE.Group(); cafe.add(flats);
+{ const FF = new Facades(); building(FF, new THREE.Matrix4().setPosition(0, 0, 4.5), { type: 'modernista', bays: 5, floors: 5, depth: 9, seed: 7, upper: true, back: false }); flats.add(FF.build()); }
 // the terrace: an awning on the café, parasols, rattan chairs at little marble tables, string lights, planters
 out(awning({ w: 12, depth: 1.6, a: CAFE.terracotta, b: CAFE.cream }), 140.2, 8, -Math.PI / 2, 3.1);
 out(bladeSign({ name: 'Cafè', sub: 'de la Plaça', color: '#b5452b' }), 140.4, 14.8, -Math.PI / 2, 3.4);
@@ -124,8 +167,6 @@ for (const [x, z] of [[134.3, 1], [134.3, 11], [134.3, 21]]) out(cafeParasol(), 
 for (const z of [-4, 6, 16, 23]) out(box(0.08, 3.0, 0.08, M(CAFE.iron)), 130.2, z, 0, 1.5); // the posts for the string lights
 outside.add(stringLights([[140, 3.0, -4], [130.2, 2.9, -4], [140, 3.0, 6], [130.2, 2.9, 6], [140, 3.0, 16], [130.2, 2.9, 16], [140, 3.0, 23]], { sag: 0.25, every: 0.6 }));
 for (const z of [-5, 24]) out(plant({ kind: 'small', s: 3.2 }), 131, z);
-// the other side of Lepant: more flats with shops (to frame the plaza)
-for (const z of [-36, -16, 32]) { const g = new THREE.Group(); g.add(box(10, 19, 14, M(z % 2 ? 0xd8c8ac : 0xe6d6bc, { roughness: 0.95 }), 0, 9.5, 0)); for (let f = 0; f < 6; f++) for (let k = 0; k < 4; k++) g.add(box(0.08, 1.8, 1.1, M(0x5a4a3a), -5.05, 1.4 + f * 3, -4.5 + k * 3)); out(g, 146, z); }
 bakeStatic(inside); bakeStatic(outside);
 
 // ---------- things on tables, steam ----------
@@ -172,6 +213,21 @@ for (const [k, role, x, z] of [[0, 'tourist', 90, -4], [1, 'visitor', 91, 6], [2
 const dogWalker = agent('rainComer', [{ jump: [125, -40] }, { to: [52, -40] }, { to: [52, 40] }, { to: [125, 40] }, { to: [125, -40] }], { speed: 1.0 });
 umb.push(dogWalker);
 const kids = ['child', 'swimKid'].map((r, i) => agent(r, [{ jump: [88, -6 + i * 10] }, { to: [80 + i * 3, -9 + i * 20] }, { do: 'look', dur: 2, face: yawTo(-1, 0) }, { to: [89, -4 + i * 8] }], { speed: 1.3, phase: i }));
+// round the plaza and the avenue (cafe/BARCELONA.md §3.5): a guide with a flag and a group of tourists who stop to
+// photograph the façade across the pond, a painter at an easel, a guitarist on the avenue, neighbours with bread and
+// fruit, strollers and a jogger on the avenue, children at the playground
+const TOUR = [[128, -40], [104, -32], [92, -14], { stop: 7 }, [92, 16], [108, 38], [126, 40], [131, 20], [131, -30]];
+['guide', 'touristA', 'touristB', 'touristC', 'touristD', 'tourist', 'visitor'].forEach((role, i) => {
+  const off = i ? [((i % 3) - 1) * 1.1, Math.ceil(i / 3) * 1.2] : [0, 0]; // the group walks behind the guide in a little crowd
+  const route = [{ jump: [TOUR[0][0] + off[0], TOUR[0][1] + off[1]] }];
+  for (const p of TOUR.slice(1)) route.push(p.stop ? { do: i ? (i % 2 ? 'photo' : 'look') : 'idle', dur: p.stop, face: yawTo(-1, 0) } : { to: [p[0] + off[0], p[1] + off[1]] });
+  umb.push(agent(role, route, { delay: i * 0.4, speed: 0.75, phase: i }));
+});
+agent('painter', [{ jump: [93.2, -9.3] }, { do: 'idle', dur: 9999, face: yawTo(-1, -0.3) }]);
+{ const [x, z] = avAt(46, 3.2); agent('musician', [{ jump: [x, z] }, { do: 'idle', dur: 9999, face: Math.PI / 4 + Math.PI }]); }
+for (const [role, a, b, d] of [['veiBread', [44.8, -66], [44.8, 64], 0], ['veiBag', [127, 64], [46, 64.5], 8], ['veiBread', [-26, -64], [26, -64], 15], ['veiBag', [127.8, -64.5], [46, -64.5], 4]]) umb.push(agent(role, [{ jump: a }, { to: b }, { hide: 6 + d }], { delay: d, speed: 0.85 }));
+for (const [role, s0, s1, sd, d] of [['touristC', 10, 135, 1.4, 0], ['woman', 135, 10, -1.6, 6], ['jogger', 8, 138, -3.2, 3], ['touristD', 130, 12, 3.0, 12], ['senior', 20, 90, -0.8, 20]]) { const [x0, z0] = avAt(s0, sd), [x1, z1] = avAt(s1, sd); umb.push(agent(role, [{ jump: [x0, z0] }, { to: [x1, z1] }, { hide: 4 + d }], { delay: d, speed: role === 'jogger' ? 1.6 : 0.9 })); }
+['child', 'rainKid', 'jinbeiKid'].forEach((r, i) => agent(r, [{ jump: [110 + i, 28] }, { to: [112.6, 30.6 + i * 0.4] }, { do: 'look', dur: 3, face: yawTo(1, 0) }, { to: [109.5, 32.5] }, { do: 'idle', dur: 2, face: yawTo(0, -1) }, { to: [114, 27.5] }], { speed: 1.2, phase: i, delay: i * 1.5 }));
 for (const [x, z, r] of BENCHES.slice(0, 3)) { const a = agent(r === 0 ? 'senior' : 'reader', [{ jump: [x + Math.sin(r) * 0.25, z - Math.cos(r) * 0.25] }, { until: rainy, do: 'sitRead', face: r - Math.PI / 2, lift: lift(0.44) }, { to: [x + 6, z] }, { hide: () => dry() }]); umb.push(a); }
 // the dog
 const dog = (() => { const g = new THREE.Group(), m = M(0xc9a87c), legs = []; const b = mesh(new THREE.SphereGeometry(0.22, 10, 8), m, 0, 0.4, 0); b.scale.set(1.8, 1, 1); g.add(b); g.add(mesh(new THREE.SphereGeometry(0.16, 10, 8), m, 0.4, 0.58, 0)); g.add(mesh(new THREE.SphereGeometry(0.07, 6, 5), M(0x2a2a2c), 0.56, 0.58, 0)); for (const s of [1, -1]) { const e = mesh(new THREE.SphereGeometry(0.08, 6, 5), M(0x8a6a4a), 0.36, 0.7, s * 0.1); e.scale.set(0.6, 1.4, 0.6); g.add(e); } const tail = mesh(new THREE.CapsuleGeometry(0.03, 0.2, 3, 6), m, -0.42, 0.55, 0); tail.rotation.z = 0.8; g.add(tail); for (const [x, z] of [[0.25, 0.12], [0.25, -0.12], [-0.25, 0.12], [-0.25, -0.12]]) { const l = mesh(new THREE.CapsuleGeometry(0.05, 0.22, 3, 6), m, x, 0.16, z); legs.push(l); g.add(l); } g.userData.update = (t) => { legs.forEach((l, i) => (l.rotation.z = Math.sin(t * 10 + i * Math.PI) * 0.4)); tail.rotation.x = Math.sin(t * 8) * 0.5; }; scene.add(g); return g; })();
@@ -227,7 +283,7 @@ const $ = (id) => document.getElementById(id);
 const WJA = { clear: ['晴れ', 'clear'], cloudy: ['くもり', 'cloudy'], drizzle: ['小雨', 'drizzle'], rain: ['本降り', 'pouring'], after: ['雨上がり', 'after the rain'] };
 for (const b of $('weather').children) b.onclick = () => { weather.hold(b.dataset.v); [...$('weather').children].forEach((x) => x.classList.toggle('on', x === b)); };
 let drift = false, driftT = 0, driftI = 0;
-const DRIFT = [[[138.0, 2.0, 7.4], [60, 20, 0.5]], [[128, 3.5, 20], [140, 1.2, 8]], [[92, 2.2, 10], [26, 44, 0]], [[124, 2.2, -6], [133, 0.8, 3]], [[140, 2.2, 22], [60, 30, 0]]];
+const DRIFT = [[[138.0, 2.0, 7.4], [60, 20, 0.5]], [[128, 3.5, 20], [140, 1.2, 8]], [[92, 2.2, 10], [26, 44, 0]], [[200, 5.5, -120], [160, 3, -80]], [[112, 6, -22], [92, 1, -8]], [[60, 3.5, 56], [100, 6, 66]], [[124, 2.2, -6], [133, 0.8, 3]], [[140, 2.2, 22], [60, 30, 0]]];
 $('drift').onclick = () => { drift = !drift; driftT = 0; $('drift').classList.toggle('on', drift); };
 const soundLabel = () => { $('sound').textContent = L(sound.on ? ['音 · ON', 'Sound · ON'] : ['音 · OFF', 'Sound · OFF']); };
 $('sound').onclick = () => { $('sound').classList.toggle('on', sound.toggle()); soundLabel(); };
@@ -241,7 +297,7 @@ steps.push((t, dt) => {
   world.hemi.intensity = LK.hemi[0] * (0.6 + 0.4 * dim); world.sun.intensity = LK.sun[0] * dim;
   sky.set(LK.sky ?? '#dfe9f2').lerp(grey, look === 'night' ? 0.1 : weather.cloud * 0.5); scene.background.copy(sky);
   const dark = Math.min(1, { morning: 0.2, day: 0, dusk: 0.6, night: 1 }[look] + weather.cloud * 0.3);
-  setGlow(dark); const nk = look === 'night' ? 1 : look === 'dusk' ? 0.35 : 0; setNight(nk); flood.update(nk); blockMats.forEach((m) => (m.emissiveIntensity = nk * 0.9)); lamps.forEach((l) => (l.intensity = 3 + dark * 14));
+  setGlow(dark); const nk = look === 'night' ? 1 : look === 'dusk' ? 0.35 : 0; setNight(nk); flood.update(nk); setCityNight(nk); CROSS.emissiveIntensity = 0.5 + dark * 1.5; lamps.forEach((l) => (l.intensity = 3 + dark * 14));
   rain.update(t, dt, r); drops.update(dt, r); wet.update(weather.wet); pud.update(weather.wet);
   steam.update(t, dt); sound.update(dt, r);
   doorT = Math.max(0, doorT - dt); dr.userData.open = doorT > 0 ? 1 : 0;

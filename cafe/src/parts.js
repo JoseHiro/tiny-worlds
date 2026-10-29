@@ -9,6 +9,7 @@ import { cat } from '../../town/src/koto-props.js';
 import { CAFE, setGlow, shell, counter, espressoMachine, grinder, pourOver, register, pastryCase, menuBoard, wallShelf, windowBar, stool, chair, roundTable, longTable, sofa, armchair, rug, lowTable, pendant, floorLamp, candle, stringLights, plant, bookshelf, door, awning, bladeSign, aFrame, umbrellaStand, coatRack, ceilingFan, recordPlayer } from './furniture.js';
 import { cup, laptop, book, notebook, tablet, phone, plate, Steam } from './things.js';
 import { Rain, WindowDrops } from './rain.js';
+import { bcnCards, BCN_GROUPS, setNight } from './bcn-cards.js';
 
 const BG = new THREE.Color('#ece6dc');
 const vec = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -98,7 +99,8 @@ const ITEMS = [
   C('people', 'バリスタと働く人', 'Baristas and workers', ['バリスタ（デニムのエプロン、注ぐ）· 若いバリスタ（キャップ、拭く）· ノートPCの人（眼鏡、打つ）· ビデオ通話の人（ヘッドホン）· デザイナー（ベレー帽、考える）', 'Barista (denim apron, pouring) · young barista (cap, wiping) · laptop worker (glasses, typing) · someone on a video call (headphones) · designer (beret, thinking)'], peopleCard(['barista', 'barista2', 'macWorker', 'callWorker', 'designer'], ['pour', 'wipe', 'sitType', 'sitChat', 'sitThink']), { view: [0.25, 0.3, 1], fill: 0.62 }),
   C('people', '勉強・読書・おしゃべり', 'Study, reading, talking', ['学生（書く・伸び）· 読書の人（ページをめくる）· おしゃべりの人（カップを口へ）· 新聞のおじいさん（ハンチング）· 親子（雨合羽の子ども）· 雨で駆け込む人（傘）· 店の猫', 'Students (writing, stretching) · a reader (turning pages) · people chatting (cup to lips) · an old man with a newspaper (flat cap) · parent and child (child in a raincoat) · someone dashing in from the rain (umbrella) · the café cat'], (scene) => { const r = peopleCard(['studentA', 'studentB', 'reader', 'chatA', 'oldman', 'parent', 'rainKid', 'rainComer'], ['sitWrite', 'sitStretch', 'sitRead', 'sitSip', 'sitRead', 'sitChat', 'idle', 'walk'])(scene); r.radius += 0.6; const k = cat({ mode: 'sleep' }); k.position.set(4.4, 0, 0.6); r.obj.add(k); const u = r.update; return { ...r, update: (t, dt) => { u(t, dt); k.userData.update(t); } }; }, { view: [0.25, 0.3, 1], fill: 0.6 }),
 ];
-const GROUPS = [['all', ['すべて', 'All']], ['room', ['店', 'Shop']], ['counter', ['カウンター', 'Counter']], ['seat', ['席', 'Seats']], ['light', ['照明・入口', 'Lights · door']], ['thing', ['小物', 'Small things']], ['people', ['人', 'People']]];
+ITEMS.push(...bcnCards(C, show)); // the Barcelona shelf (cafe/BARCELONA.md)
+const GROUPS = [['all', ['すべて', 'All']], ['room', ['店', 'Shop']], ['counter', ['カウンター', 'Counter']], ['seat', ['席', 'Seats']], ['light', ['照明・入口', 'Lights · door']], ['thing', ['小物', 'Small things']], ['people', ['人', 'People']], ...BCN_GROUPS];
 
 // ---------- page ----------
 const canvas = document.getElementById('stage');
@@ -112,7 +114,7 @@ const tabLabel = (id, name) => `${L(name)} ${id === 'all' ? ITEMS.length : ITEMS
 for (const [id, name] of GROUPS) { const b = document.createElement('button'); b.textContent = tabLabel(id, name); b.dataset.tab = id; b.onclick = () => showTab(id); tabs.appendChild(b); }
 { // evening: the bulbs, candles and the pastry case brighten
   const b = document.createElement('button'); const lampName = ['夕方の灯り', 'Evening lights']; b.textContent = L(lampName); onLang(() => (b.textContent = L(lampName)));
-  b.onclick = () => { const on = !b.classList.contains('on'); b.classList.toggle('on', on); setGlow(on ? 1 : 0); };
+  b.onclick = () => { const on = !b.classList.contains('on'); b.classList.toggle('on', on); setGlow(on ? 1 : 0); setNight(on ? 1 : 0); };
   seasonsNav.appendChild(b);
 }
 // the name in the chosen language first, the other beside it

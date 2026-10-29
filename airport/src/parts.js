@@ -560,9 +560,21 @@ const ROLES = {
   umbrellaWoman: { robe: 0x2f4a6b, pattern: 'kiku', obi: 0xc9a24a, otaiko: true, hat: 'updo', kanzashi: 0xc9a24a, shoes: 0x2a2018, stride: 0.3, pace: 0.75, carry: 'wagasa' },
 };
 for (const k of ['togoA', 'togoB', 'togoC', 'togoD', 'togoE']) ROLES[k + 'Cup'] = { ...ROLES[k], carry: 'togo' };
+// Barcelona's neighbours and visitors (cafe/src/barcelona.js): shoppers with bread or fruit, a guitarist, a painter, a tour guide
+Object.assign(ROLES, {
+  veiBread: { top: 0x8a6a5a, legs: 0x3a3f4a, hat: 'grey', carry: 'bread', pace: 0.75 },
+  veiBag: { top: 0xd96a4a, legs: 0x2f3e57, hat: 'long', hair: 0x2a2018, carry: 'bag', handbag: 0x6b4a35 },
+  musician: { top: 0x2f3e57, legs: 0x3a3f4a, hat: 'flatcap', capColor: 0x2a2a2c, hair: 0x2a2018, carry: 'guitar' },
+  painter: { top: 0xf2ede2, legs: 0x6b5a48, hat: 'beret', capColor: 0x8a2a2a, hair: 0x9a9a9a, glasses: true, carry: 'brush' },
+  guide: { top: 0xc8283a, legs: 0x2f3e57, hat: 'baseball', capColor: 0xc8283a, carry: 'flag' },
+  touristA: { top: 0x7fb6c4, legs: 0xc9b48a, hat: 'straw', carry: 'camera', backpack: 0x3a3f4a },
+  touristB: { top: 0xf2c94c, legs: 0x2f3e57, hat: 'baseball', capColor: 0x2f5a8a, carry: 'camera' },
+  touristC: { top: 0xe2a9a0, legs: 0xf6f1e6, hat: 'long', hair: 0xc9a07a, handbag: 0x2f3e57 },
+  touristD: { top: 0x5f9a6a, legs: 0x3a3f4a, hat: 'hair', hair: 0x6b4a35, backpack: 0xd96a4a },
+});
 // things carried in the right hand (s = 1 arm); the arm holds still while the other swings
 // how far forward the carrying arm is held
-const HOLD = { umbrella: 0.6, mug: 0.25, togo: 0.3, wagasa: 0.6, uchiwa: 1.1, broom: 0.5, bowl: 1.2, tray: 1.3, shears: 0.4, flag: 0.9, camera: 1.3, basket: 0.25 };
+const HOLD = { umbrella: 0.6, mug: 0.25, togo: 0.3, bread: 0.2, bag: 0.15, guitar: 1.0, brush: 1.1, wagasa: 0.6, uchiwa: 1.1, broom: 0.5, bowl: 1.2, tray: 1.3, shears: 0.4, flag: 0.9, camera: 1.3, basket: 0.25 };
 const KOTO_GOLD = 0xc9a24a;
 function carryItem(kind) {
   const g = new THREE.Group();
@@ -582,6 +594,10 @@ function carryItem(kind) {
     g.add(cyl(0.012, 0.012, 1.0, mat(0x2a2a2c), 0, 0.45, 0, 5));
     g.add(mesh(new THREE.SphereGeometry(0.55, 16, 6, 0, Math.PI * 2, 0, Math.PI / 2.6), mat(0x2f3e57, { side: THREE.DoubleSide, roughness: 0.6 }), 0, 0.72, 0));
   } else if (kind === 'togo') { g.add(cyl(0.045, 0.035, 0.13, mat(0xf6f1e6), 0.03, 0.04, 0, 10)); g.add(cyl(0.047, 0.042, 0.05, mat(0xb08458), 0.03, 0.03, 0, 10)); g.add(cyl(0.048, 0.048, 0.02, mat(0xf6f1e6), 0.03, 0.115, 0, 10)); } // a paper cup, sleeve and lid
+  else if (kind === 'bread') { g.add(cyl(0.09, 0.07, 0.22, mat(0xe8dcc4), 0.03, -0.08, 0, 8)); g.add(cyl(0.025, 0.025, 0.5, mat(0xd9a441), 0.03, 0.12, 0.02, 6)).children.at(-1).rotation.z = 0.15; } // a paper bag with a baguette sticking out
+  else if (kind === 'bag') { g.add(box(0.2, 0.24, 0.1, mat(0xc9a87c), 0.02, -0.16, 0)); g.add(mesh(new THREE.SphereGeometry(0.05, 6, 4), mat(0xf28c28), 0.0, -0.02, 0)); g.add(mesh(new THREE.SphereGeometry(0.045, 6, 4), mat(0x8fb83a), 0.06, -0.02, 0.02)); } // fruit from the market
+  else if (kind === 'guitar') { const b = new THREE.Group(); b.add(mesh(new THREE.SphereGeometry(0.16, 10, 8), mat(0xc9884a), 0, 0, 0)).children.at(-1).scale.set(1, 1.2, 0.35); b.add(mesh(new THREE.SphereGeometry(0.12, 10, 8), mat(0xc9884a), 0, 0.2, 0)).children.at(-1).scale.set(1, 1, 0.35); b.add(box(0.06, 0.45, 0.03, mat(0x4a3426), 0, 0.5, 0)); b.add(cyl(0.04, 0.04, 0.02, mat(0x2a2018), 0, 0.05, 0.05, 10)).children.at(-1).rotation.x = Math.PI / 2; b.rotation.z = 1.1; b.position.set(0.12, 0.05, 0.12); g.add(b); }
+  else if (kind === 'brush') { g.add(cyl(0.01, 0.012, 0.25, mat(0x8a6a4a), 0.04, 0.08, 0, 5)); g.add(mesh(new THREE.ConeGeometry(0.015, 0.05, 5), mat(0x3f8a9a), 0.04, 0.22, 0)); }
   else if (kind === 'mug') { g.add(cyl(0.045, 0.04, 0.09, mat(0xf6f1e6), 0.03, 0.02, 0, 10)); g.add(mesh(new THREE.TorusGeometry(0.025, 0.008, 4, 8), mat(0xf6f1e6), 0.03, 0.02, 0.05)); }
   void paper;
   return g;
