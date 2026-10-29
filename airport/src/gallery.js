@@ -5,6 +5,7 @@ import * as P from './parts.js';
 import * as I from './interior.js';
 import * as R from './rooms.js';
 import * as C from './cabin.js';
+import * as H from './hangar.js';
 
 function lineup() {
   const g = new THREE.Group();
@@ -120,7 +121,79 @@ const ITEMS = [
   { group: 'cabin', tag: 'Cabin · Cockpit', name: 'コックピット', note: '操縦席2 · 光る計器 · 機長と副操縦士が座る', build: () => { const c = C.cockpit(); const ps = c.userData.seats.map((p) => { const x = P.person('pilot', { mode: 'sit' }); x.position.copy(p); c.add(x); return x; }); const up = c.userData.update; c.userData.update = (t) => { up(t); ps.forEach((x) => x.userData.update(t)); }; return c; }, view: [-0.8, 0.9, 1.0] },
   { group: 'cabin', tag: 'Cabin · Cart', name: 'サービスカート', note: '0.6×0.34 · オレンジの天板 · 飲み物', build: () => C.serviceCart() },
   { group: 'cabin', tag: 'Cabin · Sign', name: 'ベルト着用サイン', note: '天井の表示 · 点灯で着席の合図', build: () => { const b = C.beltSign(); b.position.y = 0.6; const up = b.userData.update; b.userData.update = (t) => { b.userData.on = Math.sin(t) > 0; up(); }; return b; } },
+
+  // ---- 整備・格納庫（DESIGN.md §12）----
+  { group: 'hangar', tag: 'Hangar · Room kit', name: '格納庫（部屋キット）', note: '20×22 · 天井7 · 南の壁は腰の高さ、屋根は北半分だけ · 7人がずっと作業中', wide: true, build: hangarCard, view: [0.75, 1.0, 1.25], zoom: 0.6 },
+  { group: 'hangar', tag: 'Hangar · Aircraft', name: '整備中の機体', note: '南のエンジンのカウルを上に開けた状態 · 中にコア・ギアボックス・配管', build: () => P.airplane(P.LIVERIES.midnight, { cowlOpen: 1 }), view: [-0.9, 0.55, 1.0] },
+  { group: 'hangar', tag: 'Hangar · People', name: '整備士たち', note: 'つなぎ（青・グレー）· 検査員はクリップボード · ライン整備士は懐中電灯 · 新ポーズ5つ', build: mechanics, modes: ['wrench', 'reach', 'inspect', 'kneel', 'write', 'walk'] },
+  { group: 'hangar', tag: 'Hangar · Lift', name: '高所作業車', note: '床0.4〜3.0 · はさみ3段 · 乗った整備士ごと上下する', build: liftCard },
+  { group: 'hangar', tag: 'Hangar · Dock', name: '機首の作業台', note: '床の高さ1.0 · 1.6×1.0 · 階段の側だけ手すりが切れている', build: dockCard },
+  { group: 'hangar', tag: 'Hangar · Engine', name: '予備エンジン・スタンド', note: '黄色の台車に載せた交換用エンジン · 赤い「飛行前に外す」タグ', build: () => H.engineStand() },
+  { group: 'hangar', tag: 'Hangar · Tools', name: '工具ワゴン・作業台', note: '赤いワゴン（引き出し6段）· 万力つきの作業台と壁の有孔ボード', build: () => row([H.toolCabinet(), H.workbench()], 1.6) },
+  { group: 'hangar', tag: 'Hangar · Store', name: '部品棚・タイヤ棚', note: '棚2.2 × 4段 · 予備の主輪4本', build: () => row([H.partsRack(), H.tireRack()], 1.4) },
+  { group: 'hangar', tag: 'Hangar · Prop', name: 'ジャッキ・電源車・コーン', note: '三脚ジャッキで翼を支える · 電源車（GPU）から機首の脚へケーブル', build: () => row([H.tripodJack(1.3), H.groundPower({ to: new THREE.Vector3(1.6, 0, 1.2) }), H.safetyCone()], 1.6) },
+  { group: 'hangar', tag: 'Hangar · Office', name: '事務所', note: 'ガラス張り 4×3.2 · 机・モニター・今日の作業のホワイトボード · 監督が入力中', build: officeCard, view: [0.5, 0.9, 1.3] },
 ];
+
+function row(parts, gap) {
+  const g = new THREE.Group();
+  parts.forEach((o, i) => { o.position.x = (i - (parts.length - 1) / 2) * gap; g.add(o); });
+  return g;
+}
+
+function hangarCard() {
+  const h = H.hangarScene();
+  const g = new THREE.Group();
+  g.add(h.statics, h.group);
+  let last = 0;
+  g.userData.update = (t) => { h.update(t, Math.min(0.1, Math.max(0, t - last))); last = t; };
+  return g;
+}
+
+function mechanics() {
+  const g = new THREE.Group();
+  ['mechanic', 'mechanicB', 'inspector', 'lineMech'].forEach((role, i) => {
+    const p = P.person(role, { mode: 'wrench', seed: 11 + i });
+    p.position.z = (1.5 - i) * 0.6;
+    p.userData.phase = i * 1.3;
+    g.add(p);
+  });
+  g.userData.mode = 'wrench';
+  g.userData.update = (t) => g.children.forEach((p) => { p.userData.mode = g.userData.mode; p.userData.update(t); });
+  return g;
+}
+
+function liftCard() {
+  const l = H.scissorLift();
+  const p = P.person('mechanicB', { seed: 41 });
+  p.position.set(-0.45, 0.04, 0); p.rotation.y = Math.PI;
+  l.userData.top.add(p);
+  l.userData.update = (t) => {
+    const k = (Math.sin(t * 0.5) + 1) / 2;
+    l.userData.setHeight(0.4 + k * 2.6);
+    p.userData.mode = k > 0.95 ? 'reach' : 'idle';
+    p.userData.update(t);
+  };
+  return l;
+}
+
+function dockCard() {
+  const d = H.dockStand();
+  const p = P.person('mechanic', { mode: 'reach', seed: 12 });
+  p.position.set(-0.1, d.userData.deck.h + 0.04, -0.15); p.rotation.y = Math.PI / 2;
+  d.add(p);
+  d.userData.update = (t) => p.userData.update(t);
+  return d;
+}
+
+function officeCard() {
+  const o = H.siteOffice();
+  const p = P.person('supervisor', { mode: 'type', seed: 7 });
+  p.position.copy(o.userData.seat); p.rotation.y = Math.PI / 2;
+  o.add(p);
+  o.userData.update = (t) => p.userData.update(t);
+  return o;
+}
 
 function pair(a, b, mode) {
   const g = new THREE.Group();
@@ -161,7 +234,7 @@ function luggageSet() {
   return g;
 }
 
-const GROUPS = { all: 'すべて', outside: '機体・車両・人', r1: 'R1 チェックイン', r2: 'R2 保安検査', r3: 'R3 ラウンジ', r4: 'R4 ゲート', r5: 'R5 仕分け', r6: 'R6 到着通路', r7: 'R7/R8 手荷物受取', r9: '入国・到着ロビー', cabin: '機内' };
+const GROUPS = { all: 'すべて', outside: '機体・車両・人', r1: 'R1 チェックイン', r2: 'R2 保安検査', r3: 'R3 ラウンジ', r4: 'R4 ゲート', r5: 'R5 仕分け', r6: 'R6 到着通路', r7: 'R7/R8 手荷物受取', r9: '入国・到着ロビー', cabin: '機内', hangar: '整備・格納庫' };
 
 function crowd() {
   const g = new THREE.Group();
@@ -303,7 +376,7 @@ function openDetail(stage) {
     });
   }
   for (const m of item.modes ?? []) {
-    const labels = { idle: '待機', walk: '歩く', signal: '誘導' };
+    const labels = { idle: '待機', walk: '歩く', signal: '誘導', wrench: 'レンチ', reach: '手を伸ばす', inspect: 'ライトで点検', kneel: 'ひざをつく', write: '記入' };
     addToggle(labels[m], () => stage.obj.userData.mode === m, () => { stage.obj.userData.mode = m; });
   }
   detailEl.classList.add('open');

@@ -3,8 +3,9 @@
 // The terminal's interior and its cutaway modes live in terminal.js.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { PALETTE, mat, mesh, rbox, box, cyl, airplane, car, LIVERIES } from './parts.js';
+import { PALETTE, mat, mesh, rbox, box, cyl, car } from './parts.js';
 import { bakeStatic } from './merge.js';
+import { hangarScene, lightPools } from './hangar.js';
 import * as L from './layout.js';
 
 const { v } = L;
@@ -211,32 +212,15 @@ function controlTower(group) {
   return { beacon, radar, spin };
 }
 
-function hangar(group) {
+// the maintenance hangar (hangar.js): its building and parked aircraft are baked with the statics; its people and lift move
+function hangar(group, scene) {
   const { x0, x1, z0, z1 } = L.HANGAR;
-  const w = z1 - z0, depth = x1 - x0, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
-  const shellGeo = new THREE.CylinderGeometry(w / 2, w / 2, depth, 32, 1, true, 0, Math.PI).rotateZ(Math.PI / 2);
-  const shell = mesh(shellGeo, mat(0xd9dee4, { side: THREE.DoubleSide, metalness: 0.2 }), cx, 0, cz);
-  shell.scale.set(1, 0.66, 1);
-  group.add(shell);
-  for (let i = 1; i < 6; i++) {
-    const rib = mesh(new THREE.TorusGeometry(w / 2 + 0.02, 0.08, 6, 32, Math.PI), mat(PALETTE.grey), x0 + (depth * i) / 6, 0, cz);
-    rib.rotation.y = Math.PI / 2;
-    rib.scale.set(1, 0.66, 1);
-    group.add(rib);
-  }
-  const back = mesh(new THREE.CircleGeometry(w / 2, 32, 0, Math.PI), mat(0xc9ced4, { side: THREE.DoubleSide }), x0, 0, cz);
-  back.rotation.y = Math.PI / 2;
-  back.scale.set(1, 0.66, 1);
-  group.add(back);
-  group.add(box(depth, 0.05, w - 0.4, mat(0x9aa0a8), cx, 0.03, cz));
-  for (const s of [1, -1]) group.add(box(0.4, 3.6, 2.6, mat(PALETTE.orange), x1 + 0.2, 1.8, cz + s * (w / 2 - 1.3)));
-  group.add(box(0.3, 0.6, w, mat(PALETTE.navy), x1 + 0.1, (w / 2) * 0.66 - 0.2, cz));
-  const plane = airplane(LIVERIES.midnight);
-  plane.userData.kind = 'static'; // parked for good: let it be merged
-  plane.position.set(cx, 0, cz);
-  plane.scale.setScalar(0.94);
-  plane.rotation.y = Math.PI;
-  group.add(plane);
+  const pool = glowMat(0x000000, 0xffffff, 0, 0.6, { emissiveMap: lightPools(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  const h = hangarScene({ lamp: glowMat(0xfff6dc, 0xfff6dc, 0.5, 2.4), pool });
+  for (const o of [h.statics, h.group]) o.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2);
+  group.add(h.statics);
+  scene.add(h.group);
+  return h;
 }
 
 function fuelFarm(group) {
@@ -490,7 +474,7 @@ export function buildScenery(scene) {
   slab(scene);
   const statics = new THREE.Group(); // everything that never moves → baked into a few meshes
   const tower = controlTower(statics);
-  hangar(statics);
+  const hangarLife = hangar(statics, scene);
   fuelFarm(statics);
   deck(statics);
   const props = lightsAndPoles(scene, statics);
@@ -509,6 +493,7 @@ export function buildScenery(scene) {
       props.sock.rotation.y = Math.sin(t * 0.7) * 0.25;
       props.sock.rotation.z = -0.15 + Math.sin(t * 2.3) * 0.05;
       for (const b of bridges) b.update(dt);
+      hangarLife.update(t, dt);
     },
   };
 }

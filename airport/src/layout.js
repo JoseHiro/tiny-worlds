@@ -37,7 +37,7 @@ export const TERMINAL = { x0: -61, x1: 61, z0: 11.6, z1: 40.6 };
 export const BANDS = { corridor: [11.6, 15.6], gates: [15.6, 26.6], concourse: [26.6, 29.6], south: [29.6, 40.6] };
 export const VOID = { x0: 14, x1: 61 }; // 2F south band has no floor here: the 1F halls show through
 export const TOWER = { x: 76, z: 22 };
-export const HANGAR = { x0: -104, x1: -90, z0: -6, z1: 12 };
+export const HANGAR = { x0: -108, x1: -88, z0: -8, z1: 14 }; // the maintenance hangar, door facing east (hangar.js)
 
 export const STANDS = [-45, -27, -9, 9, 27, 45].map((x, i) => ({ id: `A${i + 1}`, x }));
 
@@ -120,6 +120,7 @@ export const STAND_SPOTS = {
   crewDoor: (s) => v(s.x + 3.5, TERMINAL.z0 - 0.3),
   crewNose: (s) => v(s.x + 1.4, PARK_Z + 5.8),
   crewHold: (s) => v(s.x + 1.8, PARK_Z - 2.8),
+  mechDoor: (s) => v(s.x - 5.5, TERMINAL.z0 - 0.3), // the line mechanic keeps to the west side (DESIGN.md §12.2)
 };
 
 export const gse = {

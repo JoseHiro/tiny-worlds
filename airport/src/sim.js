@@ -291,7 +291,7 @@ class Flight {
       sv.tug = 'out';
       tug.go([L.STAND_SPOTS.tug(s)], () => { sv.tug = 'ready'; }, SOUTH);
     }
-    const servicesDone = sv.fuel === 'done' && sv.bag === 'done' && s.bridge.extend < 0.01;
+    const servicesDone = sv.fuel === 'done' && sv.bag === 'done' && s.bridge.extend < 0.01 && !s.mechBusy;
     const tugReady = sv.tug === 'ready' && tug.endHeading === null && !tug.track;
     this.waiting = this.t >= TURN.ready && !(servicesDone && tugReady && W.pushbackClear(this));
     if (this.t >= TURN.ready && !this.waiting) {
@@ -457,7 +457,22 @@ class Walker {
     this.obj.visible = true;
   }
 
+  // a list of steps, one after another: { to: [points], face? } walks there, { do: mode, dur, face? } works in place
+  run(steps, onDone) {
+    this.steps = steps.slice();
+    this.stepsDone = onDone;
+    this.nextStep();
+  }
+
+  nextStep() {
+    const s = this.steps?.shift();
+    if (!s) { const cb = this.stepsDone; this.steps = this.stepsDone = null; cb?.(); return; }
+    if (s.to) this.walk(s.to, () => this.nextStep(), { speed: s.speed ?? 1.4, endHeading: s.face ?? null });
+    else { this.ud.mode = s.do; this.hold = s.dur; if (s.face !== undefined) this.endHeading = s.face; }
+  }
+
   update(dt) {
+    if (this.hold != null && !this.track && (this.hold -= dt) <= 0) { this.hold = null; this.ud.mode = 'idle'; this.nextStep(); }
     if (this.track) {
       this.track.s = Math.min(this.track.len, this.track.s + this.speed * dt);
       const { p, tan } = this.track.sample();
@@ -596,6 +611,9 @@ export class World {
         pp.visible = false;
         return w;
       });
+      const md = L.STAND_SPOTS.mechDoor(stand);
+      stand.mech = this.addWalker(P.person('lineMech'), md.x, md.z, SOUTH);
+      stand.mech.obj.visible = false;
       return stand;
     });
 
@@ -663,6 +681,7 @@ export class World {
   // ----- crew -----
 
   crewOut(stand, instant = false) {
+    if (!instant) this.walkaround(stand);
     const spots = [L.STAND_SPOTS.crewNose(stand), L.STAND_SPOTS.crewHold(stand)];
     stand.crew.forEach((w, i) => {
       const spot = spots[i];
@@ -675,6 +694,21 @@ export class World {
         w.walk([v(spot.x, L.LANE.east - 1.6), spot], null, { speed: 1.3, endHeading: i ? Math.PI : NORTH });
       }
     });
+  }
+
+  // the line mechanic's walk-round (DESIGN.md §12.2): west engine, west main gear, the tail, then back in.
+  // The aircraft stays on blocks until he is clear (Flight.turnaround checks stand.mechBusy).
+  walkaround(stand) {
+    const x = stand.x, z = L.PARK_Z, side = x - 5.5, door = L.STAND_SPOTS.mechDoor(stand), EAST = 0;
+    const m = stand.mech;
+    stand.mechBusy = true;
+    m.obj.position.copy(door);
+    m.run([
+      { to: [v(side, L.LANE.east - 1.6), v(side, z + 3), v(x - 2.35, z + 3)], face: SOUTH }, { do: 'inspect', dur: 2.5 }, // the intake
+      { to: [v(x - 1.95, z - 0.4)], face: EAST }, { do: 'kneel', dur: 3 }, // the main wheels
+      { to: [v(x - 1.4, z - 7.9)], face: NORTH }, { do: 'look', dur: 2 }, // up at the tail
+      { to: [v(side, z - 7.9), v(side, L.LANE.east - 1.6), door] },
+    ], () => { m.obj.visible = false; stand.mechBusy = false; });
   }
 
   crewBack(stand) {

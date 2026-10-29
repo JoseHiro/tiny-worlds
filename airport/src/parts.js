@@ -114,7 +114,8 @@ function wingGeo(points, depth, sign) {
 
 // ---------- airliner ----------
 
-export function airplane(livery = LIVERIES.sunrise) {
+// cowlOpen: ±1 opens that engine's fan cowl doors upward (in the hangar, DESIGN.md §12)
+export function airplane(livery = LIVERIES.sunrise, { cowlOpen = 0 } = {}) {
   const { body, tail, engine, logo } = livery;
   const g = new THREE.Group();
   const ud = (g.userData = { kind: 'airplane', wheels: [], beacons: [] });
@@ -211,7 +212,8 @@ export function airplane(livery = LIVERIES.sunrise) {
     lip.rotation.y = Math.PI / 2;
     lip.position.x = 0.9;
     const pylon = box(1.0, 0.5, 0.12, mat(body), -0.15, 0.45, 0);
-    eng.add(nacelle, intake, lip, pylon);
+    eng.add(intake, lip, pylon);
+    if (cowlOpen === s) eng.add(...openCowl(engine)); else eng.add(nacelle);
     g.add(eng);
   }
 
@@ -256,6 +258,32 @@ export function airplane(livery = LIVERIES.sunrise) {
 
   vehicleUpdate(g);
   return compactRig(g);
+}
+
+// An engine with its fan cowl doors swung up like wings: a top strip stays, the two side doors hinge from it,
+// and the core (dark metal, a gearbox, coloured pipes) shows between them.
+function openCowl(color) {
+  const T = Math.PI * 1.5, strip = 0.5, door = 2.1, rAvg = 0.41;
+  const shell = (t0, len) => new THREE.CylinderGeometry(0.46, 0.36, 1.5, 14, 1, true, t0, len).rotateZ(-Math.PI / 2);
+  const m = mat(color, { side: THREE.DoubleSide });
+  const out = [mesh(shell(T - strip, strip * 2), m, -0.15, 0, 0)];
+  for (const s of [1, -1]) {
+    const hinge = new THREE.Group();
+    hinge.position.set(-0.15, rAvg * Math.cos(strip), s * rAvg * Math.sin(strip));
+    const geo = s > 0 ? shell(T + strip, door) : shell(T - strip - door, door);
+    hinge.add(mesh(geo.translate(0, -hinge.position.y, -hinge.position.z), m));
+    hinge.rotation.x = -s * 1.9;
+    out.push(hinge);
+  }
+  const core = cyl(0.27, 0.22, 1.5, mat(0x5a5f68, { metalness: 0.6, roughness: 0.35 }), -0.15, 0, 0, 14);
+  core.rotation.z = -Math.PI / 2;
+  const gearbox = box(0.5, 0.18, 0.22, mat(0x8a8f96, { metalness: 0.5 }), 0, -0.3, 0);
+  const pipeA = cyl(0.025, 0.025, 1.1, mat(PALETTE.orange), -0.1, 0.12, 0.27, 6), pipeB = cyl(0.025, 0.025, 1.0, mat(PALETTE.yellow), -0.2, -0.1, -0.27, 6);
+  pipeA.rotation.z = pipeB.rotation.z = -Math.PI / 2;
+  const fan = cyl(0.37, 0.37, 0.05, mat(0x8a8f96, { metalness: 0.7, roughness: 0.3 }), 0.82, 0, 0, 20);
+  fan.rotation.z = -Math.PI / 2;
+  out.push(core, gearbox, pipeA, pipeB, fan);
+  return out;
 }
 
 // ---------- road vehicles ----------
@@ -573,13 +601,24 @@ Object.assign(ROLES, {
   touristC: { top: 0xe2a9a0, legs: 0xf6f1e6, hat: 'long', hair: 0xc9a07a, handbag: 0x2f3e57 },
   touristD: { top: 0x5f9a6a, legs: 0x3a3f4a, hat: 'hair', hair: 0x6b4a35, backpack: 0xd96a4a },
 });
+// the maintenance people (DESIGN.md §12): mechanics in coveralls, an inspector, the shift supervisor, the line mechanic at the stands
+Object.assign(ROLES, {
+  mechanic: { top: 0x3f5f8a, legs: 0x3f5f8a, coverall: true, hat: 'baseball', capColor: PALETTE.navy, carry: 'wrench' },
+  mechanicB: { top: 0x6b7280, legs: 0x6b7280, coverall: true, hat: 'helmet', carry: 'wrench' },
+  mechanicC: { top: 0x3f5f8a, legs: 0x3f5f8a, coverall: true, hat: 'hair', carry: 'flashlight' },
+  inspector: { top: PALETTE.white, vest: PALETTE.yellow, legs: PALETTE.navy, hat: 'helmet', carry: 'clipboard' },
+  supervisor: { top: PALETTE.white, legs: PALETTE.navy, hat: 'hair', tie: PALETTE.navy, glasses: true },
+  lineMech: { top: PALETTE.navy, vest: PALETTE.yellow, legs: PALETTE.darkGrey, coverall: true, hat: 'baseball', capColor: PALETTE.navy, carry: 'flashlight' },
+});
 // the story cast keeps one look everywhere; everyone else gets their own from a seed (airport/src/looks.js)
 export const ROLE_LOOKS = ROLES; // catalog shelves add sample roles here
 Object.assign(ROLES, { lookBeard: { top: 0x6b5a48, legs: 0x3a3f4a, hat: 'hair', hair: 0x4a3426, beard: 'beard', fixed: true }, lookMoustache: { top: 0x2f3e57, legs: 0x3a3f4a, hat: 'flatcap', capColor: 0x6b5a48, beard: 'moustache', fixed: true } });
 for (const k of ['mina', 'minaIn', 'minaBare', 'minaWagasa', 'kimonoKid', 'baaKimono']) ROLES[k].fixed = true;
 // things carried in the right hand (s = 1 arm); the arm holds still while the other swings
 // how far forward the carrying arm is held
-const HOLD = { umbrella: 0.6, mug: 0.25, togo: 0.3, bread: 0.2, bag: 0.15, guitar: 1.0, brush: 1.1, wagasa: 0.6, uchiwa: 1.1, broom: 0.5, bowl: 1.2, tray: 1.3, shears: 0.4, flag: 0.9, camera: 1.3, basket: 0.25 };
+const HOLD = { umbrella: 0.6, mug: 0.25, togo: 0.3, bread: 0.2, bag: 0.15, guitar: 1.0, brush: 1.1, wagasa: 0.6, uchiwa: 1.1, broom: 0.5, bowl: 1.2, tray: 1.3, shears: 0.4, flag: 0.9, camera: 1.3, basket: 0.25, wrench: 0.2, flashlight: 0.2, clipboard: 1.0 };
+// the torch beam: one soft additive cone shared by every flashlight
+const BEAM = new THREE.MeshBasicMaterial({ color: 0xfff2c4, transparent: true, opacity: 0.16, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
 const KOTO_GOLD = 0xc9a24a;
 function carryItem(kind) {
   const g = new THREE.Group();
@@ -603,6 +642,16 @@ function carryItem(kind) {
   else if (kind === 'bag') { g.add(box(0.2, 0.24, 0.1, mat(0xc9a87c), 0.02, -0.16, 0)); g.add(mesh(new THREE.SphereGeometry(0.05, 6, 4), mat(0xf28c28), 0.0, -0.02, 0)); g.add(mesh(new THREE.SphereGeometry(0.045, 6, 4), mat(0x8fb83a), 0.06, -0.02, 0.02)); } // fruit from the market
   else if (kind === 'guitar') { const b = new THREE.Group(); b.add(mesh(new THREE.SphereGeometry(0.16, 10, 8), mat(0xc9884a), 0, 0, 0)).children.at(-1).scale.set(1, 1.2, 0.35); b.add(mesh(new THREE.SphereGeometry(0.12, 10, 8), mat(0xc9884a), 0, 0.2, 0)).children.at(-1).scale.set(1, 1, 0.35); b.add(box(0.06, 0.45, 0.03, mat(0x4a3426), 0, 0.5, 0)); b.add(cyl(0.04, 0.04, 0.02, mat(0x2a2018), 0, 0.05, 0.05, 10)).children.at(-1).rotation.x = Math.PI / 2; b.rotation.z = 1.1; b.position.set(0.12, 0.05, 0.12); g.add(b); }
   else if (kind === 'brush') { g.add(cyl(0.01, 0.012, 0.25, mat(0x8a6a4a), 0.04, 0.08, 0, 5)); g.add(mesh(new THREE.ConeGeometry(0.015, 0.05, 5), mat(0x3f8a9a), 0.04, 0.22, 0)); }
+  else if (kind === 'wrench') { g.add(box(0.025, 0.24, 0.02, mat(0x9aa0a8, { metalness: 0.6, roughness: 0.35 }), 0.02, -0.08, 0)); g.add(mesh(new THREE.TorusGeometry(0.03, 0.01, 4, 8, 4.4), mat(0x9aa0a8, { metalness: 0.6, roughness: 0.35 }), 0.02, -0.21, 0)); }
+  else if (kind === 'flashlight') { // points down the arm; the beam shows only while inspecting
+    g.add(cyl(0.022, 0.022, 0.16, mat(0x2a2a2c), 0.02, -0.06, 0, 8));
+    g.add(cyl(0.032, 0.024, 0.04, mat(0x2a2a2c), 0.02, -0.16, 0, 8));
+    g.add(cyl(0.028, 0.028, 0.01, mat(0xfff2c4, { emissive: 0xfff2c4, emissiveIntensity: 1.5 }), 0.02, -0.18, 0, 8));
+    const beam = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.4, 14, 1, true), BEAM);
+    beam.position.set(0.02, -0.18 - 0.7, 0); beam.castShadow = beam.receiveShadow = false;
+    g.add(beam); g.userData.beam = beam;
+  }
+  else if (kind === 'clipboard') { g.add(box(0.02, 0.3, 0.22, mat(0x8a6a4a), 0.06, 0.04, 0)); g.add(box(0.024, 0.24, 0.18, mat(0xf6f4ee), 0.065, 0.03, 0)); g.add(box(0.03, 0.03, 0.08, mat(0x9aa0a8, { metalness: 0.5 }), 0.065, 0.18, 0)); }
   else if (kind === 'mug') { g.add(cyl(0.045, 0.04, 0.09, mat(0xf6f1e6), 0.03, 0.02, 0, 10)); g.add(mesh(new THREE.TorusGeometry(0.025, 0.008, 4, 8), mat(0xf6f1e6), 0.03, 0.02, 0.05)); }
   void paper;
   return g;
@@ -673,6 +722,7 @@ export function person(role = 'crew', { mode = 'idle', seed } = {}) {
     body.add(box(0.02, 0.03, 0.3, mat(0xeeeeee, { emissive: 0x888888, emissiveIntensity: 0.4 }), 0.172, 0.55, 0));
   }
   if (cfg.skirt) body.add(cyl(0.15, 0.24, 0.26, mat(cfg.skirt), 0, 0.33, 0, 16));
+  if (cfg.coverall) { body.add(cyl(0.172, 0.172, 0.04, mat(PALETTE.ink), 0, 0.42, 0, 16)); body.add(box(0.02, 0.07, 0.07, mat(PALETTE.white), 0.168, 0.64, 0.08)); } // a belt and a name patch
   if (cfg.collar) for (const zz of [1, -1]) { const col = box(0.02, 0.3, 0.05, mat(cfg.collar), 0.168, 0.6, zz * 0.06); col.rotation.x = zz * 0.25; body.add(col); } // happi / jinbei lapels
   if (cfg.apron) body.add(box(0.03, 0.42, 0.3, mat(cfg.apron), 0.17, 0.4, 0)); // 前掛け
   if (cfg.sailor) { body.add(box(0.2, 0.03, 0.36, mat(cfg.sailor), -0.08, 0.76, 0)); for (const zz of [1, -1]) { const c = box(0.02, 0.2, 0.06, mat(cfg.sailor), 0.165, 0.7, zz * 0.06); c.rotation.x = zz * 0.4; body.add(c); } body.add(box(0.03, 0.06, 0.06, mat(PALETTE.red), 0.18, 0.62, 0)); } // sailor collar and scarf
@@ -907,6 +957,25 @@ export function person(role = 'crew', { mode = 'idle', seed } = {}) {
         arms[1].rotation.x = 2.7;
         arms[0].rotation.z = arms[1].rotation.z = 0;
       }
+    } else if (m === 'wrench' || m === 'reach' || m === 'inspect' || m === 'kneel' || m === 'write') { // maintenance work (DESIGN.md §12)
+      const ph = ud.phase ?? 0;
+      for (const l of legs) l.rotation.z = 0;
+      body.position.y = 0; arms[0].rotation.x = arms[1].rotation.x = 0;
+      if (m === 'wrench') { // a ratchet up at head height: short quick turns, the other hand steadying
+        arms[0].rotation.z = 2.1 + Math.max(0, Math.sin(t * 6 + ph)) * 0.25; arms[0].rotation.x = 0.2;
+        arms[1].rotation.z = 1.9; arms[1].rotation.x = -0.25; head.rotation.z = 0.35;
+      } else if (m === 'reach') { // both hands up into the work overhead
+        arms[0].rotation.z = 2.5 + Math.sin(t * 2.2 + ph) * 0.12; arms[1].rotation.z = 2.4 + Math.sin(t * 1.7 + ph + 1) * 0.12;
+        arms[0].rotation.x = 0.15; arms[1].rotation.x = -0.15; head.rotation.z = 0.5;
+      } else if (m === 'inspect') { // the torch up at the aircraft, sweeping slowly
+        arms[0].rotation.z = 1.7 + Math.sin(t * 0.9 + ph) * 0.25; arms[0].rotation.x = Math.sin(t * 0.6 + ph) * 0.2;
+        arms[1].rotation.z = 0.2; head.rotation.z = 0.25 + Math.sin(t * 0.9 + ph) * 0.12;
+      } else if (m === 'kneel') { // down on one knee at a wheel
+        body.position.y = -0.16; legs[0].rotation.z = 1.1; legs[1].rotation.z = -1.15;
+        arms[0].rotation.z = 1.0 + Math.sin(t * 3 + ph) * 0.1; arms[0].rotation.x = 0.25; arms[1].rotation.z = 0.8; arms[1].rotation.x = -0.3; head.rotation.z = -0.1;
+      } else { // writing on a clipboard
+        arms[0].rotation.z = 1.0; arms[0].rotation.x = -0.15; arms[1].rotation.z = 1.1 + Math.sin(t * 7 + ph) * 0.04; arms[1].rotation.x = 0.55; head.rotation.z = -0.35;
+      }
     } else if (m === 'walk') {
       const st = cfg.stride ?? 0.55; // kimono: small steps
       legs[0].rotation.z = Math.sin(phase) * st;
@@ -938,6 +1007,8 @@ export function person(role = 'crew', { mode = 'idle', seed } = {}) {
     ud.item.rotation.z = -arms[0].rotation.z;
     if (cfg.carry === 'mug') ud.item.visible = ud.mode === 'sitSip' || ud.mode === 'walk' || ud.mode === 'idle'; // otherwise it is on the table
     if (cfg.carry === 'umbrella') ud.item.visible = ud.umbrella !== false;
+    if (cfg.carry === 'flashlight') { const on = ud.mode === 'inspect' || ud.mode === 'kneel'; ud.item.userData.beam.visible = on; if (on) ud.item.rotation.z = 0; } // the torch points along the arm
+    if (cfg.carry === 'wrench' && (ud.mode === 'wrench' || ud.mode === 'kneel')) ud.item.rotation.z = -0.4;
   };
   const moveUpdate = ud.update;
   ud.update = (t, ...rest) => { // blinks, and pony tails swinging as they walk
