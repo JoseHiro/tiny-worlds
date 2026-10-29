@@ -10,3 +10,13 @@ Makes 1080 × 1920 videos (TikTok / Reels / Shorts) from the café story pages. 
 
    `run(n, true)` films only the first and last frame of each shot, so you can check the framing.
 3. Run `film/make-mina.sh`. It adds the cross-fades and the rain sound, and writes `film/out/mina.mp4` and `mina-silent.mp4`.
+
+## Café life (`film/cafes.js`)
+
+This film has no story and no single main character. Each café goes about its day, with English captions. Film it from the plain pages (`cafe/nordic.html`, `wa.html` and `barcelona.html`, without `?story`) with `(await import('/film/cafes.js')).run(n)`. Then join the three pieces:
+
+```bash
+film/make.sh cafes 0.35 0.8 0.03
+```
+
+`film/make.sh` works for any set of pieces. You give it one rain loudness per piece: 0 is dry and 1 is a downpour.

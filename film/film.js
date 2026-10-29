@@ -1,14 +1,14 @@
 // Film a story page as a vertical video (film/README.md): the page's own loop is stopped and the world is stepped one
 // frame at a time (a fixed 1/fps, so a slow machine films the same thing), drawn at W × H with a camera of our own,
 // captions laid over it on a 2D canvas, and every frame posted to film/record.mjs.
-// A shot: { at: 'a few words of a story line' (run the story on until that line shows) | skip: seconds (run it on),
+// A shot: { start?() (set things up first), at: 'a few words of a story line' (run the story on until that line shows) | skip: seconds (run it on),
 //   dur: seconds of film, speed: story seconds per film second (1), cam: { from: [[eye], [target]], to: … } or
 //   { follow: [dx, dy, dz], look?: dy } (keep Mina in view) or { toward: [x, y, z], from: [back, up, side], to } (over her shoulder); rel: 'eye' | 'both' puts from / to
 //   relative to where Mina is as the shot begins, clear?: metres (no one else that near Mina), cap: [ja, en] (capTop: up high), draw?(g, k, W, H) (anything else on top) }
 import { v3 } from '../koto/src/world.js';
 
 const k = () => window.__koto;
-const mina = () => k().people[k().people.length - 1]; // the story's one actor is added last, when it starts
+const mina = () => k().people[k().people.length - 1]; // the story's one actor is added last, when it starts (without a story: whoever came last)
 const ease = (t) => t * t * (3 - 2 * t);
 const line = () => document.getElementById('storyLine')?.textContent ?? '';
 export const FONT = '"Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif';
@@ -37,9 +37,9 @@ export async function film({ name, shots, W = 1080, H = 1920, fps = 30, fov = 44
   const dt = 1 / fps, P = v3(0, 0, 0), T = v3(0, 0, 0);
   let n = 0, sent = [];
   for (const [i, s] of shots.entries()) {
+    s.start?.(); // (set the weather, the time of day… before running on)
     if (s.at) { let guard = 0; while (!line().includes(s.at) && guard++ < 20 * 600) k().tick(1 / 20); }
     if (s.skip) for (let j = 0; j < s.skip * 20; j++) k().tick(1 / 20);
-    s.start?.();
     const base = mina().p.position.clone(); // (rel: 'eye' | 'both': the shot is placed from where Mina is now)
     if (s.clear) for (const a of k().people) if (a !== mina() && a.p.position.distanceTo(base) < s.clear) { a.t = -60; a.p.visible = false; } // (someone in the way: sent off for a minute)
     const frames = Math.round(s.dur * fps);
