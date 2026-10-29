@@ -414,8 +414,8 @@ resize();
 applyLang();
 
 const clock = new THREE.Clock();
-renderer.setAnimationLoop(() => {
-  const rdt = Math.min(clock.getDelta(), 0.1);
+// one step of everything that lives (the camera and the screen aside): rdt seconds of real time at the chosen speed
+function advance(rdt) {
   let left = rdt * speed;
   while (left > 1e-6) {
     const step = Math.min(left, 1 / 30);
@@ -445,8 +445,12 @@ renderer.setAnimationLoop(() => {
     ring.position.set(selected.root.position.x, 0.06, selected.root.position.z);
     ring.material.opacity = 0.55 + Math.sin(performance.now() / 300) * 0.25;
   }
-  updateCamera(rdt);
   updateLighting(rdt);
+}
+renderer.setAnimationLoop(() => {
+  const rdt = Math.min(clock.getDelta(), 0.1);
+  advance(rdt);
+  updateCamera(rdt);
 
   uiTimer -= rdt;
   if (uiTimer <= 0) {
@@ -479,4 +483,5 @@ function snapshot(w = 1440, h = 900) {
   resize();
   return url;
 }
-window.__airport = { cabins, cabinView, world, terminal, pax, bags, story, selectPerson, scenery, camera, controls, renderer, scene, flyTo, select, snapshot, setTod: (k) => { todAuto = k === 'auto'; if (!todAuto) todKey = k; }, setView: (k) => { viewPick = k; } };
+// tick(dt) / render(): for film/film.js, which stops the loop and steps the airport one frame at a time
+window.__airport = { tick: advance, render: () => composer.render(), composer, cabins, cabinView, world, terminal, pax, bags, story, selectPerson, scenery, camera, controls, renderer, scene, flyTo, select, snapshot, setTod: (k) => { todAuto = k === 'auto'; if (!todAuto) todKey = k; }, setView: (k) => { viewPick = k; } };

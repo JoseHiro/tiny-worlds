@@ -23,7 +23,7 @@ film/make.sh cafes 0.35 0.8 0.03
 
 ## Pocket (`film/pocket.js`)
 
-Each pocket video shows one café as a small object on a plain table. The camera goes slowly round the whole diorama for 20 seconds while life goes on inside. Text is in English, set like a museum label. Film it from the plain page with `(await import('/film/pocket.js')).run('nordic')` (or `'wa'`). Then rename the frame folder `film/out/pocket-nordic` to `pocket-nordic1` and join it:
+Each pocket video shows one café as a small object on a plain table. The camera goes slowly round the whole diorama for 20 seconds while life goes on inside. Text is in English, set like a museum label. Film it from the plain page with `(await import('/film/pocket.js')).run('nordic')` (or `'wa'`, `'barcelona'`; on `airport/` use `'airport'`). Then rename the frame folder `film/out/pocket-nordic` to `pocket-nordic1` and join it:
 
 ```bash
 film/make.sh pocket-nordic 0.35

@@ -1,6 +1,7 @@
 // "Pocket" films: one café as a small object on a plain table, 9:16, the camera slowly going round it while life
 // goes on inside (the walls toward the camera are cut away). English text, set like a museum label.
-// Open the plain café page (cafe/nordic.html, wa.html) and run(key); run(key, true) for the first / last frames.
+// Open the plain page (cafe/nordic.html, wa.html, barcelona.html, airport/) and run(key); run(key, true) for the
+// first and last frames only.
 import { film } from './film.js';
 
 const k = () => window.__koto;
@@ -30,5 +31,24 @@ export const POCKETS = {
       { start: set('rain', 'day'), skip: 12, dur: 20, cam: { orbit: { center: [0, -0.6, 0], radius: [124, 98], height: [80, 62], from: -0.8, to: 0.1 } }, draw: label({ kicker: 'Café studies · no. 2', name: 'Ametsuchi.', lines: ['A tea house in an old town, in a downpour.', 'Matcha on the tatami, rain in the garden.'] }) },
     ],
   },
+  barcelona: {
+    bg: '#ece9e4', floor: [-1.62, 4000], far: 4000,
+    shots: [
+      { start: set('clear', 'day'), skip: 8, dur: 20, cam: { orbit: { center: [20, 30, 0], radius: [900, 800], height: [500, 430], from: 1.15, to: 1.95 } }, draw: label({ kicker: 'Café studies · no. 3', name: 'de la Plaça.', lines: ['A terrace café on a square in Barcelona,', 'across the pond from a basilica still being built.'] }) },
+    ],
+  },
+  airport: {
+    bg: '#ece9e4', floor: [-4.88, 4000], far: 4000,
+    shots: [
+      { start: () => { window.__airport.setTod('day'); window.__airport.setView('f2'); }, skip: 6, dur: 20, cam: { orbit: { center: [0, -6, 14], radius: [700, 640], height: [720, 640], from: -0.25, to: 0.25 } }, draw: label({ kicker: 'Tiny Worlds · no. 4', name: 'Mini Airport.', lines: ['A small airport that keeps its own clock.', 'Planes, bags and travellers, all day long.'] }) },
+    ],
+  },
 };
-export const run = (key, preview = false) => film({ name: `pocket-${key}`, fov: 30, ...POCKETS[key], preview });
+// the airport has a stage of its own: film it through the same hooks as the café pages
+function stage() {
+  const A = window.__airport;
+  if (!A || window.__koto) return;
+  A.composer.setPixelRatio(1); A.composer.setSize(1080, 1920);
+  window.__koto = { renderer: A.renderer, scene: A.scene, camera: A.camera, tick: A.tick, render: A.render };
+}
+export const run = (key, preview = false) => { stage(); return film({ name: `pocket-${key}`, fov: 30, ...POCKETS[key], preview }); };
