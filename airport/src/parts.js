@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { compactRig } from './merge.js';
+import { pickLook, faceMesh, hair, facialHair, scalp } from './looks.js';
 
 export const PALETTE = {
   white: 0xf4f0e8,
@@ -572,6 +573,10 @@ Object.assign(ROLES, {
   touristC: { top: 0xe2a9a0, legs: 0xf6f1e6, hat: 'long', hair: 0xc9a07a, handbag: 0x2f3e57 },
   touristD: { top: 0x5f9a6a, legs: 0x3a3f4a, hat: 'hair', hair: 0x6b4a35, backpack: 0xd96a4a },
 });
+// the story cast keeps one look everywhere; everyone else gets their own from a seed (airport/src/looks.js)
+export const ROLE_LOOKS = ROLES; // catalog shelves add sample roles here
+Object.assign(ROLES, { lookBeard: { top: 0x6b5a48, legs: 0x3a3f4a, hat: 'hair', hair: 0x4a3426, beard: 'beard', fixed: true }, lookMoustache: { top: 0x2f3e57, legs: 0x3a3f4a, hat: 'flatcap', capColor: 0x6b5a48, beard: 'moustache', fixed: true } });
+for (const k of ['mina', 'minaIn', 'minaBare', 'minaWagasa', 'kimonoKid', 'baaKimono']) ROLES[k].fixed = true;
 // things carried in the right hand (s = 1 arm); the arm holds still while the other swings
 // how far forward the carrying arm is held
 const HOLD = { umbrella: 0.6, mug: 0.25, togo: 0.3, bread: 0.2, bag: 0.15, guitar: 1.0, brush: 1.1, wagasa: 0.6, uchiwa: 1.1, broom: 0.5, bowl: 1.2, tray: 1.3, shears: 0.4, flag: 0.9, camera: 1.3, basket: 0.25 };
@@ -632,8 +637,10 @@ function robeMat(color, pattern) {
 
 export const PASSENGER_TYPES = ['passenger', 'woman', 'backpacker', 'business', 'child', 'senior'];
 
-export function person(role = 'crew', { mode = 'idle' } = {}) {
+export function person(role = 'crew', { mode = 'idle', seed } = {}) {
   const cfg = ROLES[role];
+  const look = pickLook(cfg, seed); // skin, hair and face (airport/src/looks.js)
+  const skinMat = mat(look.skin);
   const g = new THREE.Group();
   const ud = (g.userData = { kind: 'person', role, mode, beacons: [] });
   const body = new THREE.Group();
@@ -643,7 +650,7 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
   for (const s of [1, -1]) {
     const hip = new THREE.Group();
     hip.position.set(0, 0.32, s * 0.08);
-    hip.add(mesh(new THREE.CapsuleGeometry(0.07, 0.18, 4, 10), mat(cfg.legs), 0, -0.16, 0));
+    hip.add(mesh(new THREE.CapsuleGeometry(0.07, 0.18, 4, 10), cfg.legs === PALETTE.skin ? skinMat : mat(cfg.legs), 0, -0.16, 0));
     hip.add(rbox(0.16, cfg.okobo ? 0.12 : 0.06, 0.1, 0.03, mat(cfg.shoes ?? (cfg.okobo ? 0xc9a87c : PALETTE.ink)), 0.03, cfg.okobo ? -0.3 : -0.29, 0)); // shoe (おこぼ: a tall wooden clog)
     legs.push(hip);
     body.add(hip);
@@ -700,7 +707,7 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     sh.add(mesh(new THREE.CapsuleGeometry(0.055, 0.16, 4, 10), cfg.robe ? robeMat(cfg.robe, cfg.pattern ?? 'plain') : mat(cfg.top), 0, -0.13, 0));
     if (cfg.robe) { const L = cfg.longSleeve ? 0.46 : 0.26; sh.add(box(0.2, L, 0.04, cfg.haori ? mat(cfg.haori) : robeMat(cfg.robe, cfg.pattern ?? 'plain'), -0.03, -0.11 - L / 2, s * 0.03)); } // the hanging sleeve (袂; 振袖 long)
     if (cfg.carry && s > 0) { const it = carryItem(cfg.carry); it.position.set(0, -0.3, 0); sh.add(it); ud.item = it; }
-    sh.add(mesh(new THREE.SphereGeometry(0.055, 10, 8), mat(PALETTE.skin), 0, -0.28, 0));
+    sh.add(mesh(new THREE.SphereGeometry(0.055, 10, 8), skinMat, 0, -0.28, 0));
     if (cfg.stripes) sh.add(mesh(new THREE.CylinderGeometry(0.058, 0.058, 0.025, 10), mat(PALETTE.yellow, { metalness: 0.5 }), 0, -0.2, 0));
     if (cfg.wands) {
       const wand = mesh(new THREE.CylinderGeometry(0.025, 0.035, 0.34, 8),
@@ -722,13 +729,13 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
   const head = new THREE.Group();
   head.position.y = 1.0;
   head.scale.setScalar(1.25); // chibi proportions
-  head.add(mesh(new THREE.SphereGeometry(0.2, 20, 14), mat(PALETTE.skin)));
-  for (const s of [1, -1]) {
-    head.add(mesh(new THREE.SphereGeometry(0.024, 8, 6), mat(PALETTE.ink, { roughness: 0.2 }), 0.18, 0.01, s * 0.07));
-    const cheek = mesh(new THREE.SphereGeometry(0.03, 8, 6), mat(PALETTE.pink), 0.165, -0.06, s * 0.11);
-    cheek.scale.set(0.4, 0.6, 1);
-    head.add(cheek);
-  }
+  head.add(mesh(new THREE.SphereGeometry(0.2, 20, 14), skinMat));
+  const face = faceMesh(look.face, look.color);
+  face.castShadow = face.receiveShadow = false;
+  head.add(face);
+  const kit = { mat, mesh };
+  const scalpOf = (r, color, thF, thB) => scalp(r, thF, thB).forEach((geo) => head.add(mesh(geo, mat(color, { roughness: 0.75 }))));
+  let swings = [];
   const dome = (r, color, y = 0, thetaLen = Math.PI / 2) =>
     mesh(new THREE.SphereGeometry(r, 18, 10, 0, Math.PI * 2, 0, thetaLen), mat(color), 0, y, 0);
   if (cfg.hat === 'helmet') {
@@ -745,53 +752,48 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     head.add(cyl(0.2, 0.2, 0.03, mat(PALETTE.ink), 0, 0.11, 0, 18));
     head.add(rbox(0.14, 0.02, 0.24, 0.01, mat(PALETTE.ink), 0.2, 0.1, 0));
     head.add(box(0.02, 0.04, 0.08, mat(PALETTE.yellow, { metalness: 0.6 }), 0.2, 0.18, 0));
-  } else if (cfg.hat === 'bun') {
-    head.add(dome(0.212, cfg.hair ?? PALETTE.brown, 0.0, Math.PI * 0.55));
-    head.add(mesh(new THREE.SphereGeometry(0.09, 12, 10), mat(cfg.hair ?? PALETTE.brown), -0.17, 0.12, 0));
-  } else if (cfg.hat === 'long') {
-    const hc = cfg.hair ?? PALETTE.brown;
-    head.add(dome(0.214, hc, 0.0, Math.PI * 0.55));
-    const back = mesh(new THREE.CapsuleGeometry(0.15, 0.16, 6, 14), mat(hc), -0.08, -0.1, 0);
-    back.scale.set(0.8, 1, 1.3);
-    head.add(back);
+  } else if (look.style || cfg.hat === 'bun' || cfg.hat === 'bob') { // everyday hair (airport/src/looks.js)
+    swings = hair(head, look.style ?? cfg.hat, look.color, kit);
     if (cfg.hairTie) head.add(box(0.05, 0.06, 0.16, mat(0xf6f4ee), -0.2, -0.02, 0)); // the white paper tie (檀紙)
-    const fringe = dome(0.216, hc, 0.0, Math.PI * 0.3);
-    fringe.rotation.z = -0.5;
-    head.add(fringe);
+    if (cfg.hat === 'grey' && !cfg.glasses) {
+      for (const s of [1, -1]) { // glasses
+        const lens = mesh(new THREE.TorusGeometry(0.038, 0.007, 6, 16), mat(PALETTE.ink), 0.19, 0.01, s * 0.075);
+        lens.rotation.y = Math.PI / 2;
+        head.add(lens);
+      }
+      head.add(box(0.01, 0.008, 0.07, mat(PALETTE.ink), 0.198, 0.02, 0));
+    }
   } else if (cfg.hat === 'updo') { // hair put up for a kimono, with a hairpin
-    head.add(dome(0.214, PALETTE.ink, 0.0, Math.PI * 0.55));
+    scalpOf(0.214, PALETTE.ink, 1.12, 1.76);
     head.add(mesh(new THREE.SphereGeometry(0.1, 12, 10), mat(PALETTE.ink), -0.1, 0.2, 0));
     if (cfg.kanzashi) { head.add(mesh(new THREE.SphereGeometry(0.04, 8, 6), mat(cfg.kanzashi), -0.06, 0.24, 0.1)); head.add(box(0.015, 0.015, 0.16, mat(PALETTE.yellow, { metalness: 0.5 }), -0.08, 0.22, 0.06)); }
   } else if (cfg.hat === 'bald') { // a shaven head
-    head.add(dome(0.203, 0xe0b898, 0.0, Math.PI * 0.5));
+    head.add(dome(0.203, 0xe0b898, 0.0, 1.2));
   } else if (cfg.hat === 'ajiro') { // 網代笠: a wide woven hat over the eyes
-    head.add(dome(0.205, 0xe0b898, 0.0, Math.PI * 0.5));
+    head.add(dome(0.205, 0xe0b898, 0.0, 1.2));
     head.add(mesh(new THREE.ConeGeometry(0.42, 0.22, 20, 1, true), mat(0xc9a86a, { roughness: 1, side: THREE.DoubleSide }), 0, 0.12, 0));
   } else if (cfg.hat === 'sugegasa') { // 菅笠: a conical sedge hat
-    head.add(dome(0.212, PALETTE.ink, 0.0, Math.PI * 0.5));
+    scalpOf(0.212, PALETTE.ink, 1.2, 1.72);
     head.add(mesh(new THREE.ConeGeometry(0.36, 0.2, 18, 1, true), mat(0xd8c48a, { roughness: 1, side: THREE.DoubleSide }), 0, 0.26, 0));
   } else if (cfg.hat === 'eboshi') { // a priest's tall black cap
-    head.add(dome(0.212, PALETTE.ink, 0.0, Math.PI * 0.5));
+    scalpOf(0.212, PALETTE.ink, 1.2, 1.72);
     const e = mesh(new THREE.CapsuleGeometry(0.11, 0.18, 4, 10), mat(0x1d1f23, { roughness: 0.4 }), -0.04, 0.3, 0); e.scale.set(1, 1, 0.6); e.rotation.z = 0.3; head.add(e);
   } else if (cfg.hat === 'hachimaki') { // short hair and a twisted headband
     const hair = dome(0.212, PALETTE.ink, 0.0, Math.PI * 0.5); hair.rotation.z = 0.25; head.add(hair);
     head.add(mesh(new THREE.TorusGeometry(0.205, 0.022, 6, 20).rotateX(Math.PI / 2), mat(0xf6f4ee), 0, 0.07, 0));
     head.add(box(0.06, 0.05, 0.05, mat(0xf6f4ee), -0.21, 0.07, 0.04));
   } else if (cfg.hat === 'sankaku') { // a white headscarf tied at the back
-    head.add(dome(0.214, 0xf6f4ee, 0.0, Math.PI * 0.52));
+    scalpOf(0.214, 0xf6f4ee, 1.15, 1.75);
     head.add(mesh(new THREE.ConeGeometry(0.05, 0.1, 4).rotateZ(Math.PI / 2), mat(0xf6f4ee), -0.23, 0.08, 0));
-  } else if (cfg.hat === 'bob') { // a bob
-    head.add(dome(0.216, cfg.hair ?? PALETTE.ink, 0.0, Math.PI * 0.62));
-    const back = mesh(new THREE.SphereGeometry(0.2, 14, 10), mat(cfg.hair ?? PALETTE.ink), -0.05, -0.04, 0); back.scale.set(0.9, 0.9, 1.08); head.add(back);
   } else if (cfg.hat === 'maiko') { // the maiko's swept-up hair with silk flowers and dangling pins
-    head.add(dome(0.216, PALETTE.ink, 0.0, Math.PI * 0.56));
+    scalpOf(0.216, PALETTE.ink, 1.12, 1.78);
     for (const zz of [1, -1]) { const w = mesh(new THREE.SphereGeometry(0.11, 12, 8), mat(PALETTE.ink), -0.06, 0.12, zz * 0.17); w.scale.set(1, 0.8, 0.6); head.add(w); } // the side wings
     head.add(mesh(new THREE.SphereGeometry(0.13, 12, 10), mat(PALETTE.ink), -0.1, 0.25, 0)); // the top knot
     head.add(box(0.06, 0.05, 0.12, mat(0xc8283a), -0.06, 0.32, 0)); // the red silk in it
     for (let k = 0; k < 5; k++) head.add(mesh(new THREE.SphereGeometry(0.035, 6, 5), mat([cfg.kanzashi, 0xf6f4ee, 0xf2c94c][k % 3]), 0.02 - k * 0.02, 0.22 - (k % 2) * 0.04, 0.12 + k * 0.012)); // flower pins
     for (let k = 0; k < 3; k++) head.add(box(0.012, 0.12, 0.02, mat(0xf2c94c, { metalness: 0.5 }), 0.03, 0.1 - k * 0.0, 0.17 + k * 0.025)); // dangling strands
   } else if (cfg.hat === 'beret') {
-    head.add(dome(0.212, cfg.hair ?? PALETTE.ink, 0.0, Math.PI * 0.55));
+    scalpOf(0.212, cfg.hair ?? PALETTE.ink, 1.2, 1.76);
     const b2 = mesh(new THREE.SphereGeometry(0.2, 14, 8), mat(cfg.capColor)); b2.scale.set(1.05, 0.35, 1.05); b2.position.set(-0.02, 0.17, 0.02); b2.rotation.x = 0.25; head.add(b2);
   } else if (cfg.hat === 'flatcap') { // a flat cap (ハンチング)
     head.add(dome(0.21, 0xd9d6d0, 0.0, Math.PI * 0.5));
@@ -811,20 +813,9 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     head.add(dome(0.214, cfg.capColor, 0.02));
     head.add(rbox(0.16, 0.025, 0.24, 0.012, mat(cfg.capColor), 0.2, 0.04, 0));
     head.add(mesh(new THREE.SphereGeometry(0.025, 8, 6), mat(cfg.capColor), 0, 0.235, 0));
-  } else {
-    const hair = dome(0.212, cfg.hat === 'grey' ? 0xd9d6d0 : cfg.hair ?? PALETTE.ink, 0.0, Math.PI * 0.5);
-    hair.rotation.z = 0.25;
-    head.add(hair);
-    if (cfg.hat === 'grey') {
-      for (const s of [1, -1]) { // glasses
-        const lens = mesh(new THREE.TorusGeometry(0.038, 0.007, 6, 16), mat(PALETTE.ink), 0.19, 0.01, s * 0.075);
-        lens.rotation.y = Math.PI / 2;
-        head.add(lens);
-      }
-      head.add(box(0.01, 0.008, 0.07, mat(PALETTE.ink), 0.198, 0.02, 0));
-    }
   }
-  if (cfg.glasses && cfg.hat !== 'grey') {
+  if (look.beard) facialHair(head, look.beard, look.color, kit);
+  if (cfg.glasses) {
     for (const s of [1, -1]) { const lens = mesh(new THREE.TorusGeometry(0.038, 0.007, 6, 16), mat(PALETTE.ink), 0.19, 0.01, s * 0.075); lens.rotation.y = Math.PI / 2; head.add(lens); }
     head.add(box(0.01, 0.008, 0.07, mat(PALETTE.ink), 0.198, 0.02, 0));
   }
@@ -947,6 +938,13 @@ export function person(role = 'crew', { mode = 'idle' } = {}) {
     ud.item.rotation.z = -arms[0].rotation.z;
     if (cfg.carry === 'mug') ud.item.visible = ud.mode === 'sitSip' || ud.mode === 'walk' || ud.mode === 'idle'; // otherwise it is on the table
     if (cfg.carry === 'umbrella') ud.item.visible = ud.umbrella !== false;
+  };
+  const moveUpdate = ud.update;
+  ud.update = (t, ...rest) => { // blinks, and pony tails swinging as they walk
+    moveUpdate(t, ...rest);
+    const k = (t + look.phase) % look.blink;
+    face.userData.blink(k < 0.12 || (look.blink > 4 && k > 0.3 && k < 0.4));
+    if (swings.length) { const w = ud.mode === 'walk' ? Math.sin(t * 7 * (cfg.pace ?? 1) + (ud.phase ?? 0)) * 0.18 : Math.sin(t * 1.3 + look.phase) * 0.04; for (const sw of swings) sw.rotation.z = w; }
   };
   return compactRig(g);
 }

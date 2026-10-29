@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { L, onLang } from '../../koto/src/i18n.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { clock } from '../../sealife/src/kit.js';
-import { person } from '../../airport/src/parts.js';
+import { person, ROLE_LOOKS } from '../../airport/src/parts.js';
 import { cat } from '../../town/src/koto-props.js';
 import { CAFE, setGlow, shell, counter, espressoMachine, grinder, pourOver, register, pastryCase, menuBoard, wallShelf, windowBar, stool, chair, roundTable, longTable, sofa, armchair, rug, lowTable, pendant, floorLamp, candle, stringLights, plant, bookshelf, door, awning, bladeSign, aFrame, umbrellaStand, coatRack, ceilingFan, recordPlayer } from './furniture.js';
 import { cup, laptop, book, notebook, tablet, phone, plate, Steam } from './things.js';
@@ -99,8 +99,30 @@ const ITEMS = [
   C('people', 'バリスタと働く人', 'Baristas and workers', ['バリスタ（デニムのエプロン、注ぐ）· 若いバリスタ（キャップ、拭く）· ノートPCの人（眼鏡、打つ）· ビデオ通話の人（ヘッドホン）· デザイナー（ベレー帽、考える）', 'Barista (denim apron, pouring) · young barista (cap, wiping) · laptop worker (glasses, typing) · someone on a video call (headphones) · designer (beret, thinking)'], peopleCard(['barista', 'barista2', 'macWorker', 'callWorker', 'designer'], ['pour', 'wipe', 'sitType', 'sitChat', 'sitThink']), { view: [0.25, 0.3, 1], fill: 0.62 }),
   C('people', '勉強・読書・おしゃべり', 'Study, reading, talking', ['学生（書く・伸び）· 読書の人（ページをめくる）· おしゃべりの人（カップを口へ）· 新聞のおじいさん（ハンチング）· 親子（雨合羽の子ども）· 雨で駆け込む人（傘）· 店の猫', 'Students (writing, stretching) · a reader (turning pages) · people chatting (cup to lips) · an old man with a newspaper (flat cap) · parent and child (child in a raincoat) · someone dashing in from the rain (umbrella) · the café cat'], (scene) => { const r = peopleCard(['studentA', 'studentB', 'reader', 'chatA', 'oldman', 'parent', 'rainKid', 'rainComer'], ['sitWrite', 'sitStretch', 'sitRead', 'sitSip', 'sitRead', 'sitChat', 'idle', 'walk'])(scene); r.radius += 0.6; const k = cat({ mode: 'sleep' }); k.position.set(4.4, 0, 0.6); r.obj.add(k); const u = r.update; return { ...r, update: (t, dt) => { u(t, dt); k.userData.update(t); } }; }, { view: [0.25, 0.3, 1], fill: 0.6 }),
 ];
+// faces and hair (airport/src/looks.js): big heads in a row, then the same role seeded into a crowd
+function headsCard(list) { // [role, cfg overrides] — shown as heads at eye height, blinking
+  return (scene) => {
+    floor(scene, list.length * 0.8 + 1, 1.6, 0xc49a6c);
+    const g = new THREE.Group();
+    const ps = list.map(([role, seed], i) => { const p = person(role, { mode: 'idle', seed }); p.position.set((i - (list.length - 1) / 2) * 0.72, 0, 0); p.rotation.y = -Math.PI / 2 + (i % 2 ? 0.25 : -0.25) * (list.length > 6 ? 1 : 0.6); p.userData.phase = i; g.add(p); return p; });
+    scene.add(g);
+    return { obj: g, radius: list.length * 0.3 + 0.1, target: vec(0, 1.05, 0), update: (t) => ps.forEach((p) => p.userData.update(t)) };
+  };
+}
+Object.assign(ROLE_LOOKS, {
+  lookRound: { top: 0x9db59a, legs: 0x3a3f4a, hat: 'hair', hair: 0x2a2018, face: 'round' }, lookLash: { top: 0xe2a9a0, legs: 0x3a3f4a, hat: 'long', hair: 0x6b4a35, face: 'lash' },
+  lookCalm: { top: 0x2f3e57, legs: 0x3a3f4a, hat: 'hair', hair: 0x1d1f23, face: 'calm', tie: 0xc8283a }, lookHappy: { top: 0xf2c94c, legs: 0x3a3f4a, hat: 'bob', hair: 0x4a3426, face: 'happy' },
+  lookKid: { top: 0xe8673c, legs: 0x2f3e57, hat: 'long', hair: 0x2a2018, face: 'kid', scale: 0.72 }, lookElder: { top: 0xe8dcc6, legs: 0x6b5a48, hat: 'grey', face: 'elder', fixed: true },
+});
+const styleRoles = (styles, hairColor, extra = {}) => styles.map((st) => { const k = 'look_' + st + (extra.scale ? 'Kid' : ''); ROLE_LOOKS[k] = { top: 0xd8d2c6, legs: 0x3a3f4a, hat: 'hair', hair: hairColor, style: st, fixed: true, ...extra }; return [k, 1]; });
+ITEMS.push(
+  C('look', '顔の表情', 'Faces', ['顔は頭の前に貼った1枚の絵：光の入った目、髪色のまゆ、口、ほっぺ · ときどきまばたき · ふつう / まつげ / 落ち着き / 笑顔 / 子ども / おじいさん・おばあさん', 'Each face is one painted patch on the front of the head: eyes with a shine, brows in the hair colour, a mouth, blush · they blink now and then · round / lashes / calm / laughing / child / elder'], headsCard([['lookRound'], ['lookLash'], ['lookCalm'], ['lookHappy'], ['lookKid'], ['lookElder']]), { view: [0, 0.12, 1], fill: 0.55 }),
+  C('look', '髪型（短い）', 'Short hair', ['ショート · 七三（横に流す）· ぱっつん前髪 · 坊主 · ツンツン · くせ毛 · アフロ · 横と後ろだけ（おじいさん）· 口ひげ・あごひげ', 'Short · side parting · straight bangs · buzz cut · spiky · curly · afro · thinning (sides and back only) · moustache and beard'], headsCard([...styleRoles(['short', 'side', 'fringe', 'buzz', 'spiky', 'curly', 'afro', 'thin'], 0x2a2018), ['lookBeard'], ['lookMoustache']]), { view: [0, 0.2, 1], fill: 0.55 }),
+  C('look', '髪型（長い）', 'Long hair', ['ロング（前髪を流す）· ウェーブ · ポニーテール（歩くと揺れる）· ツインテール · ボブ · 後ろのおだんご · 上のおだんご', 'Long (fringe swept aside) · wavy · ponytail (it swings as they walk) · twin tails · bob · low bun · top bun'], headsCard(styleRoles(['long', 'wavy', 'pony', 'twin', 'bob', 'bun', 'topbun'], 0x6b4a35)), { view: [-0.5, 0.2, 1], fill: 0.55 }),
+  C('look', '肌と髪の色・人混み', 'Skin, hair colour, a crowd', ['同じ役（旅行者）でも一人ずつ違う：肌5色、髪9色、髪型と表情はシードで決まる · 物語の人（ミナ、ハナとおばあちゃん）はいつも同じ見た目', 'The same role (a traveller) still looks different each time: 5 skin tones, 9 hair colours, style and face picked from a seed · the story cast (Mina, Hana and her grandmother) always looks the same'], (scene) => { const r = peopleCard(Array.from({ length: 10 }, (_, i) => (i % 3 === 2 ? 'touristC' : i % 3 ? 'woman' : 'passenger')), ['idle', 'walk'])(scene); return r; }, { view: [0.3, 0.25, 1], fill: 0.6 }),
+);
 ITEMS.push(...bcnCards(C, show)); // the Barcelona shelf (cafe/BARCELONA.md)
-const GROUPS = [['all', ['すべて', 'All']], ['room', ['店', 'Shop']], ['counter', ['カウンター', 'Counter']], ['seat', ['席', 'Seats']], ['light', ['照明・入口', 'Lights · door']], ['thing', ['小物', 'Small things']], ['people', ['人', 'People']], ...BCN_GROUPS];
+const GROUPS = [['all', ['すべて', 'All']], ['room', ['店', 'Shop']], ['counter', ['カウンター', 'Counter']], ['seat', ['席', 'Seats']], ['light', ['照明・入口', 'Lights · door']], ['thing', ['小物', 'Small things']], ['people', ['人', 'People']], ['look', ['顔と髪', 'Faces · hair']], ...BCN_GROUPS];
 
 // ---------- page ----------
 const canvas = document.getElementById('stage');
