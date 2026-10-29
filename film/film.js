@@ -5,6 +5,7 @@
 //   dur: seconds of film, speed: story seconds per film second (1), cam: { from: [[eye], [target]], to: … } or
 //   { follow: [dx, dy, dz], look?: dy } (keep Mina in view) or { orbit: { center, radius, height, from, to } } or { toward: [x, y, z], from: [back, up, side], to } (over her shoulder); rel: 'eye' | 'both' puts from / to
 //   relative to where Mina is as the shot begins, clear?: metres (no one else that near Mina), cap: [ja, en] (capTop: up high), draw?(g, k, W, H) (anything else on top) }
+// · until: () => bool (run the world on until it is true) · cam: { fn(u, P, T, ts) } sets eye P and target T itself (to track a moving thing)
 import * as THREE from 'three';
 import { v3 } from '../koto/src/world.js';
 
@@ -45,6 +46,7 @@ export async function film({ name, shots, W = 1080, H = 1920, fps = 30, fov = 44
     s.start?.(); // (set the weather, the time of day… before running on)
     if (s.at) { let guard = 0; while (!line().includes(s.at) && guard++ < 20 * 600) k().tick(1 / 20); }
     if (s.skip) for (let j = 0; j < s.skip * 20; j++) k().tick(1 / 20);
+    if (s.until) { let guard = 0; while (!s.until() && guard++ < 20 * 900) k().tick(1 / 20); }
     const base = mina().p.position.clone(); // (rel: 'eye' | 'both': the shot is placed from where Mina is now)
     if (s.clear) for (const a of k().people) if (a !== mina() && a.p.position.distanceTo(base) < s.clear) { a.t = -60; a.p.visible = false; } // (someone in the way: sent off for a minute)
     const frames = Math.round(s.dur * fps);
@@ -52,7 +54,8 @@ export async function film({ name, shots, W = 1080, H = 1920, fps = 30, fov = 44
     for (let f = 0; f < frames; f++) {
       const u = frames > 1 ? f / (frames - 1) : 0;
       if (f) k().tick(dt * (s.speed ?? 1));
-      if (s.cam.follow) {
+      if (s.cam.fn) s.cam.fn(u, P, T, f / fps);
+      else if (s.cam.follow) {
         const m = mina().p.position, o = s.cam.follow;
         P.set(m.x + o[0], m.y + o[1], m.z + o[2]); T.set(m.x, m.y + (s.cam.look ?? 0.9), m.z);
       } else if (s.cam.orbit) { // round a point: angles (radians, from +z) from → to, at a radius and a height
