@@ -41,7 +41,7 @@ export const SHOTS = {
   1: [ // Stilla Kaffe: the rain on the window, the long table, the baristas, the cat
     { skip: 10, start: sky('drizzle', 'morning'), dur: 3.4, cam: { from: [[-2.6, 1.9, 9.6], [-2.6, 1.4, 3.9]], to: [[-2.6, 1.75, 7.8], [-2.6, 1.35, 3.9]] }, draw: both(title, place('Stilla Kaffe', 'a drizzly morning up north')) },
     { skip: 2, dur: 3.0, cam: { from: [[0.2, 2.3, 2.9], [-2.4, 0.7, 0.2]], to: [[-0.3, 2.0, 2.4], [-2.4, 0.7, 0.2]] }, cap: ['Homework and lattes'] },
-    { skip: 2, dur: 3.0, cam: { from: [[2.4, 2.1, 0.4], [2.6, 1.1, -4.2]], to: [[2.6, 1.9, -0.4], [2.6, 1.1, -4.2]] }, cap: ['Ordering at the counter'] },
+    { skip: 2, dur: 3.0, cam: { from: [[3.2, 2.3, -0.2], [1.0, 1.2, -5.4]], to: [[2.6, 2.0, -1.2], [1.0, 1.2, -5.4]] }, cap: ['Ordering at the counter'] },
   ],
   2: [ // Ametsuchi: the downpour in the alley, the tatami room, the little garden
     { skip: 10, start: sky('rain'), dur: 3.4, cam: { from: [[5.4, 1.7, 10.2], [-1.2, 1.6, 4]], to: [[4.4, 1.6, 8.8], [-1.2, 1.6, 4]] }, draw: place('Kissa Ametsuchi', 'a downpour in the old town') },

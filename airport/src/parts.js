@@ -527,6 +527,12 @@ const ROLES = {
   rainKid: { top: 0xf2c94c, legs: 0x2f3e57, hat: 'rainhat', capColor: 0xf2c94c, scale: 0.7, shoes: 0xf2c94c },
   rainComer: { top: 0x5f6b5a, legs: 0x2f3e57, hat: 'hair', carry: 'umbrella' },
   regular: { top: 0xc9714a, legs: 0x3a3f4a, hat: 'hair', glasses: true, carry: 'mug' },
+  // café customers who take their coffee away (cafe/src/nordic.js): togoX comes in empty-handed, togoXCup leaves with a cup
+  togoA: { top: 0x3a3f4a, legs: 0x6b5a48, hat: 'beret', capColor: 0xc9714a, hair: 0x4a3426 },
+  togoB: { top: 0xe8dcc6, legs: 0x2f3e57, hat: 'long', hair: 0xc9a07a, handbag: 0x6b4a35 },
+  togoC: { top: 0x4a6b8a, legs: 0x3a3f4a, hat: 'hair', hair: 0x2a2018, backpack: 0x2a2a2c },
+  togoD: { top: 0x9a5a4a, legs: 0x3a3f4a, hat: 'bob', hair: 0x2a2018, scarf: 0xf2c94c },
+  togoE: { top: 0xf2ede2, legs: 0x5a6b7a, hat: 'flatcap', capColor: 0x3a3f4a, glasses: true },
   // Mina, the travelling illustrator (cafe/DESIGN.md §12): a blue raincoat, a brown bob, a sketchbook in her bag
   mina: { top: 0x5f7f9a, legs: 0x3a3f4a, hat: 'bob', hair: 0x6b4a35, backpack: 0xc9a07a, carry: 'umbrella', shoes: 0x8a5a3a },
   minaIn: { top: 0x5f7f9a, legs: 0x3a3f4a, hat: 'bob', hair: 0x6b4a35, backpack: 0xc9a07a, carry: 'mug', shoes: 0x8a5a3a },
@@ -553,9 +559,10 @@ const ROLES = {
   jinbeiKid: { top: 0x6f8fb8, legs: 0x6f8fb8, hat: 'hair', collar: 0x2f4a6b, scale: 0.7, carry: 'uchiwa' },
   umbrellaWoman: { robe: 0x2f4a6b, pattern: 'kiku', obi: 0xc9a24a, otaiko: true, hat: 'updo', kanzashi: 0xc9a24a, shoes: 0x2a2018, stride: 0.3, pace: 0.75, carry: 'wagasa' },
 };
+for (const k of ['togoA', 'togoB', 'togoC', 'togoD', 'togoE']) ROLES[k + 'Cup'] = { ...ROLES[k], carry: 'togo' };
 // things carried in the right hand (s = 1 arm); the arm holds still while the other swings
 // how far forward the carrying arm is held
-const HOLD = { umbrella: 0.6, mug: 0.25, wagasa: 0.6, uchiwa: 1.1, broom: 0.5, bowl: 1.2, tray: 1.3, shears: 0.4, flag: 0.9, camera: 1.3, basket: 0.25 };
+const HOLD = { umbrella: 0.6, mug: 0.25, togo: 0.3, wagasa: 0.6, uchiwa: 1.1, broom: 0.5, bowl: 1.2, tray: 1.3, shears: 0.4, flag: 0.9, camera: 1.3, basket: 0.25 };
 const KOTO_GOLD = 0xc9a24a;
 function carryItem(kind) {
   const g = new THREE.Group();
@@ -574,7 +581,8 @@ function carryItem(kind) {
   else if (kind === 'umbrella') { // a western umbrella, open
     g.add(cyl(0.012, 0.012, 1.0, mat(0x2a2a2c), 0, 0.45, 0, 5));
     g.add(mesh(new THREE.SphereGeometry(0.55, 16, 6, 0, Math.PI * 2, 0, Math.PI / 2.6), mat(0x2f3e57, { side: THREE.DoubleSide, roughness: 0.6 }), 0, 0.72, 0));
-  } else if (kind === 'mug') { g.add(cyl(0.045, 0.04, 0.09, mat(0xf6f1e6), 0.03, 0.02, 0, 10)); g.add(mesh(new THREE.TorusGeometry(0.025, 0.008, 4, 8), mat(0xf6f1e6), 0.03, 0.02, 0.05)); }
+  } else if (kind === 'togo') { g.add(cyl(0.045, 0.035, 0.13, mat(0xf6f1e6), 0.03, 0.04, 0, 10)); g.add(cyl(0.047, 0.042, 0.05, mat(0xb08458), 0.03, 0.03, 0, 10)); g.add(cyl(0.048, 0.048, 0.02, mat(0xf6f1e6), 0.03, 0.115, 0, 10)); } // a paper cup, sleeve and lid
+  else if (kind === 'mug') { g.add(cyl(0.045, 0.04, 0.09, mat(0xf6f1e6), 0.03, 0.02, 0, 10)); g.add(mesh(new THREE.TorusGeometry(0.025, 0.008, 4, 8), mat(0xf6f1e6), 0.03, 0.02, 0.05)); }
   void paper;
   return g;
 }

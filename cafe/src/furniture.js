@@ -457,3 +457,73 @@ export function tsukubai() {
   g.userData = { kind: 'tsukubai', water };
   return g;
 }
+
+// ---------- the shop corner: things for sale, the pick-up end, the milk-and-sugar bar ----------
+const BAGS = [0xc9a87c, 0x2f3e57, 0x9db59a, 0xc9714a, 0xe8dcc6, 0x6b4a35];
+const TUMBLERS = [CAFE.white, CAFE.sage, CAFE.navy, CAFE.terracotta, CAFE.rose, CAFE.mustard, 0x2a2a2c];
+// a bag of beans: kraft or coloured, a label band, a folded top
+function beanBag(color, x, y, z) {
+  const g = new THREE.Group();
+  g.add(rbox(0.14, 0.22, 0.08, 0.02, M(color, { roughness: 0.9 }), 0, 0.11, 0));
+  g.add(box(0.145, 0.06, 0.085, M(CAFE.white), 0, 0.1, 0));
+  g.add(box(0.12, 0.03, 0.06, M(color, { roughness: 0.9 }), 0, 0.235, 0));
+  g.position.set(x, y, z); return g;
+}
+// a tumbler with its lid
+function tumbler(color, x, y, z, h = 0.2) {
+  const g = new THREE.Group();
+  g.add(cyl(0.045, 0.038, h, M(color, { roughness: 0.4, metalness: color === 0x2a2a2c ? 0.3 : 0 }), 0, h / 2, 0, 12));
+  g.add(cyl(0.047, 0.047, 0.03, M(color === CAFE.white ? CAFE.sage : CAFE.white), 0, h + 0.015, 0, 12));
+  g.position.set(x, y, z); return g;
+}
+// a tall oak shelf unit against a wall: tumblers, mugs, bags of beans and boxes of tea, lit along each shelf
+export function merchWall({ len = 3.2, h = 2.1, rows = 4 } = {}) {
+  const g = new THREE.Group(), wood = M(CAFE.oak);
+  g.add(box(len, h, 0.04, M(CAFE.walnut), 0, h / 2, -0.17)); // the back panel
+  for (const x of [-len / 2, 0, len / 2]) g.add(box(0.05, h, 0.36, wood, x, h / 2, 0));
+  for (let r = 0; r < rows; r++) {
+    const y = 0.3 + r * ((h - 0.4) / rows);
+    g.add(box(len, 0.04, 0.36, wood, 0, y, 0));
+    g.add(box(len - 0.1, 0.015, 0.02, GLOW.case, 0, y + (h - 0.4) / rows - 0.05, 0.14)); // a light strip under the shelf above
+    for (let k = 0; k < Math.floor(len / 0.19); k++) {
+      const x = -len / 2 + 0.14 + k * 0.19;
+      if (Math.abs(x) < 0.08) continue;
+      const kind = r === 0 ? 'bag' : r === rows - 1 ? 'mug' : (k + r) % 3 ? 'tumbler' : 'box';
+      if (kind === 'bag') g.add(beanBag(BAGS[(k * 2 + r) % BAGS.length], x, y + 0.02, 0));
+      else if (kind === 'tumbler') g.add(tumbler(TUMBLERS[(k + r * 2) % TUMBLERS.length], x, y + 0.02, 0, 0.17 + (k % 2) * 0.05));
+      else if (kind === 'mug') g.add(cyl(0.05, 0.045, 0.1, M(TUMBLERS[(k * 3) % TUMBLERS.length]), x, y + 0.07, 0, 10));
+      else g.add(rbox(0.14, 0.16, 0.1, 0.01, M([CAFE.rose, CAFE.sage, CAFE.mustard][k % 3]), x, y + 0.1, 0));
+    }
+  }
+  g.add(box(len, 0.08, 0.36, wood, 0, 0.04, 0));
+  return bake(g, 'merchWall');
+}
+// a low table in the middle of the room, stacked with bags of beans and tumblers on little stands
+export function merchTable({ w = 1.4, d = 0.8 } = {}) {
+  const g = new THREE.Group();
+  g.add(box(w, 0.06, d, M(CAFE.oak), 0, 0.72, 0)); legs4(g, w, d, 0.72, 0.03, M(CAFE.walnut));
+  g.add(box(w - 0.1, 0.03, d - 0.1, M(CAFE.oak), 0, 0.2, 0)); // the lower shelf
+  for (let k = 0; k < 5; k++) for (let j = 0; j < 2; j++) g.add(beanBag(BAGS[(k + j * 2) % BAGS.length], -w / 2 + 0.2 + k * 0.25, 0.22, -0.15 + j * 0.3));
+  for (let k = 0; k < 3; k++) for (let j = 0; j < 3 - k; j++) g.add(beanBag(BAGS[(k + j) % BAGS.length], -0.45 + j * 0.17 + k * 0.085, 0.75 + k * 0.24, -0.15)); // a little pyramid
+  for (let k = 0; k < 4; k++) { g.add(cyl(0.07, 0.07, 0.06 + k * 0.05, M(CAFE.white), 0.2 + (k % 2) * 0.22, 0.75 + (0.06 + k * 0.05) / 2, -0.15 + Math.floor(k / 2) * 0.3, 10)); g.add(tumbler(TUMBLERS[k + 1], 0.2 + (k % 2) * 0.22, 0.81 + k * 0.05, -0.15 + Math.floor(k / 2) * 0.3)); }
+  const card = mesh(new THREE.PlaneGeometry(0.22, 0.14), new THREE.MeshStandardMaterial({ map: signTexture('NEW', { w: 128, h: 80, font: 'bold 34px Georgia, serif', bg: '#f3ead8', fg: '#2f3e57' }) }), 0.3, 0.84, 0.3); card.rotation.x = -0.4; g.add(card);
+  return bake(g, 'merchTable');
+}
+// the pick-up end of the counter: a lit sign hanging over it, a row of cups waiting with names
+export function pickupSign({ text = 'PICK UP' } = {}) {
+  const g = new THREE.Group();
+  for (const x of [-0.35, 0.35]) g.add(cyl(0.005, 0.005, 0.6, M(CAFE.iron), x, 0.3, 0, 4));
+  const t = signTexture(text, { w: 256, h: 64, font: 'bold 36px "Avenir Next", sans-serif', bg: '#2f3e57', fg: '#f3ead8' });
+  g.add(mesh(new THREE.PlaneGeometry(0.9, 0.22), new THREE.MeshStandardMaterial({ map: t, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.35, side: THREE.DoubleSide }), 0, 0, 0));
+  return g;
+}
+// milk and sugar: a little cabinet with carafes, a jar of stirrers, napkins and a stack of lids
+export function condimentBar({ len = 1.0 } = {}) {
+  const g = new THREE.Group();
+  g.add(box(len, 0.9, 0.5, M(CAFE.white), 0, 0.45, 0)); g.add(box(len + 0.04, 0.04, 0.54, M(CAFE.marble, { roughness: 0.3 }), 0, 0.92, 0));
+  for (let k = 0; k < 3; k++) g.add(cyl(0.05, 0.05, 0.2, M(CAFE.steel, { metalness: 0.6, roughness: 0.3 }), -len / 2 + 0.15 + k * 0.13, 1.04, -0.05, 10));
+  g.add(cyl(0.04, 0.04, 0.12, M(0xcfe2e6, { transparent: true, opacity: 0.6 }), 0.15, 1.0, 0.05, 8));
+  g.add(box(0.14, 0.08, 0.14, M(CAFE.white), 0.32, 0.98, -0.05));
+  g.add(cyl(0.05, 0.05, 0.1, M(0xf6f1e6), 0.32, 1.07, 0.12, 10));
+  return bake(g, 'condimentBar');
+}

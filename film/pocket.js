@@ -22,7 +22,7 @@ export const POCKETS = {
   nordic: {
     bg: '#ece9e4', floor: [-1.62, 400],
     shots: [
-      { start: set('drizzle', 'morning'), skip: 12, dur: 20, cam: { orbit: { center: [1.2, -0.6, 3.6], radius: [110, 84], height: [72, 52], from: 0.8, to: -0.1 } }, draw: label({ kicker: 'Café studies · no. 1', name: 'Stilla Kaffe.', lines: ['A corner café on a drizzly northern street.', 'Laptops at the window, a cat on the sill.'] }) },
+      { start: set('drizzle', 'morning'), skip: 12, dur: 20, cam: { orbit: { center: [-1.2, -0.6, 2.0], radius: [128, 100], height: [84, 62], from: 0.8, to: -0.1 } }, draw: label({ kicker: 'Café studies · no. 1', name: 'Stilla Kaffe.', lines: ['A big corner café on a drizzly northern street.', 'Beans, buns, birches — and a cat on the sill.'] }) },
     ],
   },
   wa: {

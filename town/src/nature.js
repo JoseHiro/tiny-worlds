@@ -62,13 +62,13 @@ const once = (key, make) => { if (!geoCache.has(key)) geoCache.set(key, make());
 const plain = new Map();
 const vcMat = (sway) => { const k = JSON.stringify(sway); if (!plain.has(k)) plain.set(k, swimMaterial(sway, { roughness: 0.9 })); return plain.get(k); };
 // one tree: a merged shape that sways a little at the top
-function treeMesh(key, build, sway = { mode: 'sway', amp: 0.06, freq: 0.9, waves: 0.15, z0: 1.5, len: 5 }) {
+export function treeMesh(key, build, sway = { mode: 'sway', amp: 0.06, freq: 0.9, waves: 0.15, z0: 1.5, len: 5 }) {
   const m = new THREE.Mesh(once(key, () => assemble(build())), vcMat(sway));
   m.castShadow = true; m.receiveShadow = true;
   m.userData = { kind: 'nature', nature: key, keep: true }; // keep: a building's bakeStatic must not merge it (it would lose its colours)
   return m;
 }
-const leafy = (base, alt, k = 0.35) => (p) => (Math.sin(p.x * 7.1 + p.y * 5.3) * Math.sin(p.z * 6.7 - p.y * 3.1) > k ? alt : base);
+export const leafy = (base, alt, k = 0.35) => (p) => (Math.sin(p.x * 7.1 + p.y * 5.3) * Math.sin(p.z * 6.7 - p.y * 3.1) > k ? alt : base);
 
 // ヤシ: a curved trunk and a crown of drooping fronds
 export function palm({ height = 6, lean = 0.5, seed = 1 } = {}) {
