@@ -86,9 +86,14 @@ const SKETCH = [
   (x) => { x.strokeRect(52, 30, 24, 8); x.strokeRect(56, 38, 16, 14); x.beginPath(); x.moveTo(46, 30); x.lineTo(64, 18); x.lineTo(82, 30); x.moveTo(60, 52); x.lineTo(60, 80); x.moveTo(68, 52); x.lineTo(68, 80); x.moveTo(48, 82); x.lineTo(80, 82); x.stroke(); for (const r of [6, 12, 18]) { x.beginPath(); x.ellipse(96, 100, r, r * 0.4, 0, 0, 7); x.stroke(); } x.beginPath(); x.arc(30, 96, 10, Math.PI, 0); x.stroke(); },
   (x) => { for (const [cx, h] of [[30, 56], [46, 70], [64, 90], [82, 70], [98, 56]]) { x.beginPath(); x.moveTo(cx - 7, 112); x.lineTo(cx - 4, 112 - h); x.quadraticCurveTo(cx, 106 - h - 14, cx + 4, 112 - h); x.lineTo(cx + 7, 112); x.stroke(); for (let k = 0; k < 5; k++) { x.beginPath(); x.moveTo(cx - 2, 104 - k * h / 6); x.lineTo(cx + 2, 104 - k * h / 6); x.stroke(); } } x.beginPath(); x.moveTo(10, 114); x.lineTo(118, 114); x.stroke(); },
 ];
+// one page (128 × 128) drawn into a 2D context; also for the end of the film (film/mina.js)
+export function drawSketch(x, i) {
+  if (i === 4) { const g = x.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, '#2f3e6a'); g.addColorStop(1, '#c9714a'); x.globalAlpha = 0.55; x.fillStyle = g; x.fillRect(8, 8, 112, 112); x.globalAlpha = 1; x.strokeStyle = '#f6e3b0'; } else x.strokeStyle = '#4a4540';
+  x.lineWidth = 1.4; SKETCH[Math.min(i, 3) - 1](x);
+}
 const sketchTex = (n) => canvasTex('sketch' + n, 256, 128, (x) => {
   x.fillStyle = '#fbf7ee'; x.fillRect(0, 0, 256, 128); x.fillStyle = '#e6dfd0'; x.fillRect(127, 0, 2, 128);
-  const page = (i, dx) => { if (i < 1) return; x.save(); x.translate(dx, 0); if (i === 4) { const g = x.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, '#2f3e6a'); g.addColorStop(1, '#c9714a'); x.globalAlpha = 0.55; x.fillStyle = g; x.fillRect(8, 8, 112, 112); x.globalAlpha = 1; x.strokeStyle = '#f6e3b0'; } else x.strokeStyle = '#4a4540'; x.lineWidth = 1.4; SKETCH[Math.min(i, 3) - 1](x); x.restore(); };
+  const page = (i, dx) => { if (i < 1) return; x.save(); x.translate(dx, 0); drawSketch(x, i); x.restore(); };
   page(n - 1, 0); page(n, 128);
 });
 export function sketchbook({ page = 1 } = {}) {

@@ -179,6 +179,7 @@ export function createWorld({ shadow = 62, target = [0, 0, 0], views, follow = n
       },
       follow() { following = true; const [p, t] = followCam(); camera.position.copy(p); controls.target.copy(t); controls.update(); },
       advance(sec) { for (let k = 0; k < sec * 20; k++) { simT += 1 / 20; step(timer.elapsedTime + simT, 1 / 20); } },
+      tick(dt) { simT += dt; step(timer.elapsedTime + simT, dt); }, // (film/film.js: one frame of a fixed length, the loop stopped)
       snapshot(w = 1440, h = 900) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.render(scene, camera); const url = renderer.domElement.toDataURL('image/jpeg', 0.88); resize(); return url; },
       info: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, heapMB: (performance.memory?.usedJSHeapSize ?? 0) / 1e6 | 0 }),
     };
