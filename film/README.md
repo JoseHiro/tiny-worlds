@@ -20,3 +20,11 @@ film/make.sh cafes 0.35 0.8 0.03
 ```
 
 `film/make.sh` works for any set of pieces. You give it one rain loudness per piece: 0 is dry and 1 is a downpour.
+
+## Pocket (`film/pocket.js`)
+
+Each pocket video shows one café as a small object on a plain table. The camera goes slowly round the whole diorama for 20 seconds while life goes on inside. Text is in English, set like a museum label. Film it from the plain page with `(await import('/film/pocket.js')).run('nordic')` (or `'wa'`). Then rename the frame folder `film/out/pocket-nordic` to `pocket-nordic1` and join it:
+
+```bash
+film/make.sh pocket-nordic 0.35
+```

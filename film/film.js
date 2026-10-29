@@ -3,8 +3,9 @@
 // captions laid over it on a 2D canvas, and every frame posted to film/record.mjs.
 // A shot: { start?() (set things up first), at: 'a few words of a story line' (run the story on until that line shows) | skip: seconds (run it on),
 //   dur: seconds of film, speed: story seconds per film second (1), cam: { from: [[eye], [target]], to: … } or
-//   { follow: [dx, dy, dz], look?: dy } (keep Mina in view) or { toward: [x, y, z], from: [back, up, side], to } (over her shoulder); rel: 'eye' | 'both' puts from / to
+//   { follow: [dx, dy, dz], look?: dy } (keep Mina in view) or { orbit: { center, radius, height, from, to } } or { toward: [x, y, z], from: [back, up, side], to } (over her shoulder); rel: 'eye' | 'both' puts from / to
 //   relative to where Mina is as the shot begins, clear?: metres (no one else that near Mina), cap: [ja, en] (capTop: up high), draw?(g, k, W, H) (anything else on top) }
+import * as THREE from 'three';
 import { v3 } from '../koto/src/world.js';
 
 const k = () => window.__koto;
@@ -27,8 +28,11 @@ export function caption(g, [ja, en], a, W, H, top = false) {
   g.restore();
 }
 
-export async function film({ name, shots, W = 1080, H = 1920, fps = 30, fov = 44, preview = false }) {
+// bg: a plain backdrop instead of the sky (the diorama as an object on a table); floor: [y, size] a pale floor
+// under it that only takes the diorama's shadow
+export async function film({ name, shots, W = 1080, H = 1920, fps = 30, fov = 44, preview = false, bg = null, floor = null }) {
   const { renderer, camera, scene } = k();
+  if (floor) { const f = new THREE.Mesh(new THREE.PlaneGeometry(floor[1], floor[1]).rotateX(-Math.PI / 2), new THREE.ShadowMaterial({ opacity: 0.18 })); f.position.y = floor[0]; f.receiveShadow = true; scene.add(f); }
   renderer.setAnimationLoop(null); // the page's loop would step the world in real time
   renderer.setPixelRatio(1); renderer.setSize(W, H, false);
   camera.fov = fov; camera.aspect = W / H; camera.updateProjectionMatrix();
@@ -50,6 +54,10 @@ export async function film({ name, shots, W = 1080, H = 1920, fps = 30, fov = 44
       if (s.cam.follow) {
         const m = mina().p.position, o = s.cam.follow;
         P.set(m.x + o[0], m.y + o[1], m.z + o[2]); T.set(m.x, m.y + (s.cam.look ?? 0.9), m.z);
+      } else if (s.cam.orbit) { // round a point: angles (radians, from +z) from → to, at a radius and a height
+        const { center: c, radius, height, from: a0, to: a1 = a0 } = s.cam.orbit, a = a0 + (a1 - a0) * u;
+        const at = (x) => (Array.isArray(x) ? x[0] + (x[1] - x[0]) * ease(u) : x), r = at(radius); // (radius, height: one value or [from, to])
+        P.set(c[0] + Math.sin(a) * r, c[1] + at(height), c[2] + Math.cos(a) * r); T.set(...c);
       } else if (s.cam.toward) { // over Mina's shoulder at something far off: [back, up, side] from her, eased from → to
         const e = ease(u), a = s.cam.from, b = s.cam.to ?? a, [bk, up, sd] = a.map((x, j) => x + (b[j] - x) * e);
         T.set(...s.cam.toward); const d = v3(T.x - base.x, 0, T.z - base.z).normalize();
@@ -62,6 +70,7 @@ export async function film({ name, shots, W = 1080, H = 1920, fps = 30, fov = 44
       camera.position.copy(P); camera.lookAt(T);
       if (!shown.includes(f)) continue;
       k().tick(0); // (the cut-away walls follow the camera)
+      if (bg) scene.background.set(bg); // (the café sets its sky every step)
       renderer.render(scene, camera);
       g.drawImage(renderer.domElement, 0, 0);
       const ts = f / fps;

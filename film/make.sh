@@ -18,11 +18,11 @@ for lv in "$@"; do
   last=$lv; off=$(echo "$off + $d - $F" | bc)
 done
 T=$(echo "$off + $F" | bc); R="$R$last$close"
-[ $n -gt 1 ] || prev="0:v"
+vmap="[$prev]"; [ $n -gt 1 ] || vmap="0:v" # (one piece: its own picture, no cross-fade)
 ffmpeg -y -loglevel error $ins \
   -f lavfi -i "anoisesrc=color=pink:amplitude=0.6:duration=$T:sample_rate=48000" \
   -f lavfi -i "anoisesrc=color=brown:amplitude=0.5:duration=$T:sample_rate=48000" \
   -filter_complex "$xf[$n]highpass=f=400,lowpass=f=5200[p];[$((n + 1))]lowpass=f=420[b];[p][b]amix=inputs=2:weights=1 0.6,volume='$R':eval=frame,volume=3,afade=t=in:d=0.6,afade=t=out:st=$(echo "$T - 1" | bc):d=1[au]" \
-  -map "[$prev]" -map "[au]" -c:v libx264 -pix_fmt yuv420p -crf 18 -c:a aac -b:a 160k -movflags +faststart "$name.mp4"
+  -map "$vmap" -map "[au]" -c:v libx264 -pix_fmt yuv420p -crf 18 -c:a aac -b:a 160k -movflags +faststart "$name.mp4"
 ffmpeg -y -loglevel error -i "$name.mp4" -an -c:v copy "$name-silent.mp4"
 echo "film/out/$name.mp4  ($T s)"
