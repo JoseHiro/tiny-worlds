@@ -32,13 +32,13 @@ export const POCKETS = {
     ],
   },
   barcelona: {
-    bg: '#ece9e4', floor: [-1.62, 4000], far: 4000,
+    bg: '#ece9e4', floor: [-1.62, 4000], near: 150, far: 2500,
     shots: [
       { start: set('clear', 'day'), skip: 8, dur: 20, cam: { orbit: { center: [20, 30, 0], radius: [900, 800], height: [500, 430], from: 1.15, to: 1.95 } }, draw: label({ kicker: 'Café studies · no. 3', name: 'de la Plaça.', lines: ['A terrace café on a square in Barcelona,', 'across the pond from a basilica still being built.'] }) },
     ],
   },
   airport: {
-    bg: '#ece9e4', floor: [-4.88, 4000], far: 4000,
+    bg: '#ece9e4', floor: [-4.88, 4000], near: 200, far: 2500,
     shots: [
       { start: () => { window.__airport.setTod('day'); window.__airport.setView('f2'); }, skip: 6, dur: 20, cam: { orbit: { center: [0, -6, 14], radius: [700, 640], height: [720, 640], from: -0.25, to: 0.25 } }, draw: label({ kicker: 'Tiny Worlds · no. 4', name: 'Mini Airport.', lines: ['A small airport that keeps its own clock.', 'Planes, bags and travellers, all day long.'] }) },
     ],

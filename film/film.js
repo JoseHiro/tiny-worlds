@@ -28,14 +28,14 @@ export function caption(g, [ja, en], a, W, H, top = false) {
   g.restore();
 }
 
-// far: see further than the page does (a big diorama from far off); bg: a plain backdrop instead of the sky (the diorama as an object on a table); floor: [y, size] a pale floor
+// near / far: the depth range (a big diorama from far off: push near out too, or the ground flickers); bg: a plain backdrop instead of the sky (the diorama as an object on a table); floor: [y, size] a pale floor
 // under it that only takes the diorama's shadow
-export async function film({ name, shots, W = 1080, H = 1920, fps = 30, fov = 44, far = null, preview = false, bg = null, floor = null }) {
+export async function film({ name, shots, W = 1080, H = 1920, fps = 30, fov = 44, near = null, far = null, preview = false, bg = null, floor = null }) {
   const { renderer, camera, scene } = k();
   if (floor) { const f = new THREE.Mesh(new THREE.PlaneGeometry(floor[1], floor[1]).rotateX(-Math.PI / 2), new THREE.ShadowMaterial({ opacity: 0.18 })); f.position.y = floor[0]; f.receiveShadow = true; scene.add(f); }
   renderer.setAnimationLoop(null); // the page's loop would step the world in real time
   renderer.setPixelRatio(1); renderer.setSize(W, H, false);
-  camera.fov = fov; camera.aspect = W / H; if (far) camera.far = far; camera.clearViewOffset(); camera.updateProjectionMatrix();
+  camera.fov = fov; camera.aspect = W / H; if (near) camera.near = near; if (far) camera.far = far; camera.clearViewOffset(); camera.updateProjectionMatrix();
   const draw = k().render ?? (() => renderer.render(scene, camera)); // (a page with post-processing hands its own)
   const out = document.createElement('canvas'); out.width = W; out.height = H;
   const g = out.getContext('2d');
