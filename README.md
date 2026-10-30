@@ -7,6 +7,10 @@ Small 3D dioramas with stories inside, built in the browser with [three.js](http
 
 ## Worlds
 
+### World Map — [`world/`](world/)
+
+Every world on one low-poly globe, with the routes out of Mini Airport and aircraft flying them. Fly to Naha: a 45-second flight over the clouds, then the landing at Naha Airport on the Naha road. Pages: [`world/index.html`](world/index.html) (the map) · [`world/flight.html`](world/flight.html) (in flight) · [`world/DESIGN.md`](world/DESIGN.md)
+
 ### 01 · Mini Airport — [`airport/`](airport/)
 
 One runway, six stands and a two-storey terminal (departures on 2F, arrivals on 1F).

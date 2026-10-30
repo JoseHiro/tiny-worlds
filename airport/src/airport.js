@@ -370,7 +370,12 @@ function flightCard(f) {
       <span>${T.t('paxOffOn')}</span><b>${f.deplaned ?? 0}${ppl} / ${f.boarded ?? 0}${ppl}</b>
       <span>${T.t('seats')}</span><b>${cabins.seatedCount(f)} / ${cabinView.seatsTotal}</b>
       <span>${T.t('bagsOffOn')}</span><b>${f.bagsUnloaded ?? 0}${pcs} / ${f.bagsLoaded ?? 0}${pcs}</b>
-    </div>${svc}</div>`;
+    </div>${svc}${toNaha(f)}</div>`;
+}
+// a flight to Naha can be followed on into the next world: the flight, then the landing on the Naha road (world/DESIGN.md §4)
+function toNaha(f) {
+  if (f.to?.[1] !== 'OKA' || !['parked', 'pushback', 'engineStart', 'taxiOut', 'lineup', 'takeoff'].includes(f.state)) return '';
+  return `<a class="worldlink" href="../world/flight.html?from=HND&to=OKA&flight=${encodeURIComponent(f.number)}">この便で那覇へ飛ぶ → <small>Fly on this flight to Naha</small></a>`;
 }
 
 let uiTimer = 0;

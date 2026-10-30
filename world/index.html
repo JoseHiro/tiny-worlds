@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>World Map — Tiny Worlds</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --panel: rgba(250, 247, 241, 0.9); --line: #d9d3c4; --ink: #1c2232; --muted: #6f7a76; --accent: #e8673c; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #efe8dc; color: var(--ink); font: 13px/1.45 Inter, system-ui, sans-serif; }
+    #app { position: fixed; inset: 0; background: radial-gradient(circle at 50% 55%, #f7f1e6 0%, #efe8dc 55%, #e6ddcd 100%); }
+    .labels { position: absolute; inset: 0; pointer-events: none; }
+    .city { font: 600 11px Inter, sans-serif; color: var(--ink); white-space: nowrap; transform: translateY(-14px); text-shadow: 0 0 4px #f7f1e6, 0 0 2px #f7f1e6; transition: opacity .2s; }
+    .city.world { font-size: 12.5px; }
+    .city.world::after { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-left: 5px; vertical-align: 1px; }
+    .city.dim { color: var(--muted); font-weight: 500; }
+    .flight { background: var(--ink); color: #fff; font: 600 10px Inter, sans-serif; padding: 2px 7px; border-radius: 9px; white-space: nowrap; transform: translateY(-12px); }
+    .brand { position: fixed; left: 28px; top: 24px; pointer-events: none; max-width: 380px; }
+    .eyebrow { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+    .brand h1 { font: italic 400 52px/0.95 'Instrument Serif', serif; margin: 6px 0 10px; }
+    .brand h1 span { color: var(--accent); }
+    .brand p { margin: 0; color: var(--muted); font-size: 12px; }
+    .bar { position: fixed; right: 18px; top: 18px; display: flex; gap: 8px; }
+    .row { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px; backdrop-filter: blur(10px); }
+    .row button { border: 0; background: transparent; border-radius: 7px; font: 500 11px Inter, sans-serif; color: var(--ink); padding: 6px 9px; cursor: pointer; }
+    .row button.on { background: var(--ink); color: #fff; }
+    .card { position: fixed; right: 18px; bottom: 18px; width: 320px; background: var(--panel); backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .card[hidden] { display: none; }
+    .card .eyebrow { display: flex; justify-content: space-between; }
+    .card h2 { font: italic 400 34px/1 'Instrument Serif', serif; margin: 0; }
+    .card p { margin: 0; color: var(--muted); font-size: 12.5px; }
+    .card .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .card a { text-decoration: none; font-weight: 500; font-size: 12px; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--ink); color: var(--ink); }
+    .card a.primary { background: var(--ink); color: #fff; }
+    .card a.fly { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .card button.x { border: 0; background: none; font-size: 15px; cursor: pointer; color: var(--muted); padding: 0; }
+    .hint { position: fixed; left: 28px; bottom: 20px; font-size: 11px; color: var(--muted); }
+    a { color: inherit; }
+    @media (max-width: 720px) { .brand { left: 16px; } .brand h1 { font-size: 38px; } .brand p { display: none; } .bar { top: auto; bottom: 16px; right: 16px; left: 16px; justify-content: space-between; } .card { left: 16px; right: 16px; width: auto; bottom: 70px; } .hint { display: none; } }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <div class="brand">
+    <div class="eyebrow" data-en="Tiny Worlds · The map">Tiny Worlds · 世界地図</div>
+    <h1>World Map<span>.</span></h1>
+    <p data-en="Every tiny world, on one globe. Aircraft from Mini Airport fly to the cities; the places with an orange dot have a world you can open.">小さな世界たちを、ひとつの地球に。ミニ空港を出た飛行機が町へ飛んでいます。オレンジの点がある町は、開ける世界があります。</p>
+  </div>
+  <div class="bar">
+    <div class="row" id="views"><button data-v="globe" data-en="Globe">地球</button><button data-v="asia" data-en="East Asia">東アジア</button><button data-v="europe" data-en="Europe">ヨーロッパ</button></div>
+    <div class="row" id="lang"><button data-v="ja">日本語</button><button data-v="en">EN</button></div>
+  </div>
+  <aside class="card" id="card" hidden>
+    <div class="eyebrow"><span id="cardCity"></span><button class="x" id="cardClose" aria-label="close">×</button></div>
+    <h2 id="cardTitle"></h2>
+    <p id="cardText"></p>
+    <div class="links" id="cardLinks"></div>
+  </aside>
+  <div class="hint" data-en="Drag to turn · scroll to zoom · click a city or an aircraft · <a href='../'>Tiny Worlds</a>">ドラッグで回す · ホイールでズーム · 町や飛行機をクリック · <a href="../">Tiny Worlds</a></div>
+  <script type="module" src="./src/map.js"></script>
+</body>
+</html>

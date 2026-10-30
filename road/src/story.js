@@ -1,5 +1,5 @@
 // Hana's family on the Naha road (town/DESIGN.md §3.1).
-//  out:  arrive at Naha Airport → the rental-car shuttle → pick up the van → drive → the beach car park → "to the sea"
+//  out:  land at Naha Airport (world/DESIGN.md §3.1) → arrive at the terminal → the rental-car shuttle → pick up the van → drive → the beach car park → "to the sea"
 //  back: from the beach with a souvenir bag → drive back → return the van → shuttle → the airport → "to the flight home"
 // Vehicles drive in the shared traffic while they're on the road; pulling in and out is scripted along short curves.
 import * as THREE from 'three';
@@ -68,10 +68,12 @@ export class Story {
     people.forEach((p, n) => this.walkers.push({ p, pts: pts.map((q) => q.clone().add(vec(0, 0, (n - 1) * 0.55))), k: 0, delay: n * 0.45, speed, then: n === people.length - 1 ? then : null }));
   }
   // drive a vehicle along a smooth curve through pts in `dur` seconds (heading along the curve); then()
-  drive(obj, pts, dur, then, { reverse = false } = {}) {
+  drive(obj, pts, dur, then, { reverse = false, ease = 'inOut', air = false } = {}) {
     obj.visible = true;
-    this.moves.push({ obj, curve: new THREE.CatmullRomCurve3(pts), t: 0, dur, then, reverse });
+    this.moves.push({ obj, curve: new THREE.CatmullRomCurve3(pts), t: 0, dur, then, reverse, ease, air });
   }
+  // the same through the air (the points' heights are kept), fast at first and slowing to the end, like a landing
+  fly(obj, pts, dur, then) { this.drive(obj, pts, dur, then, { ease: 'out', air: true }); }
   ground(p) { p.y = this.roadY(p.x) + 0.02; return p; }
 
   // ---------- the legs ----------
@@ -83,7 +85,39 @@ export class Story {
     this.bag.visible = leg === 'back';
     this.familyVan.add(this.tag);
     this.focusObj = null;
-    if (leg === 'out') this.outArrive(); else this.backStart();
+    this.parkJet();
+    if (leg === 'out') this.outLand(); else this.backStart();
+  }
+
+  // the aircraft at its stand with the bridge on, as it is whenever nobody is landing
+  parkJet() {
+    this.moves = this.moves.filter((m) => m.obj !== this.jet);
+    this.jet.position.set(this.AIR.standX, 0, this.AIR.standZ); this.jet.rotation.set(0, 0, 0);
+    this.jet.userData.speed = 0;
+    this.jetBridge.userData.setReach(1);
+  }
+  outLand() {
+    // down from the north over the sea, touch down, roll out; the turn-off, the taxiway, nose in at the stand
+    const X = this.AIR.runwayX, { standX, standZ } = this.AIR, jet = this.jet;
+    this.jetBridge.userData.setReach(0);
+    const flight = new URLSearchParams(location.search).get('flight');
+    this.say(`${flight ? flight + ' が' : 'ハナの一家を乗せた便が'}那覇空港に着陸します`);
+    this.focusObj = jet;
+    this.drive(jet, [vec(X, 30, -440), vec(X, 16, -360), vec(X, 5, -290), vec(X, 0.6, -250)], 8, () => {
+      this.say('接地！ 減速して、滑走路の南のはしへ');
+      this.fly(jet, [vec(X, 0, -250), vec(X, 0, -120), vec(X, 0, -10), vec(X, 0, 26)], 11, () => this.outTaxi());
+    }, { ease: 'linear', air: true });
+  }
+  outTaxi() {
+    const X = this.AIR.runwayX, { standX, standZ } = this.AIR, jet = this.jet;
+    this.say('滑走路を出て、誘導路をスポットへ');
+    this.drive(jet, [vec(X, 0, 26), vec(X + 2, 0, 33), vec(X + 12, 0, 34), vec(-82, 0, 34), vec(-73, 0, 29), vec(-72, 0, 14), vec(-72.5, 0, standZ + 4), vec(-68, 0, standZ), vec(standX, 0, standZ)], 15, () => {
+      jet.rotation.set(0, 0, 0);
+      this.say('スポットに到着。ボーディングブリッジがつきます');
+      let k = 0;
+      const reach = () => { k = Math.min(1, k + 0.05); this.jetBridge.userData.setReach(k); if (k < 1) this.after(0.05, reach); else this.after(1.2, () => this.outArrive()); };
+      reach();
+    });
   }
 
   outArrive() {
@@ -229,7 +263,7 @@ export class Story {
       this.hide(this.family);
       this.shuttle.userData.doorOpen = false;
       this.step = 'end';
-      this.done({ href: '../airport/', label: '空港の世界へ（ハナの帰りの便）→' });
+      this.done({ href: '../world/flight.html?from=OKA&to=HND&flight=MA%20238&story=hana', label: '帰りの便に乗る（ミニ空港へ）→' });
     });
   }
 
@@ -262,11 +296,12 @@ export class Story {
     // scripted driving
     for (const m of this.moves.slice()) {
       m.t = Math.min(1, m.t + dt / m.dur);
-      const k = THREE.MathUtils.smoothstep(m.t, 0, 1);
+      const k = m.ease === 'out' ? 1 - (1 - m.t) ** 2 : m.ease === 'linear' ? m.t : THREE.MathUtils.smoothstep(m.t, 0, 1);
       const pos = m.curve.getPointAt(k), tan = m.curve.getTangentAt(Math.min(0.999, k + 0.001));
-      m.obj.position.set(pos.x, this.roadY(pos.x), pos.z);
-      m.obj.rotation.set(0, Math.atan2(-tan.z, tan.x), 0);
-      m.obj.userData.speed = m.curve.getLength() / m.dur * (1 - Math.abs(2 * m.t - 1));
+      const y = m.air ? Math.max(0, pos.y) : this.roadY(pos.x);
+      m.obj.position.set(pos.x, y, pos.z);
+      m.obj.rotation.set(0, Math.atan2(-tan.z, tan.x), m.air && y > 0.2 ? 0.07 : 0); // nose up on the approach
+      m.obj.userData.speed = m.curve.getLength() / m.dur * (m.ease === 'out' ? 2 * (1 - m.t) : m.ease === 'linear' ? 1 : 1 - Math.abs(2 * m.t - 1));
       m.obj.userData.braking = m.t > 0.75;
       if (m.t >= 1) { this.moves.splice(this.moves.indexOf(m), 1); m.obj.userData.speed = 0; m.then?.(); }
     }
@@ -283,7 +318,7 @@ export class Story {
   focus() {
     const o = this.focusObj;
     if (!o) return null;
-    const onFoot = o.userData.kind === 'person';
-    return { pos: o.position.clone(), fwd: vec(Math.cos(o.rotation.y), 0, -Math.sin(o.rotation.y)), onFoot };
+    const onFoot = o.userData.kind === 'person', aircraft = o.userData.kind === 'airplane';
+    return { pos: o.position.clone(), fwd: vec(Math.cos(o.rotation.y), 0, -Math.sin(o.rotation.y)), onFoot, aircraft };
   }
 }

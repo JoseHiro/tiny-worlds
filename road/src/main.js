@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { clock } from '../../sealife/src/kit.js';
-import { person, mat, mesh, box } from '../../airport/src/parts.js';
+import { person, mat, mesh, box, airplane, LIVERIES } from '../../airport/src/parts.js';
 import { bakeStatic } from '../../airport/src/merge.js';
 import { tile, Network, Traffic, Signals, TILE } from '../../town/src/roads.js';
 import { straight4, taper, busBay, parkingLot, LANES4 } from '../../town/src/roads-more.js';
@@ -143,6 +143,53 @@ const updaters = []; // (t, dt) each frame
   bakeStatic(g);
   scene.add(g);
 }
+// ---------- behind the terminal: the airside (world/DESIGN.md §3.1) — a north–south runway by the sea, a stand, a jet bridge ----------
+const AIR = { runwayX: -125, standX: -54, standZ: -6 }; // the parked aircraft's centre; its nose points east at the terminal
+{
+  const g = new THREE.Group();
+  const grass = mat(0xa9c98a, { roughness: 1 }), pave = mat(0xcfcac0, { roughness: 0.95 }), tar = mat(0x4d535c, { roughness: 0.9 }), white = mat(0xf4efe4);
+  g.add(box(140, 0.1, 520, grass, -115, -0.12, -120)); // the airfield, lying a little under the road's ground where they meet
+  const sea = mesh(new THREE.PlaneGeometry(600, 900).rotateX(-Math.PI / 2), mat(0x3fc1c9, { roughness: 0.25, metalness: 0.1 }), -485, -0.4, -100); // the East China Sea, west of the runway
+  const shallows = mesh(new THREE.PlaneGeometry(26, 520).rotateX(-Math.PI / 2), mat(0x8fe8dc, { roughness: 0.3 }), -198, -0.3, -120);
+  g.add(sea, shallows);
+  g.add(box(9, 0.1, 300, tar, AIR.runwayX, 0, -110)); // runway 18/36, z −260 … 40
+  for (let z = -250; z <= 30; z += 14) g.add(box(0.5, 0.11, 6, white, AIR.runwayX, 0.01, z));
+  for (const z of [-256, 36]) for (let k = -3; k <= 3; k++) g.add(box(0.7, 0.11, 4, white, AIR.runwayX + k * 1.15, 0.01, z));
+  g.add(box(5, 0.08, 6, tar, AIR.runwayX, 0, 36)); // the turn-off at the south end
+  g.add(box(55, 0.08, 5, tar, -100, 0, 34)); // taxiway east
+  g.add(box(5, 0.08, 46, tar, -72, 0, 12)); // and north to the stand
+  g.add(box(30, 0.1, 50, pave, -59, 0.01, -2)); // the apron
+  const glassA = mat(0x7d9db5, { roughness: 0.15, metalness: 0.2 });
+  g.add(box(0.3, 3.2, 54, glassA, -44.1, 5.2, 0)); // the terminal's airside face: a band of windows (gates) above a plain base
+  for (let z = -26; z <= 26; z += 4) g.add(box(0.4, 3.4, 0.25, mat(0xb9bdc2, { metalness: 0.5 }), -44.2, 5.2, z));
+  for (const z of [-6]) { g.add(box(16, 0.11, 0.18, mat(0xf2c94c), -62, 0.02, z)); } // the stand's lead-in line
+  // the control tower, by the taxiway
+  g.add(cylMesh(1.4, 1.8, 16, mat(0xf1ede4), -92, 8, 6));
+  g.add(cylMesh(3.2, 2.4, 3, mat(0x7fc4cf, { roughness: 0.2 }), -92, 17.5, 6));
+  g.add(cylMesh(3.4, 3.4, 0.5, mat(0x2c3a57), -92, 19.2, 6));
+  for (const [x, z] of [[-80, -40], [-84, -60], [-88, 52], [-76, 60], [-150, 60]]) { const p = N.palm({ height: 6, lean: 0.4, seed: (x + z) % 4 }); p.position.set(x, 0, z); g.add(p); }
+  bakeStatic(g);
+  scene.add(g);
+}
+function cylMesh(rt, rb, h, m, x, y, z) { return mesh(new THREE.CylinderGeometry(rt, rb, h, 10), m, x, y, z); }
+// the jet bridge: out of the terminal's west wall to the front door (it folds back when no aircraft is in)
+const jetBridge = new THREE.Group();
+{
+  const tube = box(1, 2.3, 1.9, mat(0xe9e6df), -0.5, 0, 0); // 1 long, scaled to reach
+  const glass = box(1, 0.5, 1.95, mat(0x7d9db5, { roughness: 0.2 }), -0.5, 0.55, 0);
+  const inner = new THREE.Group(); inner.add(tube, glass);
+  jetBridge.add(inner);
+  jetBridge.add(cylMesh(0.18, 0.18, 2.4, mat(0x9aa1a8), -3.6, -1.2, 0));
+  jetBridge.position.set(-44, 2.6, AIR.standZ - 1.85);
+  jetBridge.userData.setReach = (k) => { inner.scale.x = 1.2 + k * 3.4; }; // 0 folded … 1 at the door
+  jetBridge.userData.setReach(1);
+  scene.add(jetBridge);
+}
+// the aircraft: parked at the stand, unless the family is landing in it (story)
+const jet = airplane(LIVERIES.lagoon);
+jet.position.set(AIR.standX, 0, AIR.standZ);
+scene.add(jet);
+
 const beam = V.monorailBeam({ length: 116, height: 7 });
 beam.position.set(38, 0, 0); // from the station (x ≈ −20) to the end of town (x ≈ 96), over the median
 scene.add(beam);
@@ -292,7 +339,7 @@ updaters.push((t, dt) => { for (const c of traffic.cars) { if (c.teleported) { c
 
 // ---------- the family's story ----------
 
-const story = new Story({ scene, traffic, net, lanesOf, roadY, rentals, familyVan, office, lot, beachLot, familyBay, labels: CSS2DObject, text: (s) => { $('storyText').textContent = s; }, done: (link) => showLink(link) });
+const story = new Story({ scene, traffic, net, lanesOf, roadY, rentals, familyVan, office, lot, beachLot, familyBay, jet, jetBridge, AIR, labels: CSS2DObject, text: (s) => { $('storyText').textContent = s; }, done: (link) => showLink(link) });
 
 // ---------- views ----------
 
@@ -341,10 +388,14 @@ const chase = { pos: vec(0, 20, 30), look: vec(0, 0, 0) };
 function driveCamera(dt) {
   const target = story.focus();
   if (!target) return;
-  const { pos, fwd, onFoot } = target;
+  const { pos, fwd, onFoot, aircraft } = target;
   let want, look;
-  if (onFoot) { // people walking: a raised three-quarter view from the south-east, never from behind (buildings)
-    want = pos.clone().add(vec(10, 17, 23));
+  if (aircraft) { // the landing: behind and off to the left, low, looking down the runway ahead
+    const side = vec(fwd.z, 0, -fwd.x);
+    want = pos.clone().addScaledVector(fwd, -30).addScaledVector(side, 9).add(vec(0, 7, 0));
+    look = pos.clone().addScaledVector(fwd, 18);
+  } else if (onFoot) { // people walking: a raised three-quarter view from the south-east, never from behind (buildings)
+    want = pos.clone().add(pos.x < 0 ? vec(8, 7.5, 24) : vec(10, 17, 23)); // outside the terminal: low, under the monorail station
     look = pos.clone();
   } else { // a car: behind and well above, like looking down on a diorama; over the crest it rises to show the sea
     const k = smooth(pos.x, 226, 240) * (1 - smooth(pos.x, 262, 275));

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>In Flight — Tiny Worlds</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --panel: rgba(250, 247, 241, 0.88); --line: #d9d3c4; --ink: #1c2232; --muted: #6f7a76; --accent: #e8673c; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #cfe3ea; color: var(--ink); font: 13px/1.45 Inter, system-ui, sans-serif; }
+    #app { position: fixed; inset: 0; }
+    .brand { position: fixed; left: 28px; top: 24px; pointer-events: none; max-width: 420px; z-index: 2; }
+    .eyebrow { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+    .brand h1 { font: italic 400 34px/1.05 'Instrument Serif', serif; margin: 6px 0 8px; }
+    .brand h1 span { color: var(--accent); }
+    #phase { font-size: 12.5px; border-left: 2px solid var(--accent); padding-left: 8px; color: var(--ink); min-height: 1.4em; }
+    #note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .panel { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); width: min(560px, calc(100% - 32px)); background: var(--panel); backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; z-index: 2; }
+    .route { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 12px; }
+    .track { position: relative; flex: 1; height: 2px; background: repeating-linear-gradient(90deg, var(--ink) 0 4px, transparent 4px 8px); opacity: 0.6; }
+    #plane { position: absolute; top: -9px; font-size: 14px; transform: translateX(-50%); }
+    .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+    .meta button, #go { border: 1px solid var(--ink); background: transparent; border-radius: 8px; font: 500 11px Inter, sans-serif; color: var(--ink); padding: 5px 10px; cursor: pointer; }
+    #go { display: block; text-align: center; background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; font-size: 13px; padding: 9px; text-decoration: none; }
+    #go[hidden] { display: none; }
+    .row { display: flex; gap: 4px; }
+    .lang { position: fixed; right: 18px; top: 18px; z-index: 2; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
+    .lang button { border: 0; background: transparent; border-radius: 7px; font: 500 11px Inter, sans-serif; color: var(--ink); padding: 6px 9px; cursor: pointer; }
+    .lang button.on { background: var(--ink); color: #fff; }
+    /* the cabin window, for the shot from a seat */
+    #window { position: fixed; left: 50%; top: 46%; width: min(46vw, 62vh); aspect-ratio: 0.78; transform: translate(-50%, -50%); border-radius: 42% / 34%; box-shadow: 0 0 0 14px #f1ede4, 0 0 0 16px #d6cfc0, 0 0 0 100vmax #e8e2d6; pointer-events: none; opacity: 0; z-index: 1; }
+    #window.on { opacity: 1; }
+    #fade { position: fixed; inset: 0; background: #f7f1e6; opacity: 0; pointer-events: none; transition: opacity .8s; z-index: 3; }
+    a { color: inherit; }
+    @media (max-width: 720px) { .brand { left: 16px; } .brand h1 { font-size: 26px; } }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="window"></div>
+  <div class="brand">
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 id="title"></h1>
+    <div id="phase"></div>
+    <div id="note"></div>
+  </div>
+  <div class="lang row" id="lang"><button data-v="ja">日本語</button><button data-v="en">EN</button></div>
+  <aside class="panel">
+    <div class="route"><span id="from"></span><div class="track"><span id="plane">✈︎</span></div><span id="to"></span></div>
+    <div class="meta"><span id="left"></span><span><button id="skip" data-en="Skip to the landing">着陸まで飛ばす</button> <a href="./" data-en="World map">世界地図</a></span></div>
+    <a id="go" hidden></a>
+  </aside>
+  <div id="fade"></div>
+  <script type="module" src="./src/flight.js"></script>
+</body>
+</html>
