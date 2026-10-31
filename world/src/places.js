@@ -1,6 +1,6 @@
 // The cities on the world map and the worlds you can open there (world/DESIGN.md §2). Shared by the map and the flight.
 // Mini Airport sits where Tokyo is (decision B). Routes from it follow the airport's own destination list
-// (airport/src/sim.js CITIES), plus two long-haul routes to the worlds in Europe.
+// (airport/src/sim.js CITIES), plus Bangkok's night market and two long-haul routes to the worlds in Europe.
 
 // [code, ja, en, lat, lon]
 export const CITIES = {
@@ -15,6 +15,7 @@ export const CITIES = {
   TPE: ['台北', 'Taipei', 25.08, 121.23],
   PVG: ['上海', 'Shanghai', 31.14, 121.81],
   HKG: ['香港', 'Hong Kong', 22.31, 113.91],
+  BKK: ['バンコク', 'Bangkok', 13.75, 100.50],
   KYO: ['京都', 'Kyoto', 35.01, 135.77],
   BCN: ['バルセロナ', 'Barcelona', 41.39, 2.17],
   ARN: ['ストックホルム', 'Stockholm', 59.33, 18.07],
@@ -32,6 +33,9 @@ export const WORLDS = [
   { city: 'KYO', model: 'pagoda', title: ['古都', 'Koto'],
     text: ['京都と鎌倉のような町。参道、花街の路地、竹林と千本鳥居、海と大仏。和のカフェもここに。', 'A town like Kyoto and Kamakura: the temple street, a lantern lane, bamboo and torii, the sea and the Buddha. The Japanese café is here too.'],
     links: [{ href: '../koto/', label: ['参道', 'Temple street'] }, { href: '../koto/lane.html', label: ['路地', 'Lantern lane'] }, { href: '../cafe/wa.html', label: ['和のカフェ', 'Japanese café'] }] },
+  { city: 'BKK', model: 'tuktuk', title: ['バンコクの夜市', 'Bangkok night market'],
+    text: ['ネオン看板のヤワラート通りと色テントの路地。夕方から夜へ、屋台が開いていく。パッタイ屋の娘ノーイの物語。', 'Yaowarat Road under its neon signs and a lane of coloured tents. Dusk turns to night and the stalls open; the story of Noi, of the pad thai stall.'],
+    links: [{ href: '../bangkok/', label: ['夜市', 'Night market'] }, { href: '../bangkok/?story=1', label: ['物語', 'Story'] }, { href: '../bangkok/parts.html', label: ['パーツ', 'Parts'] }] },
   { city: 'BCN', model: 'sagrada', title: ['バルセロナ', 'Barcelona'],
     text: ['テラスのカフェと、本当の大きさのサグラダ・ファミリア。', 'A café terrace, and the Sagrada Família at full size.'],
     links: [{ href: '../cafe/barcelona.html', label: ['テラス', 'Terrace'] }, { href: '../cafe/sagrada.html', label: ['サグラダ', 'Sagrada'] }] },
@@ -41,5 +45,5 @@ export const WORLDS = [
 ];
 
 // every route starts at Mini Airport
-export const ROUTES = ['CTS', 'SDJ', 'ITM', 'FUK', 'OKA', 'HIJ', 'ICN', 'TPE', 'PVG', 'HKG', 'BCN', 'ARN'];
+export const ROUTES = ['CTS', 'SDJ', 'ITM', 'FUK', 'OKA', 'HIJ', 'ICN', 'TPE', 'PVG', 'HKG', 'BKK', 'BCN', 'ARN'];
 export const LIVERY_KEYS = ['sunrise', 'lagoon', 'midnight'];

@@ -141,6 +141,17 @@ const MODELS = {
     }
     return g;
   },
+  tuktuk() { // Bangkok: a tuk-tuk under a string of night-market bulbs
+    const g = new THREE.Group(), blue = mat(0x2c5aa0), dark = mat(0x24252a);
+    g.add(box(2.2, 0.55, 1.2, blue, 0, 0.75, 0)); // the body
+    g.add(box(0.6, 0.7, 0.8, blue, 1.25, 0.8, 0)); // the nose
+    g.add(box(2.4, 0.12, 1.4, mat(0xf2b84b), -0.1, 2.05, 0)); // the roof
+    for (const [x, z] of [[-1.0, -0.6], [-1.0, 0.6], [0.6, -0.6], [0.6, 0.6]]) g.add(box(0.07, 1.0, 0.07, dark, x, 1.5, z));
+    for (const [x, z] of [[1.3, 0], [-0.8, -0.62], [-0.8, 0.62]]) { const w = cyl(0.35, 0.35, 0.2, dark, x, 0.35, z, 10); w.rotation.x = Math.PI / 2; g.add(w); }
+    g.add(box(0.25, 0.2, 0.06, mat(0xfff4d0, { emissive: 0xfff4d0, emissiveIntensity: 0.8 }), 1.56, 0.95, 0));
+    [0xffcf80, 0xff5ca8, 0x5ce1ff, 0x5cff8a].forEach((c, i) => { for (const s of [-1, 1]) g.add(cyl(0.09, 0.09, 0.09, mat(c, { emissive: c, emissiveIntensity: 0.9 }), -1.05 + i * 0.6 + (s > 0 ? 0.3 : 0), 2.05, s * 0.72, 6)); });
+    return g;
+  },
   cabin() { // the Nordic café: a red wooden house
     const g = new THREE.Group();
     g.add(box(2.0, 1.3, 1.4, mat(0xa8352c), 0, 0.65, 0));
