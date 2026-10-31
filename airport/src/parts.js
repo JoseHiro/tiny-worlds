@@ -890,7 +890,7 @@ export function person(role = 'crew', { mode = 'idle', seed } = {}) {
   ud.update = (t) => {
     const m = ud.mode ?? 'idle';
     const phase = t * 7 * (cfg.pace ?? 1) + (ud.phase ?? 0);
-    head.rotation.y = 0; head.rotation.z = 0; body.rotation.z = 0;
+    head.rotation.y = 0; head.rotation.z = 0; head.rotation.x = 0; body.rotation.z = 0;
     if (m.startsWith('sit') && m !== 'sit') { // seated at a table: typing, sipping, reading, writing, thinking, a stretch
       for (const l of legs) l.rotation.z = Math.PI / 2;
       body.position.y = 0;
@@ -912,7 +912,33 @@ export function person(role = 'crew', { mode = 'idle', seed } = {}) {
       } else if (m === 'sitStretch') {
         const k = Math.min(1, (Math.sin(t * 0.7 + ph) + 1.2) / 1.6);
         arms[0].rotation.x = -2.7 * k; arms[1].rotation.x = 2.7 * k; arms[0].rotation.z = arms[1].rotation.z = 0.3 * (1 - k); head.rotation.z = 0.25 * k;
+      } else if (m === 'sitSleep') { // in-flight (world/CABIN.md §5.5): head dropped to one side, slow breaths
+        arms[0].rotation.z = arms[1].rotation.z = 0.55; arms[0].rotation.x = 0.15; arms[1].rotation.x = -0.15;
+        head.rotation.x = 0.38; head.rotation.z = -0.22 + Math.sin(t * 0.9 + ph) * 0.03; body.position.y = Math.sin(t * 0.9 + ph) * 0.006;
+      } else if (m === 'sitEat') { // the fork from the tray to the mouth, slowly; the other hand on the tray
+        const k = Math.max(0, Math.sin(t * 1.1 + ph));
+        arms[0].rotation.z = 1.1 + k * 1.0; arms[0].rotation.x = 0.3; arms[1].rotation.z = 1.05; arms[1].rotation.x = -0.25; head.rotation.z = -0.25 + k * 0.15;
+      } else if (m === 'sitWatch') { // eyes on the seat-back screen; a laugh now and then
+        arms[0].rotation.z = arms[1].rotation.z = 0.6; arms[0].rotation.x = 0.1; arms[1].rotation.x = -0.1;
+        const laugh = Math.sin(t * 0.37 + ph) > 0.93;
+        head.rotation.z = -0.05 + (laugh ? Math.abs(Math.sin(t * 14)) * 0.1 : 0); body.position.y = laugh ? Math.abs(Math.sin(t * 14)) * 0.01 : 0;
+      } else if (m === 'sitWindow') { // turned to the window on the left (−Z), hands on the sill
+        arms[0].rotation.z = 0.9; arms[1].rotation.z = 1.3; arms[1].rotation.x = 0.5; head.rotation.y = 1.1 + Math.sin(t * 0.4 + ph) * 0.15; head.rotation.z = -0.08;
       } else { arms[0].rotation.z = arms[1].rotation.z = 0.6; head.rotation.y = Math.sin(t * 0.5 + ph) * 0.4; } // sitChat
+    } else if (m === 'lie' || m === 'serve' || m === 'push') { // in-flight: lying flat (the caller turns the body), handing over, pushing a trolley
+      const ph = ud.phase ?? 0;
+      arms[0].rotation.x = arms[1].rotation.x = 0; body.position.y = 0;
+      if (m === 'lie') {
+        for (const l of legs) l.rotation.z = 0;
+        arms[0].rotation.z = arms[1].rotation.z = 0.12; head.rotation.x = 0.3; body.position.y = Math.sin(t * 0.9 + ph) * 0.006;
+      } else if (m === 'serve') {
+        for (const l of legs) l.rotation.z = 0;
+        const k = (Math.sin(t * 1.2 + ph) + 1) / 2;
+        arms[0].rotation.z = arms[1].rotation.z = 1.25 + k * 0.25; arms[0].rotation.x = 0.12; arms[1].rotation.x = -0.12; body.rotation.z = -0.12 - k * 0.1; head.rotation.z = -0.1;
+      } else {
+        legs[0].rotation.z = Math.sin(t * 4 + ph) * 0.3; legs[1].rotation.z = -Math.sin(t * 4 + ph) * 0.3;
+        arms[0].rotation.z = arms[1].rotation.z = 1.2; arms[0].rotation.x = 0.15; arms[1].rotation.x = -0.15; body.rotation.z = -0.1;
+      }
     } else if (m === 'pour' || m === 'wipe') { // the barista at work
       for (const l of legs) l.rotation.z = 0;
       body.position.y = 0; arms[0].rotation.x = arms[1].rotation.x = 0;

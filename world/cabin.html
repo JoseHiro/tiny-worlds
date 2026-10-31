@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>In-flight Cabin — Tiny Worlds</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --panel: rgba(250, 247, 241, 0.9); --line: #d9d3c4; --ink: #1c2232; --muted: #6f7a76; --accent: #e8673c; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #e9e2d5; color: var(--ink); font: 13px/1.45 Inter, system-ui, sans-serif; }
+    #app { position: fixed; inset: 0; }
+    .brand { position: fixed; left: 28px; top: 24px; pointer-events: none; max-width: 440px; }
+    .eyebrow { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+    .brand h1 { font: italic 400 44px/1 'Instrument Serif', serif; margin: 6px 0 10px; }
+    .brand h1 span { color: var(--accent); }
+    #phase { font-size: 12.5px; border-left: 2px solid var(--accent); padding-left: 8px; min-height: 2.8em; }
+    .bar { position: fixed; right: 18px; top: 18px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; max-width: 60vw; }
+    .row { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px; backdrop-filter: blur(10px); }
+    .row button { border: 0; background: transparent; border-radius: 7px; font: 500 11px Inter, sans-serif; color: var(--ink); padding: 6px 9px; cursor: pointer; }
+    .row button.on { background: var(--ink); color: #fff; }
+    .panel { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(640px, calc(100% - 32px)); background: var(--panel); backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+    .ctl { display: flex; align-items: center; gap: 10px; }
+    .ctl button { border: 1px solid var(--ink); background: transparent; border-radius: 8px; font: 500 11px Inter, sans-serif; color: var(--ink); padding: 5px 10px; cursor: pointer; min-width: 34px; }
+    .ctl button.on { background: var(--ink); color: #fff; }
+    input[type=range] { flex: 1; accent-color: var(--accent); }
+    #clock { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 64px; text-align: right; }
+    .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+    #belt { display: inline-flex; align-items: center; gap: 6px; }
+    #belt i { width: 10px; height: 10px; border-radius: 50%; background: #c9c3b6; }
+    #belt.on i { background: #f2b84b; box-shadow: 0 0 6px #f2b84b; }
+    a { color: inherit; }
+    @media (max-width: 720px) { .brand { left: 16px; } .brand h1 { font-size: 32px; } .bar { top: auto; bottom: 128px; left: 16px; right: 16px; max-width: none; justify-content: flex-start; } }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <div class="brand">
+    <div class="eyebrow" data-en="Tiny Worlds · In flight, HND → OKA">Tiny Worlds · 機内　羽田 → 那覇</div>
+    <h1>The cabin<span>.</span></h1>
+    <div id="phase"></div>
+  </div>
+  <div class="bar">
+    <div class="row" id="views"></div>
+    <div class="row" id="lang"><button data-v="ja">日本語</button><button data-v="en">EN</button></div>
+  </div>
+  <aside class="panel">
+    <div class="ctl">
+      <button id="play">❚❚</button>
+      <input id="time" type="range" min="0" max="46" step="0.05" value="0" />
+      <span id="clock"></span>
+      <span class="row" id="speed" style="padding:2px"><button data-v="0.5">×½</button><button data-v="1">×1</button><button data-v="2">×2</button></span>
+    </div>
+    <div class="meta"><span id="belt"><i></i><span data-en="Seat belts">ベルト着用</span></span><span><a href="./cabin-parts.html" data-en="Parts">パーツ</a> · <a href="./CABIN.md" data-en="Design notes">設計書</a> · <a href="./flight.html" data-en="The flight">フライト</a></span></div>
+  </aside>
+  <script type="module" src="./src/cabin-page.js"></script>
+</body>
+</html>

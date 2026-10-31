@@ -32,6 +32,18 @@
     /* the cabin window, for the shot from a seat */
     #window { position: fixed; left: 50%; top: 46%; width: min(46vw, 62vh); aspect-ratio: 0.78; transform: translate(-50%, -50%); border-radius: 42% / 34%; box-shadow: 0 0 0 14px #f1ede4, 0 0 0 16px #d6cfc0, 0 0 0 100vmax #e8e2d6; pointer-events: none; opacity: 0; z-index: 1; }
     #window.on { opacity: 1; }
+    /* outside ⇄ cabin (world/CABIN.md): the switch, and the cabin's camera presets */
+    .seg { display: inline-flex; gap: 2px; border: 1px solid var(--ink); border-radius: 9px; padding: 2px; }
+    .seg button { border: 0; background: transparent; border-radius: 7px; font: 500 11px Inter, sans-serif; color: var(--ink); padding: 4px 10px; cursor: pointer; }
+    .seg button.on { background: var(--ink); color: #fff; }
+    #views { position: fixed; right: 18px; top: 62px; z-index: 2; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px; display: flex; flex-wrap: wrap; gap: 2px; max-width: calc(100% - 36px); }
+    #views[hidden] { display: none; }
+    #views button { border: 0; background: transparent; border-radius: 7px; font: 500 11px Inter, sans-serif; color: var(--ink); padding: 6px 9px; cursor: pointer; }
+    #views button.on { background: var(--ink); color: #fff; }
+    #belt { display: inline-flex; align-items: center; gap: 5px; margin-left: 8px; }
+    #belt i { width: 8px; height: 8px; border-radius: 50%; background: #c9c3b6; }
+    #belt.on i { background: #f2b84b; box-shadow: 0 0 6px #f2b84b; }
+    #belt[hidden] { display: none; }
     #fade { position: fixed; inset: 0; background: #f7f1e6; opacity: 0; pointer-events: none; transition: opacity .8s; z-index: 3; }
     a { color: inherit; }
     @media (max-width: 720px) { .brand { left: 16px; } .brand h1 { font-size: 26px; } }
@@ -50,9 +62,10 @@
     <div id="note"></div>
   </div>
   <div class="lang row" id="lang"><button data-v="ja">日本語</button><button data-v="en">EN</button></div>
+  <div id="views" hidden></div>
   <aside class="panel">
     <div class="route"><span id="from"></span><div class="track"><span id="plane">✈︎</span></div><span id="to"></span></div>
-    <div class="meta"><span id="left"></span><span><button id="skip" data-en="Skip to the landing">着陸まで飛ばす</button> <a href="./" data-en="World map">世界地図</a></span></div>
+    <div class="meta"><span><span class="seg" id="mode"><button data-v="out" data-en="Outside">外</button><button data-v="cabin" data-en="Cabin">機内</button></span><span id="belt" hidden><i></i><span data-en="Belts">ベルト</span></span></span><span id="left"></span><span><button id="skip" data-en="Skip to the landing">着陸まで飛ばす</button> <a href="./" data-en="World map">世界地図</a></span></div>
     <a id="go" hidden></a>
   </aside>
   <div id="fade"></div>
