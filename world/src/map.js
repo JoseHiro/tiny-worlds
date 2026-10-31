@@ -9,6 +9,11 @@ import { L, onLang } from '../../koto/src/i18n.js';
 import { CITIES, WORLDS, ROUTES, LIVERY_KEYS } from './places.js';
 
 const $ = (id) => document.getElementById(id);
+// the map fills #app: the whole window on world/, the first screen of the home page (#app[data-home]), where the
+// wheel scrolls the page instead of zooming. Links in places.js are written from world/, so they are resolved from there.
+const host = $('app'), HOME = 'home' in host.dataset;
+const WORLD_DIR = new URL('../', import.meta.url);
+const href = (h) => new URL(h, WORLD_DIR).href;
 const R = 100, D = Math.PI / 180;
 const vec = (x, y, z) => new THREE.Vector3(x, y, z);
 // a latitude/longitude on the globe (matches SphereGeometry's uv, so the equirectangular land texture lines up)
@@ -24,10 +29,10 @@ const name = (code) => L([CITIES[code][0], CITIES[code][1]]);
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.NeutralToneMapping;
-$('app').appendChild(renderer.domElement);
+host.appendChild(renderer.domElement);
 const labels = new CSS2DRenderer();
 labels.domElement.className = 'labels';
-$('app').appendChild(labels.domElement);
+host.appendChild(labels.domElement);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(30, 1, 1, 2000);
@@ -39,6 +44,7 @@ controls.rotateSpeed = 0.45;
 controls.zoomSpeed = 0.7;
 controls.minDistance = 150;
 controls.maxDistance = 520;
+controls.enableZoom = !HOME;
 scene.add(new THREE.HemisphereLight('#fffaf0', '#c9c2b0', 1.6));
 const sun = new THREE.DirectionalLight('#fff4e0', 1.9); // rides with the camera, a little up and to the left
 sun.position.set(-160, 220, 120);
@@ -285,7 +291,7 @@ function showCard(what) {
   card.hidden = false;
   const links = $('cardLinks');
   links.innerHTML = '';
-  const link = (href, label, cls = '') => { const a = document.createElement('a'); a.href = href; a.textContent = L(label); a.className = cls; links.append(a); };
+  const link = (url, label, cls = '') => { const a = document.createElement('a'); a.href = href(url); a.textContent = L(label); a.className = cls; links.append(a); };
   if (what.kind === 'world') {
     const w = what.ref;
     $('cardCity').textContent = name(w.city);
@@ -315,6 +321,7 @@ $('cardClose').onclick = () => { $('card').hidden = true; shown = null; };
 const S = new THREE.Vector3();
 function pickAt(cx, cy) {
   const rect = renderer.domElement.getBoundingClientRect();
+  cx -= rect.left; cy -= rect.top;
   const camDir = camera.position.clone().normalize();
   let best = null, bestD = 22;
   for (const p of picks) {
@@ -345,10 +352,10 @@ let fly = null;
 function flyTo([lat, lon, dist], dur = 2.2) {
   const p0 = camera.position.clone();
   fly = { t: 0, dur, d0: p0.length(), dir0: p0.normalize(), dir1: ll(lat, lon, 1).normalize(), d1: dist };
-  for (const b of $('views').children) b.classList.toggle('on', VIEWS[b.dataset.v]?.[0] === lat && VIEWS[b.dataset.v]?.[1] === lon);
+  for (const b of $('views')?.children ?? []) b.classList.toggle('on', VIEWS[b.dataset.v]?.[0] === lat && VIEWS[b.dataset.v]?.[1] === lon);
 }
 const goTo = (code, dist) => flyTo([CITIES[code][2] - 10, CITIES[code][3], dist], 1.4);
-$('views').onclick = (e) => { const v = e.target.closest('button')?.dataset.v; if (v) flyTo(VIEWS[v]); };
+if ($('views')) $('views').onclick = (e) => { const v = e.target.closest('button')?.dataset.v; if (v) flyTo(VIEWS[v]); };
 controls.addEventListener('start', () => { fly = null; });
 
 // close in, the camera looks a little north of straight down, so the globe reads like a diorama with a horizon
@@ -365,19 +372,23 @@ function tilt() {
 // ---------- the frame ----------
 
 function resize() {
-  renderer.setSize(innerWidth, innerHeight);
-  labels.setSize(innerWidth, innerHeight);
-  camera.aspect = innerWidth / innerHeight;
+  const w = host.clientWidth, h = host.clientHeight;
+  renderer.setSize(w, h);
+  labels.setSize(w, h);
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
-addEventListener('resize', resize);
+new ResizeObserver(resize).observe(host);
 resize();
+// scrolled out of sight (the home page's list below), the globe stops drawing
+let onScreen = true;
+new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; }).observe(host);
 
 const start = new URLSearchParams(location.search).get('view');
 camera.position.copy(ll(...VIEWS.globe.slice(0, 2), VIEWS.globe[2]));
 if (start && VIEWS[start]) camera.position.copy(ll(VIEWS[start][0], VIEWS[start][1], VIEWS[start][2]));
 else setTimeout(() => { if (!fly) flyTo(VIEWS.asia, 3); }, 1200); // the whole globe first, then East Asia
-for (const b of $('views').children) b.classList.toggle('on', b.dataset.v === (start ?? 'globe'));
+for (const b of $('views')?.children ?? []) b.classList.toggle('on', b.dataset.v === (start ?? 'globe'));
 
 const qa = new THREE.Quaternion(), qb = new THREE.Quaternion(), clk = new THREE.Clock();
 function frame(dt) {
@@ -397,6 +408,13 @@ function frame(dt) {
   renderer.render(scene, camera);
   labels.render(scene, camera);
 }
-renderer.setAnimationLoop(() => frame(Math.min(clk.getDelta(), 0.05)));
+renderer.setAnimationLoop(() => { const dt = Math.min(clk.getDelta(), 0.05); if (onScreen) frame(dt); });
+
+// turn to a world and open its card (the home page's list: "地図で見る")
+export function focus(code) {
+  const w = WORLDS.find((x) => x.city === code);
+  if (w) showCard({ kind: 'world', ref: w });
+  goTo(code, 230);
+}
 
 window.__map = { renderer, scene, camera, controls, planes, flyTo, VIEWS, showCard, frame };

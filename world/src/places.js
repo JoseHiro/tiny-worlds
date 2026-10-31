@@ -25,23 +25,23 @@ export const CITIES = {
 export const WORLDS = [
   { city: 'HND', model: 'tower', title: ['ミニ空港', 'Mini Airport'],
     text: ['滑走路1本と6つのスポット。乗客、荷物、整備の人たちが一日じゅう働く空港。', 'One runway and six stands, with passengers, bags and a maintenance crew at work all day.'],
-    links: [{ href: '../airport/', label: ['開く', 'Open'] }] },
+    links: [{ href: '../airport/', label: ['開く', 'Open'] }, { href: '../airport/parts.html', label: ['パーツと部屋', 'Parts & rooms'] }, { href: './cabin.html', label: ['機内', 'The cabin'] }, { href: './cabin-parts.html', label: ['機内パーツ', 'Cabin parts'] }] },
   { city: 'OKA', model: 'palm', title: ['那覇', 'Naha'],
     text: ['那覇空港からレンタカーでビーチへ。サンゴ礁の海とウミガメ。', 'From Naha Airport by rental car to the beach, the reef and the sea turtles.'],
-    links: [{ href: '../road/', label: ['道', 'The road'] }, { href: '../naha/', label: ['海', 'The sea'] }],
+    links: [{ href: '../road/', label: ['道', 'The road'] }, { href: '../naha/', label: ['海', 'The sea'] }, { href: '../sealife/', label: ['海の生き物', 'Sea life'] }, { href: '../town/', label: ['道と街', 'Roads & towns'] }],
     fly: true },
   { city: 'KYO', model: 'pagoda', title: ['古都', 'Koto'],
     text: ['京都と鎌倉のような町。参道、花街の路地、竹林と千本鳥居、海と大仏。和のカフェもここに。', 'A town like Kyoto and Kamakura: the temple street, a lantern lane, bamboo and torii, the sea and the Buddha. The Japanese café is here too.'],
-    links: [{ href: '../koto/', label: ['参道', 'Temple street'] }, { href: '../koto/lane.html', label: ['路地', 'Lantern lane'] }, { href: '../cafe/wa.html', label: ['和のカフェ', 'Japanese café'] }] },
+    links: [{ href: '../koto/', label: ['参道', 'Temple street'] }, { href: '../koto/?story=1', label: ['物語', 'Story'] }, { href: '../koto/lane.html', label: ['路地', 'Lantern lane'] }, { href: '../koto/yama.html', label: ['竹林と稲荷', 'Bamboo & torii'] }, { href: '../koto/umi.html', label: ['海と大仏', 'Sea & Buddha'] }, { href: '../cafe/wa.html', label: ['和のカフェ', 'Japanese café'] }, { href: '../koto/parts.html', label: ['パーツ', 'Parts'] }] },
   { city: 'BKK', model: 'tuktuk', title: ['バンコクの夜市', 'Bangkok night market'],
     text: ['ネオン看板のヤワラート通りと色テントの路地。夕方から夜へ、屋台が開いていく。パッタイ屋の娘ノーイの物語。', 'Yaowarat Road under its neon signs and a lane of coloured tents. Dusk turns to night and the stalls open; the story of Noi, of the pad thai stall.'],
     links: [{ href: '../bangkok/', label: ['夜市', 'Night market'] }, { href: '../bangkok/?story=1', label: ['物語', 'Story'] }, { href: '../bangkok/parts.html', label: ['パーツ', 'Parts'] }] },
   { city: 'BCN', model: 'sagrada', title: ['バルセロナ', 'Barcelona'],
     text: ['テラスのカフェと、本当の大きさのサグラダ・ファミリア。', 'A café terrace, and the Sagrada Família at full size.'],
-    links: [{ href: '../cafe/barcelona.html', label: ['テラス', 'Terrace'] }, { href: '../cafe/sagrada.html', label: ['サグラダ', 'Sagrada'] }] },
+    links: [{ href: '../cafe/barcelona.html', label: ['テラス', 'Terrace'] }, { href: '../cafe/sagrada.html', label: ['サグラダ（制作中）', 'Sagrada (WIP)'] }, { href: '../cafe/parts.html', label: ['カフェのパーツ', 'Café parts'] }] },
   { city: 'ARN', model: 'cabin', title: ['北欧のカフェ', 'Nordic café'],
     text: ['雨の日の Stilla Kaffe。ミナの物語。', 'Stilla Kaffe on a rainy day, and Mina’s story.'],
-    links: [{ href: '../cafe/nordic.html', label: ['開く', 'Open'] }] },
+    links: [{ href: '../cafe/nordic.html', label: ['開く', 'Open'] }, { href: '../cafe/parts.html', label: ['カフェのパーツ', 'Café parts'] }] },
 ];
 
 // every route starts at Mini Airport

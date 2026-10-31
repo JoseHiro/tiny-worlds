@@ -8,21 +8,64 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
-    :root { --bg: #efe8dc; --card: #f7f2ea; --line: #ddd4c5; --ink: #1c2232; --muted: #7a7366; --accent: #e8673c; }
+    :root { --bg: #efe8dc; --card: #f7f2ea; --line: #ddd4c5; --ink: #1c2232; --muted: #7a7366; --accent: #e8673c; --route: #2c3a57;
+      --sky: radial-gradient(circle at 50% 55%, #f7f1e6 0%, #efe8dc 55%, #e6ddcd 100%); --panel: rgba(250, 247, 241, 0.9); --glow: #f7f1e6; --on: #fff; }
     @media (prefers-color-scheme: dark) {
-      :root { --bg: #141a28; --card: #1c2333; --line: #2f374a; --ink: #f1ece3; --muted: #a7a2b4; }
+      :root { --bg: #141a28; --card: #1c2333; --line: #2f374a; --ink: #f1ece3; --muted: #a7a2b4; --route: #8a93ad;
+        --sky: radial-gradient(circle at 50% 55%, #26304a 0%, #182033 55%, #111726 100%); --panel: rgba(28, 35, 51, 0.9); --glow: #141a28; --on: #141a28; }
     }
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 Inter, system-ui, sans-serif; }
-    main { max-width: 960px; margin: 0 auto; padding: 72px 24px 96px; }
     .eyebrow { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
-    h1 { font: italic 400 clamp(56px, 10vw, 96px)/0.95 'Instrument Serif', serif; margin: 10px 0 18px; }
-    h1 span { color: var(--accent); }
-    .lede { max-width: 560px; color: var(--muted); margin: 0 0 48px; }
-    .world { display: grid; grid-template-columns: 220px 1fr; gap: 28px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; }
-    .world svg { width: 100%; height: auto; border-radius: 12px; background: #e5dccc; }
-    .world h2 { font: italic 400 40px/1 'Instrument Serif', serif; margin: 4px 0 10px; }
-    .world p { margin: 0 0 14px; color: var(--muted); }
+
+    /* the first screen: the globe */
+    .hero { position: relative; height: 100svh; min-height: 560px; overflow: hidden; }
+    #app { position: absolute; inset: 0; background: var(--sky); }
+    .labels { position: absolute; inset: 0; pointer-events: none; }
+    .city { font: 600 11px Inter, sans-serif; color: #1c2232; white-space: nowrap; transform: translateY(-14px); text-shadow: 0 0 4px #f7f1e6, 0 0 2px #f7f1e6; transition: opacity .2s; }
+    .city.world { font-size: 12.5px; }
+    .city.world::after { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-left: 5px; vertical-align: 1px; }
+    .city.dim { color: #6f7a76; font-weight: 500; }
+    .brand { position: absolute; left: 32px; top: 28px; pointer-events: none; max-width: 400px; }
+    .brand, .down .hint { text-shadow: 0 0 14px var(--glow), 0 0 5px var(--glow), 0 0 2px var(--glow); }
+    .brand h1 { font: italic 400 clamp(52px, 8vw, 88px)/0.95 'Instrument Serif', serif; margin: 8px 0 14px; }
+    h1 span, h2 span { color: var(--accent); }
+    .brand p { margin: 0; color: var(--muted); font-size: 13px; }
+    .bar { position: absolute; right: 18px; top: 18px; display: flex; gap: 8px; }
+    .row { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px; backdrop-filter: blur(10px); }
+    .row button { border: 0; background: transparent; border-radius: 7px; font: 500 11px Inter, sans-serif; color: var(--ink); padding: 6px 9px; cursor: pointer; }
+    .row button.on { background: var(--ink); color: var(--on); }
+    .card { position: absolute; right: 18px; bottom: 18px; width: 330px; background: var(--panel); backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .card[hidden] { display: none; }
+    .card .eyebrow { display: flex; justify-content: space-between; font-size: 10px; }
+    .card h2 { font: italic 400 34px/1 'Instrument Serif', serif; margin: 0; }
+    .card p { margin: 0; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+    .card .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .card a { text-decoration: none; font-weight: 500; font-size: 12px; padding: 6px 11px; border-radius: 8px; border: 1px solid var(--ink); color: var(--ink); }
+    .card a.primary { background: var(--ink); color: var(--on); }
+    .card a.fly { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .card button.x { border: 0; background: none; font-size: 15px; cursor: pointer; color: var(--muted); padding: 0; }
+    .down { position: absolute; left: 32px; bottom: 24px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+    .down a.btn { text-decoration: none; font-weight: 600; font-size: 13px; padding: 9px 15px; border-radius: 99px; background: var(--ink); color: var(--on); }
+    .down .hint { font-size: 11px; color: var(--muted); }
+
+    /* below: the index of worlds, strung on a route line like stops on a flight map */
+    main { max-width: 960px; margin: 0 auto; padding: 72px 24px 96px; }
+    main > h2 { font: italic 400 48px/1 'Instrument Serif', serif; margin: 6px 0 8px; }
+    .lede { max-width: 560px; color: var(--muted); margin: 0 0 36px; }
+    .stops { position: relative; padding-left: 34px; }
+    .stops::before { content: ''; position: absolute; left: 9px; top: 30px; bottom: 30px; border-left: 2px dashed var(--route); opacity: .35; }
+    .stop { position: relative; display: grid; grid-template-columns: 220px 1fr; gap: 28px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; margin-top: 18px; scroll-margin-top: 24px; }
+    .stop::before { content: ''; position: absolute; left: -31px; top: 32px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--bg); }
+    .stop svg { width: 100%; height: auto; border-radius: 12px; background: #e5dccc; }
+    .stop h2 { font: italic 400 40px/1 'Instrument Serif', serif; margin: 4px 0 10px; }
+    .stop p { margin: 0 0 14px; color: var(--muted); }
+    .where { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .where button { font: 600 10.5px Inter, sans-serif; letter-spacing: .04em; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 99px; padding: 3px 10px 3px 8px; cursor: pointer; }
+    .where button::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 6px; vertical-align: 1px; }
+    .where button:hover { border-color: var(--ink); }
+    .where small { font-weight: 400; color: var(--muted); margin-left: 4px; }
     .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
     .tags span { font-size: 11px; border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; color: var(--muted); }
     .links { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -31,41 +74,50 @@
     .soon { margin-top: 18px; border: 1px dashed var(--line); border-radius: 18px; padding: 22px 24px; color: var(--muted); }
     footer { margin-top: 56px; font-size: 12px; color: var(--muted); }
     footer a { color: inherit; }
-    @media (max-width: 640px) { .world { grid-template-columns: 1fr; } }
+    @media (max-width: 720px) {
+      .hero { height: 82svh; }
+      .brand { left: 16px; top: 16px; } .brand p { display: none; }
+      .bar { top: auto; bottom: 16px; right: 16px; }
+      .card { left: 12px; right: 12px; width: auto; bottom: 64px; }
+      .down { left: 16px; bottom: 16px; } .down .hint { display: none; }
+      .stop { grid-template-columns: 1fr; } .stops { padding-left: 24px; } .stops::before { left: 5px; } .stop::before { left: -24px; }
+    }
   </style>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
+  </script>
 </head>
 <body>
-  <main>
-    <div class="eyebrow">Dioramas · Stories · three.js</div>
-    <h1>Tiny Worlds<span>.</span></h1>
-    <p class="lede">小さな3Dの世界に、それぞれの物語を詰めたジオラマ集です。人も乗り物も荷物も、一つひとつが自分の目的を持って動いています。<br>Small 3D worlds, each with its own stories. Every person, vehicle and suitcase has somewhere to be.</p>
+  <section class="hero">
+    <div id="app" data-home></div>
+    <div class="brand">
+      <div class="eyebrow">Dioramas · Stories · three.js</div>
+      <h1>Tiny Worlds<span>.</span></h1>
+      <p data-en="Small 3D worlds, each with its own stories, on one globe. Aircraft from Mini Airport fly out to the cities; the places with an orange dot have a world you can open.">小さな3Dの世界に、それぞれの物語を詰めたジオラマ集。ミニ空港を出た飛行機が、世界のある町へ飛んでいます。オレンジの点の町をクリックすると、その世界へ。</p>
+    </div>
+    <div class="bar">
+      <div class="row" id="views"><button data-v="globe" data-en="Globe">地球</button><button data-v="asia" data-en="East Asia">東アジア</button><button data-v="europe" data-en="Europe">ヨーロッパ</button></div>
+      <div class="row" id="lang"><button data-v="ja">日本語</button><button data-v="en">EN</button></div>
+    </div>
+    <aside class="card" id="card" hidden>
+      <div class="eyebrow"><span id="cardCity"></span><button class="x" id="cardClose" aria-label="close">×</button></div>
+      <h2 id="cardTitle"></h2>
+      <p id="cardText"></p>
+      <div class="links" id="cardLinks"></div>
+    </aside>
+    <div class="down">
+      <a class="btn" href="#index" data-en="↓ All worlds">↓ 世界の一覧</a>
+      <span class="hint" data-en="Drag to turn · click a city or an aircraft">ドラッグで回す · 町や飛行機をクリック</span>
+    </div>
+  </section>
 
-    <article class="world">
-      <svg viewBox="0 0 220 150" role="img" aria-label="World map">
-        <circle cx="110" cy="75" r="58" fill="#8fcfd4" />
-        <path d="M128 40 C140 44 146 56 140 66 C134 74 142 84 136 94 C130 100 122 96 120 88 C118 78 112 74 114 64 C116 54 118 44 128 40 Z" fill="#f0e4c6" />
-        <path d="M70 52 C82 46 98 50 100 60 C102 70 92 74 84 80 C76 86 66 80 64 70 C62 62 64 56 70 52 Z" fill="#f0e4c6" />
-        <path d="M134 62 Q 110 30 76 60" fill="none" stroke="#2c3a57" stroke-width="1.4" stroke-dasharray="3 3" />
-        <path d="M134 62 Q 132 82 122 92" fill="none" stroke="#2c3a57" stroke-width="1.4" stroke-dasharray="3 3" />
-        <circle cx="134" cy="62" r="4" fill="#e8673c" /><circle cx="122" cy="92" r="3.4" fill="#e8673c" /><circle cx="76" cy="60" r="3.4" fill="#e8673c" />
-        <g transform="translate(98 34) rotate(-20)"><rect x="0" y="2" width="16" height="3.4" rx="1.7" fill="#fffaf2" /><path d="M6 3 L3 -3 L7 -3 L11 3 Z" fill="#fffaf2" /></g>
-      </svg>
-      <div>
-        <div class="eyebrow">All worlds</div>
-        <h2>World Map</h2>
-        <p>小さな世界たちを、ひとつの地球に。ミニ空港を出た飛行機が町へ飛び、開ける世界がある町は光ります。那覇へは、実際に飛んで行けます。<br>Every tiny world on one globe. Aircraft from Mini Airport fly to the cities; the ones with a world light up — and you can fly to Naha.</p>
-        <div class="tags"><span>地球儀 Globe</span><span>路線 Routes</span><span>空の旅 In flight</span></div>
-        <div class="links">
-          <a class="primary" href="./world/">開く Open</a>
-          <a href="./world/flight.html?from=HND&amp;to=OKA">那覇へ飛ぶ Fly to Naha</a>
-          <a href="./world/cabin.html">機内 The cabin</a>
-          <a href="./world/cabin-parts.html">機内パーツ Cabin parts</a>
-          <a href="https://github.com/JoseHiro/tiny-worlds/blob/main/world/DESIGN.md">設計書 Design notes</a>
-        </div>
-      </div>
-    </article>
+  <main id="index">
+    <div class="eyebrow">Index · 世界の一覧</div>
+    <h2>Every stop<span>.</span></h2>
+    <p class="lede">地図の上の世界を、ミニ空港から順に。行き先のピンを押すと、上の地球儀がその町へ回ります。<br>The worlds on the map, starting from Mini Airport. Press a pin and the globe above turns to that city.</p>
 
-    <article class="world" style="margin-top:18px">
+    <div class="stops">
+    <article class="stop">
       <svg viewBox="0 0 220 150" role="img" aria-label="Mini Airport">
         <rect x="18" y="62" width="184" height="64" rx="6" fill="#b7cd96" />
         <rect x="18" y="122" width="184" height="10" fill="#8a6a4c" />
@@ -82,6 +134,7 @@
         </g>
       </svg>
       <div>
+        <div class="where" data-city="HND"></div>
         <div class="eyebrow">World 01</div>
         <h2>Mini Airport</h2>
         <p>滑走路1本・スポット6つ、2階建てターミナルの空港の午後。チェックインから搭乗、手荷物の旅、到着ロビーでの再会まで、乗客と荷物を一人ずつ、一個ずつ追いかけられます。<br>
@@ -95,7 +148,33 @@
       </div>
     </article>
 
-    <article class="world" style="margin-top:18px">
+    <article class="stop">
+      <svg viewBox="0 0 220 150" role="img" aria-label="In flight">
+        <rect width="220" height="150" fill="#bfe0e6" />
+        <circle cx="110" cy="190" r="120" fill="#8fcfd4" />
+        <path d="M30 120 Q 110 20 190 100" fill="none" stroke="#2c3a57" stroke-width="1.4" stroke-dasharray="3 3" />
+        <circle cx="30" cy="120" r="4" fill="#e8673c" /><circle cx="190" cy="100" r="4" fill="#e8673c" />
+        <g transform="translate(96 44) rotate(-6)"><rect x="0" y="6" width="44" height="7" rx="3.5" fill="#fffaf2" /><path d="M16 9 L10 -4 L16 -4 L27 9 Z" fill="#fffaf2" /><path d="M1 9 L-3 0 L3 0 L7 8 Z" fill="#e8673c" /></g>
+        <ellipse cx="54" cy="40" rx="16" ry="6" fill="#fff" opacity=".8" /><ellipse cx="170" cy="58" rx="12" ry="5" fill="#fff" opacity=".8" />
+      </svg>
+      <div>
+        <div class="where" data-city="HND OKA"></div>
+        <div class="eyebrow">空の旅 · In flight</div>
+        <h2>The flight</h2>
+        <p>ミニ空港から那覇へ、実際に飛んで行けます。窓の外と機内を切り替えながら着陸まで。機内だけをゆっくり見たり、地図を全画面で開くこともできます。<br>
+          Fly from Mini Airport to Naha, switching between the view outside and the cabin until you land. Or look round the cabin on its own, or open the map full screen.</p>
+        <div class="tags"><span>路線 Routes</span><span>機内 Cabin</span><span>地球儀 Globe</span></div>
+        <div class="links">
+          <a class="primary" href="./world/flight.html?from=HND&amp;to=OKA">那覇へ飛ぶ Fly to Naha</a>
+          <a href="./world/cabin.html">機内 The cabin</a>
+          <a href="./world/cabin-parts.html">機内パーツ Cabin parts</a>
+          <a href="./world/">地図を全画面で Full-screen map</a>
+          <a href="https://github.com/JoseHiro/tiny-worlds/blob/main/world/DESIGN.md">設計書 Design notes</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="stop">
       <svg viewBox="0 0 220 150" role="img" aria-label="Naha">
         <rect x="18" y="56" width="184" height="70" rx="6" fill="#0d5486" />
         <rect x="18" y="56" width="184" height="26" rx="6" fill="#1cb0c4" />
@@ -106,6 +185,7 @@
         <path d="M60 100 q2 -18 8 -26" stroke="#9c7a55" stroke-width="3" fill="none" /><path d="M68 74 l-12 2 M68 74 l10 -4 M68 74 l2 10" stroke="#4f9a5a" stroke-width="3" />
       </svg>
       <div>
+        <div class="where" data-city="OKA"></div>
         <div class="eyebrow">World 02 · 試作 prototype</div>
         <h2>Naha</h2>
         <p>ハナの一家が旅した那覇の海。白い砂浜、透き通った浅瀬、サンゴ礁、外洋への崖。すみかごとに約550匹の生き物が暮らし、ときどきイルカやジンベエザメが通ります。<br>
@@ -120,7 +200,7 @@
       </div>
     </article>
 
-    <article class="world" style="margin-top:18px">
+    <article class="stop">
       <svg viewBox="0 0 220 150" role="img" aria-label="Naha Road">
         <rect x="18" y="60" width="184" height="66" rx="6" fill="#a9c98a" />
         <path d="M18 96 L120 96 Q150 96 170 84 L202 76" stroke="#50545b" stroke-width="12" fill="none" />
@@ -131,6 +211,7 @@
         <rect x="96" y="90" width="9" height="6" rx="2" fill="#f3f1ea" />
       </svg>
       <div>
+        <div class="where" data-city="OKA"></div>
         <div class="eyebrow">World 02 · 空港から海へ The road</div>
         <h2>Naha Road</h2>
         <p>那覇空港からビーチまでの道。モノレール、国道の押しボタン信号、住宅地、サトウキビ畑、坂の上で見える海。ハナの一家がレンタカーで走ります（行き・帰り）。<br>
@@ -144,7 +225,7 @@
       </div>
     </article>
 
-    <article class="world" style="margin-top:18px">
+    <article class="stop">
       <svg viewBox="0 0 220 140" aria-hidden="true">
         <rect width="220" height="140" rx="10" fill="#eef0f4" />
         <rect x="18" y="98" width="184" height="28" rx="6" fill="#a9c98a" />
@@ -156,6 +237,7 @@
         <circle cx="184" cy="80" r="14" fill="#d9542f" /><rect x="182" y="86" width="4" height="14" fill="#4a3e34" />
       </svg>
       <div>
+        <div class="where" data-city="KYO"></div>
         <div class="eyebrow">World 03 · 古都 The old capital（4つの場面 · 4 scenes）</div>
         <h2>Koto</h2>
         <p>京都と鎌倉を混ぜた架空の古都。石畳の坂の参道を上って山門をくぐると寺の境内。参拝する人、修学旅行、人力車が行き交います。夜は提灯のともる花街の路地と白川、竹林の小径から千本鳥居の山へ、路面電車の走る海辺から大仏へも。部品は：反りのある屋根、町家と茶屋、山門・五重塔・大仏、神社と千本鳥居、竹林、人力車と路面電車、着物・舞妓さん・お坊さん。季節と灯りを切り替えられます。ハナとおばあちゃんが着物で4つの場面をめぐる物語つき。<br>
@@ -173,7 +255,7 @@
       </div>
     </article>
 
-    <article class="world" style="margin-top:18px">
+    <article class="stop">
       <svg viewBox="0 0 220 140" aria-hidden="true">
         <rect width="220" height="140" rx="10" fill="#e9e4dc" />
         <rect x="30" y="40" width="160" height="80" fill="#f6f1e6" />
@@ -186,6 +268,7 @@
         <path d="M160 70 q4 -8 0 -16 M168 70 q4 -8 0 -16" stroke="#ffffff" stroke-width="2" fill="none" opacity=".9" />
       </svg>
       <div>
+        <div class="where" data-city="ARN KYO BCN"></div>
         <div class="eyebrow">World 04 · Cozy Café（3つの店 · 3 cafés）</div>
         <h2>Café</h2>
         <p>見ているだけで穏やかになる小さなカフェ。窓際でノートPCに向かう人、勉強する学生、ソファで本を読む人、ラテの湯気。外は雨が降ったりやんだりして、雨宿りの人が入ってきます。雨音と店の音、ぼんやり眺めるカメラつき。バルセロナでは、広場の池の向こうにサグラダ・ファミリア（2026年の姿、本物の大きさ）。<br>
@@ -202,7 +285,7 @@
       </div>
     </article>
 
-    <article class="world" style="margin-top:18px">
+    <article class="stop">
       <svg viewBox="0 0 220 140" aria-hidden="true">
         <rect width="220" height="140" rx="10" fill="#1d2440" />
         <rect x="14" y="30" width="44" height="80" fill="#e9dfc8" /><rect x="58" y="44" width="40" height="66" fill="#c9d4c8" /><rect x="128" y="36" width="42" height="74" fill="#e6c8b8" /><rect x="170" y="48" width="38" height="62" fill="#e8d890" />
@@ -215,6 +298,7 @@
         <circle cx="150" cy="104" r="4" fill="#ff7a2a" /><path d="M150 100 q-3 -8 1 -14 M156 100 q3 -8 -1 -14" stroke="#ffffff" stroke-width="1.6" fill="none" opacity=".7" />
       </svg>
       <div>
+        <div class="where" data-city="BKK"></div>
         <div class="eyebrow">World 05 · Night Market（バンコク · Bangkok）</div>
         <h2>Yaowarat</h2>
         <p>バンコクの屋台の夜。ネオン看板の下がるショップハウス、歩道にずらりと並ぶ屋台、車道のトゥクトゥク。アーチをくぐると色とりどりのテントの路地。2分のあいだに夕方が夜になり、看板が順に灯って屋台が開いていく。人をクリックするとついて行けます。物語はパッタイ屋の娘ノーイの一夜。<br>
@@ -229,9 +313,33 @@
       </div>
     </article>
 
+    </div>
+
     <div class="soon">次の世界を準備中… / More worlds coming.</div>
 
     <footer>Built with <a href="https://threejs.org">three.js</a> · <a href="https://github.com/JoseHiro/tiny-worlds">GitHub</a></footer>
   </main>
+
+  <script type="module">
+    import { focus } from './world/src/map.js';
+    import { CITIES } from './world/src/places.js';
+    import { L, onLang } from './koto/src/i18n.js';
+    // each stop's pins: the city, its airport code, and how far it is from Mini Airport
+    const D = Math.PI / 180, [, , la0, lo0] = CITIES.HND;
+    const km = (la, lo) => Math.round(6371 * Math.acos(Math.min(1, Math.sin(la0 * D) * Math.sin(la * D) + Math.cos(la0 * D) * Math.cos(la * D) * Math.cos((lo - lo0) * D))) / 10) * 10;
+    function pins() {
+      for (const el of document.querySelectorAll('.where')) {
+        el.innerHTML = '';
+        for (const code of el.dataset.city.split(' ')) {
+          const [ja, en, la, lo] = CITIES[code], b = document.createElement('button'), d = km(la, lo);
+          b.innerHTML = `${L([ja, en])} · ${code}<small>${d ? L([`ミニ空港から ${d.toLocaleString()} km`, `${d.toLocaleString()} km from Mini Airport`]) : L(['出発地', 'Home base'])}</small>`;
+          b.onclick = () => { scrollTo({ top: 0 }); focus(code); };
+          el.append(b);
+        }
+      }
+    }
+    pins();
+    onLang(pins);
+  </script>
 </body>
 </html>
