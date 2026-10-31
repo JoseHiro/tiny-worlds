@@ -7,9 +7,9 @@ Small 3D dioramas with stories inside, built in the browser with [three.js](http
 
 ## Worlds
 
-### Bangkok night market (work in progress) — [`bangkok/`](bangkok/)
+### Bangkok night market — [`bangkok/`](bangkok/)
 
-A street-food night in Bangkok: a neon main road and a lane of coloured tents. So far the design notes and the parts: stall kit, twenty-six dishes, vendors. Pages: [`bangkok/parts.html`](bangkok/parts.html) (parts catalogue) · [`bangkok/DESIGN.md`](bangkok/DESIGN.md)
+A street-food night in Bangkok: a neon main road and a lane of coloured tents. Over two minutes dusk turns to night, the signs come on one by one and the stalls open; forty people queue, eat on plastic stools and wander into the lane while tuk-tuks stop for them. Click anyone to follow them, or watch the story of Noi, the pad thai stall's daughter. Pages: [`bangkok/`](bangkok/) (the street) · [`bangkok/parts.html`](bangkok/parts.html) (parts catalogue) · [`bangkok/DESIGN.md`](bangkok/DESIGN.md)
 
 ### World Map — [`world/`](world/)
 

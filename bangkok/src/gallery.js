@@ -1,115 +1,39 @@
 // Night-market parts catalogue (bangkok/DESIGN.md §5–7): one renderer, one scene per card, scissor viewports.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { person } from '../../airport/src/parts.js';
 import { L, onLang } from '../../koto/src/i18n.js';
 import { BK, tickFx, geoCount, liveAll, addTo } from './common.js';
 import * as K from './stalls.js';
 import * as F from './foods.js';
 import * as S from './street.js';
 import * as W from './vehicles.js';
+import * as Kit from './kit.js';
 import './people.js';
 
-const at = (o, x, z, y = 0, ry = 0) => { o.position.set(x, y, z); o.rotation.y = ry; return o; };
+const { at, who, TO_CUSTOMER, TO_VENDOR } = Kit;
 const row = (parts, gap) => { const g = new THREE.Group(); parts.forEach((o, i) => g.add(at(o, (i - (parts.length - 1) / 2) * gap, 0))); return liveAll(g); };
 const pair = (a, b, gap = 0.35) => row([a, b], gap);
 // small things in a few rows (a long single row frames too thin)
 const grid = (parts, gap, cols = 4) => { const g = new THREE.Group(); const rows = Math.ceil(parts.length / cols); parts.forEach((o, i) => g.add(at(o, ((i % cols) - (cols - 1) / 2) * gap, (Math.floor(i / cols) - (rows - 1) / 2) * gap))); return liveAll(g); };
-const who = (role, mode, seed = 1) => { const p = person(role, { mode, seed }); p.userData.phase = seed; if (p.userData.suitcase) p.userData.suitcase.visible = false; return p; };
 const set = (o, s) => Object.assign(o.userData.state, s);
-// a character faces +X at yaw 0: vendors look across the counter to +Z, customers back toward −Z
-const TO_CUSTOMER = -Math.PI / 2, TO_VENDOR = Math.PI / 2;
 
-// ---------- complete stalls (the overview) ----------
-function padThaiStall() {
-  const g = new THREE.Group();
-  const c = g.add(K.cart({ sign: 'padthai' })).children.at(-1);
-  const wok = at(K.wokStove({ food: F.padThaiHeap(0.1) }), 0.95, -0.15);
-  set(wok, { toss: 1 });
-  g.add(wok);
-  g.add(at(K.parasol({ colors: [BK.red, 0xf4f0e8], r: 1.1 }), 0.3, -0.45));
-  // in the case: plates ready; on the counter: bowls of shrimp, eggs, sprouts
-  const [cx, cy0] = c.userData.case;
-  for (let i = 0; i < 3; i++) g.add(at(F.padThaiDish(), cx - 0.18 + i * 0.18, 0, cy0 + 0.01));
-  for (let i = 0; i < 3; i++) g.add(at(F.bowl(0.06, { broth: [0xf08a5a, 0xf2e8c8, 0xf2d880][i], band: 0x3a7fd0 }), 0.15 + i * 0.14, 0.12, 0.66));
-  g.add(at(K.bagBunch(), 0.55, 0.28, 1.0));
+// ---------- complete stalls (the overview; the stalls themselves are in kit.js) ----------
+function padThaiStall() { // Noi and her father at the wok, two customers waiting, a table in front
+  const g = Kit.padThai({ vendor: null });
   g.add(at(who('noi', 'wok', 3), 0.95, -0.6, 0, TO_CUSTOMER), at(who('noiDad', 'idle', 5), -0.1, -0.6, 0, TO_CUSTOMER));
-  // two customers waiting
   g.add(at(who('tourist', 'idle', 7), -0.1, 0.75, 0, TO_VENDOR), at(who('thaiStudent', 'idle', 8), 0.4, 0.8, 0, TO_VENDOR));
-  // a table in front, two people eating
   const seat = at(K.seating(), 0.3, 2.0);
   g.add(seat);
   [[0, 'passenger'], [1, 'woman']].forEach(([i, role]) => {
     const s = seat.userData.seats[i];
-    const p = at(who(role, 'sitEat', 10 + i), 0.3 + s.x * 0.92, 2.0 + s.z * 0.92, 0, s.yaw);
-    g.add(p);
+    g.add(at(who(role, 'sitEat', 10 + i), 0.3 + s.x * 0.92, 2.0 + s.z * 0.92, 0, s.yaw));
     g.add(at(F.padThaiDish(), 0.3 + s.x * 0.45, 2.0 + s.z * 0.45, 0.51));
   });
   g.add(at(F.thaiTeaCup(), 0.15, 2.05, 0.51));
   return liveAll(g);
 }
-function mooPingStall() {
-  const g = new THREE.Group();
-  g.add(at(K.foldTable({ w: 0.7, cloth: [0x3a7fd0, 0xf4f0e8] }), 0, 0.1));
-  const gr = at(K.grill({ len: 0.7 }), 0, -0.25);
-  g.add(gr);
-  for (let i = 0; i < 9; i++) g.add(at(F.moopingSkewer(), -0.02, -0.36 + i * 0.026, gr.userData.grate + 0.01));
-  g.add(at(F.kratip(), -0.25, 0.15, 0.57), at(F.kratip(), -0.13, 0.15, 0.57));
-  for (let i = 0; i < 5; i++) g.add(at(F.riceBag(), 0.05 + (i % 3) * 0.08, 0.1 + Math.floor(i / 3) * 0.08, 0.57));
-  g.add(at(K.parasol({ colors: [BK.stoolBlue, 0xf4f0e8], r: 0.95 }), 0, -0.6));
-  const p = at(who('griller', 'fan', 4), 0, -0.7, 0, TO_CUSTOMER);
-  g.add(p);
-  return liveAll(g);
-}
-function fruitStall() {
-  const g = new THREE.Group();
-  const c = g.add(K.cart({ sign: 'fruit', gas: 0x4f9d6a })).children.at(-1);
-  const ice = at(K.iceCase({ w: 0.62, d: 0.46 }), c.userData.caseFloor[0], 0, c.userData.caseFloor[1]);
-  g.add(ice);
-  const rows = F.fruitRows(ice.userData.ice);
-  rows.position.set(c.userData.caseFloor[0], c.userData.caseFloor[1], 0);
-  g.add(rows);
-  for (let i = 0; i < 3; i++) g.add(at(F.fruitBag(), 0.15 + i * 0.13, 0.12, 0.66));
-  g.add(at(K.parasol({ colors: [0x4f9d6a, 0xf4f0e8], r: 1.0 }), 0.2, -0.45));
-  const p = at(who('fruitSeller', 'chop', 6), 0.3, -0.6, 0, TO_CUSTOMER);
-  g.add(p);
-  return liveAll(g);
-}
-function somTamStall() {
-  const g = new THREE.Group();
-  g.add(at(K.foldTable({ w: 0.8, cloth: [0xf2b84b, 0xf4f0e8] }), 0, 0));
-  g.add(at(F.mortar(), 0.05, -0.05, 0.57));
-  g.add(at(F.somTamDish(), -0.22, 0.1, 0.57));
-  for (let i = 0; i < 3; i++) g.add(at(F.mango(false), 0.25 + i * 0.05, 0.12, 0.57));
-  g.add(at(F.kratip(), 0.3, -0.12, 0.57));
-  g.add(at(K.parasol({ colors: [0xf2b84b], r: 0.95 }), 0, -0.55));
-  const p = at(who('somtamAunty', 'pound', 2), 0.05, -0.55, 0, TO_CUSTOMER);
-  g.add(p);
-  return liveAll(g);
-}
-function noodleStall() {
-  const g = new THREE.Group();
-  const c = g.add(K.cart({ sign: 'kuaytiew', gas: 0x3a7fd0 })).children.at(-1);
-  g.add(at(F.noodleBundles(), c.userData.case[0], 0, c.userData.case[1] + 0.01));
-  g.add(at(K.stockPot({ stand: false, r: 0.13, h: 0.24 }), 0.22, -0.05, 0.66), at(K.stockPot({ stand: false, r: 0.11, h: 0.22, broth: 0x9a6a3a }), 0.48, -0.05, 0.66));
-  g.add(at(F.noodleSoup(), 0.35, 0.22, 0.66));
-  g.add(at(K.parasol({ colors: [0xe8673c, 0xf4f0e8], r: 1.05 }), 0.2, -0.45));
-  const p = at(who('noodleMan', 'shake', 9), 0.3, -0.6, 0, TO_CUSTOMER);
-  g.add(p);
-  return liveAll(g);
-}
-function teaStall() {
-  const g = new THREE.Group();
-  g.add(at(K.foldTable({ w: 0.7, cloth: [0xe8673c, 0xf4f0e8] }), 0, 0));
-  g.add(at(F.teaPour(), 0.0, 0.05, 0.57));
-  for (let i = 0; i < 4; i++) g.add(at(i % 2 ? F.thaiTeaBag() : F.thaiTeaCup(), -0.25 + i * 0.07, 0.15, 0.57));
-  g.add(at(F.pinkMilk(), 0.25, 0.15, 0.57));
-  const p = at(who('teaVendor', 'pour', 12), 0.0, -0.45, 0, TO_CUSTOMER);
-  g.add(p);
-  return liveAll(g);
-}
 function overview() {
-  return row([padThaiStall(), mooPingStall(), fruitStall(), somTamStall(), noodleStall(), teaStall()], 2.3);
+  return row([padThaiStall(), Kit.mooPing(), Kit.fruit(), Kit.somTam(), Kit.noodle(), Kit.tea()], 2.3);
 }
 
 // ---------- cards ----------

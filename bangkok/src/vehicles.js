@@ -109,6 +109,7 @@ export function taxi(kind = 'pink') {
   bx(g, 0.24, 0.16, 0.6, M.white, -0.2, 1.34, 0);
   for (const s of [-1, 1]) { const p = signPlane('taxi', 0.58, 0.14); p.position.set(-0.2 + s * 0.121, 1.34, 0); p.rotation.y = s * Math.PI / 2; g.add(p); }
   const vacant = bx(g, 0.02, 0.06, 0.12, M.glow(0xff2a2a, 2), 0.72, 0.86, 0.38);
+  vacant.userData.keep = true; // (it switches on and off: never merged)
   const wheels = [[1.05, 0.62], [1.05, -0.62], [-1.1, 0.62], [-1.1, -0.62]].map(([x, z]) => wheel(g, 0.26, 0.18, x, 0.26, z));
   g.userData.state = { vacant: true };
   return rolling(g, wheels, 0.26, () => { vacant.visible = !!g.userData.state.vacant; });
