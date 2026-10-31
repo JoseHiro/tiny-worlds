@@ -17,7 +17,8 @@ import * as F from './foods.js';
 import * as S from './street.js';
 import * as W from './vehicles.js';
 import * as Kit from './kit.js';
-import { Queue, Seats, Shopper } from './crowd.js';
+import { Queue, Seats, Shopper, Throng } from './crowd.js';
+import { surfaces, patch, lightPools, ROAD } from './ground.js';
 import './people.js';
 
 const VIEWS = {
@@ -46,6 +47,10 @@ world.slab(-34, 34, -12.4, 11.6, () => 0, 1, 1, tarmac);
 world.slab(-3.2, 21.2, 11.6, 42, () => 0.02, 1, 1, concrete); // the lane's block
 const flat = (w, d, x, z, m, y = 0.012) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2), m); p.position.set(x, y, z); p.receiveShadow = true; scene.add(p); return p; };
 flat(12, 7.6, 9, 7.8, concrete); // the lane's mouth, from the kerb to the tents
+// the surfaces (ground.js): worn asphalt between the kerbs, concrete slabs from the mouth of the lane to the stage
+{ const S0 = surfaces();
+  scene.add(patch(S0.road, 68, ROAD.d, 0, 0.004, 0, ROAD.len, ROAD.d));
+  scene.add(patch(S0.concrete, 12, 7.6, 9, 0.014, 7.8), patch(S0.concrete, 12, 30.4, 9, 0.026, 26.8)); }
 const town = new THREE.Group(); scene.add(town);
 const put = (parent, o, x, z, y = 0, ry = 0) => { o.position.set(x, y, z); o.rotation.y = ry; parent.add(o); return o; };
 { const dash = mat(0xf2e6b0); for (let x = -33; x < 34; x += 2.2) put(town, new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.01, 0.1), dash), x, 0, 0.01);
@@ -57,18 +62,24 @@ put(town, S.sidewalk({ len: 19, d: 3.4 }), 24.5, 5.7, 0, Math.PI);
 const onPavement = (x, z) => Math.abs(z) > 4 && Math.abs(z) < 7.5 && !(z > 0 && x > 3 && x < 15);
 const heightAt = (x, z) => (onPavement(x, z) ? 0.14 : z > 11.6 ? 0.02 : 0);
 
+const HALO = []; // glows to draw round the lights: [position, colour, size, when it comes on (0…1 of dark)] (see halo below)
+
 // ---------- the shophouses on both sides, their signs, poles, wires and bulbs ----------
 const SHOPS = ['goods', 'gold', 'eatery', 'goods', 'pharmacy', 'gold', 'goods', 'eatery', 'mart', 'goods', 'gold', 'eatery'];
-const SIGN_FOR = { gold: ['gold', 'bank'], eatery: ['restaurant', 'shark', 'noodle'], pharmacy: ['medicine', 'hotel'], goods: ['tea', 'hotel', 'bank'], mart: [] };
+const SIGN_FOR = { gold: ['gold', 'jewel', 'bank'], eatery: ['restaurant', 'shark', 'noodle', 'seafood', 'duck'], pharmacy: ['medicine', 'herbal', 'hotel'], goods: ['tea', 'hotel', 'pawn', 'massage'], mart: ['massage', 'hotel'] };
+const BIG = ['gold', 'restaurant', 'hotel', 'jewel', 'shark', 'seafood', 'bank', 'duck', 'tea', 'pawn']; // the big ones high up
+const TUBES = [BK.neonPink, BK.neonBlue, BK.neonGreen, 0xffd060, 0xff5a3a];
 const DOORS = []; // shop doors people come out of and go into: [x, z on the pavement, z just inside]
 for (const side of [-1, 1]) for (let i = 0; i < 22; i++) {
   const x = -31.5 + i * 3;
   if (side > 0 && x > 3 && x < 15) continue; // the lane
   const k = i + (side > 0 ? 5 : 0), shop = SHOPS[k % SHOPS.length], floors = 3 + ((k * 7) % 3);
   const H = 2.6 + (floors - 1) * 2.3 + 0.5, keys = SIGN_FOR[shop];
-  const signs = keys.length ? [[keys[k % keys.length], 0.9, 3.3]] : [];
-  if (keys.length && k % 2) signs.push([keys[(k + 1) % keys.length], -0.9, Math.min(5.6, H - 2.6)]);
-  put(town, S.shophouse({ shop, floors, w: 3.0, color: S.FACADES[k % S.FACADES.length], seed: 10 + k + (side > 0 ? 50 : 0), signs }), x, side * 7.4, 0, side > 0 ? Math.PI : 0);
+  // signs stacked up every facade, sticking out over the pavement: one low, one higher, and a big one near the top
+  const signs = [[keys[k % keys.length], 0.9, 3.3], [keys[(k + 1) % keys.length], -0.9, Math.min(5.6, H - 2.6), TUBES[(k + 2) % 5]]];
+  if (floors > 3) signs.push([BIG[(k * 3 + (side > 0 ? 1 : 0)) % BIG.length], 0.9, H - 3.8, TUBES[k % 5], 3.4, 1.25]);
+  put(town, S.shophouse({ shop, floors, w: 3.0, color: S.FACADES[k % S.FACADES.length], seed: 10 + k + (side > 0 ? 50 : 0), signs, neon: TUBES[(k + 3) % 5] }), x, side * 7.4, 0, side > 0 ? Math.PI : 0);
+  for (const y of [2.59, 3.15]) for (let dx = -1.2; dx <= 1.2; dx += 0.6) HALO.push([new THREE.Vector3(x + dx, y, side * 7.31), TUBES[(k + 3) % 5], 0.55, 0.25]); // (the fascia's neon)
   DOORS.push([x, side * 7.0, side * 7.9]);
 }
 // the lane's walls: the backs of the next blocks, a few windows lit
@@ -92,6 +103,12 @@ for (const side of [-1, 1]) {
   town.add(S.bulbString(V(-30, 3.1, z), V(-33.8, 3.0, z), { n: 6, sag: 0.1 }));
 }
 for (const x of [-18, 18, -30]) town.add(S.wires(V(x, 6.0, -4.3), V(x, 6.0, 4.3), { n: 5, sag: 0.6, seed: x + 3 }));
+// red lanterns strung across the road from pole to pole, and bulbs along the shop fronts under the fascias
+for (const x of [-30, -18, -6, 18, 30]) town.add(S.bulbString(V(x, 5.5, -4.3), V(x, 5.5, 4.3), { n: 9, sag: 1.1, r: 0.17, colors: [0xd9342b, 0xd9342b, 0xe8b64a] }));
+for (const side of [-1, 1]) for (let x = -33.5; x < 33; x += 6) {
+  if (side > 0 && x + 6 > 3 && x < 15) continue; // (the lane)
+  town.add(S.bulbString(V(x, 2.5, side * 7.15), V(x + 6, 2.5, side * 7.15), { n: 20, sag: 0.18, r: 0.03, colors: [BK.bulb, BK.bulb, BK.neonPink, BK.bulb, BK.neonBlue, BK.bulb, 0xffd060] }));
+}
 town.add(S.wires(V(6, 5.8, -4.3), V(18, 5.8, 4.3), { n: 4, sag: 0.7, seed: 8 }));
 // the arch at the lane's mouth, the shrine and a sleeping dog on the north pavement
 put(town, S.arch({ w: 10.2, h: 4.0 }), 9, 7.9, 0, Math.PI);
@@ -107,8 +124,8 @@ function sleepingDog() {
 }
 
 // ---------- the lane: two rows of tents, bulbs criss-crossing over the aisle, the stage ----------
-const LEFT = ['hoytod', 'insects', 'mango', 'satay', 'sweets', 'tomyum', 'durian', 'kaprao', 'coconut', 'drinks'];
-const RIGHT = ['khanomkrok', 'porkLeg', 'drinks', 'coconut', 'mango', 'insects', 'kaprao', 'sweets', 'satay', 'tomyum'];
+const LEFT = ['hoytod', 'insects', 'mango', 'satay', 'toys', 'tomyum', 'accessories', 'kaprao', 'coconut', 'drinks']; // (Noi buys mango sticky rice at the third)
+const RIGHT = ['khanomkrok', 'porkLeg', 'clothes', 'records', 'mango', 'accessories', 'kaprao', 'toys', 'durian', 'sweets'];
 const stallsRoot = new THREE.Group(); scene.add(stallsRoot);
 const STALLS = []; // { g, q, x, z, side, openAt, open }
 for (let k = 0; k < 10; k++) for (const [row, kinds] of [[-1, LEFT], [1, RIGHT]]) {
@@ -124,6 +141,10 @@ world.stills.push(still(scene, 'musician', 'sit', [9.1, 0.42, 39.2], Math.PI / 2
 // ---------- the stalls along both pavements (north stalls face the shops: their customers stand at −Z) ----------
 const NORTH = [[-29, 'mooping'], [-25, 'khaomangai'], [-21, 'fruit'], [-17, 'chestnut'], [-13, 'seafood'], [-9, 'kuayjub'], [-5, 'tea'], [-1, 'roti'], [3, 'noodle'], [14, 'somtam'], [18, 'satay'], [22, 'fruit'], [26, 'nest'], [30, 'fried']];
 const SOUTH = [[-29, 'kuayjub'], [-25, 'tea'], [-21, 'mooping'], [-17, 'fruit'], [-13, 'chestnut'], [-9, 'seafood'], [-5, 'somtam'], [18, 'khaomangai'], [22, 'roti'], [26, 'noodle'], [30, 'tea']];
+// and as the evening fills up, more in every gap between them (small carts between two big stalls), so the food runs
+// on without a break along both pavements
+NORTH.push([-27, 'roti'], [-23, 'tea'], [-19, 'somtam'], [-15, 'noodle'], [-11, 'chestnut'], [-7, 'fried'], [-3, 'mooping'], [16, 'tea'], [20, 'chestnut'], [24, 'kuayjub'], [28, 'nest'], [32, 'roti']);
+SOUTH.push([-27, 'satay'], [-23, 'noodle'], [-19, 'nest'], [-15, 'seafood'], [-11, 'fried'], [-7, 'roti'], [-3, 'chestnut'], [20, 'mooping'], [24, 'somtam'], [28, 'khaomangai'], [32, 'tea']);
 for (const [side, list] of [[-1, NORTH], [1, SOUTH]]) list.forEach(([x, kind], i) => {
   const g = put(stallsRoot, Kit.STALLS[kind](), x, side * 5.0, 0.14, side < 0 ? Math.PI : 0);
   const [fx, fz] = g.userData.front, spot = [x + (side < 0 ? -fx : fx), side * (5.0 + fz)];
@@ -134,19 +155,27 @@ for (const s of STALLS) { s.open = true; s.q.ready = () => s.open; life.push(s.g
 const keepMoving = (root) => root.traverse((o) => { if (o !== root && o.userData.update && o.userData.kind !== 'stall') o.userData.keep = true; });
 keepMoving(stallsRoot);
 
-// small instanced batches that never move (ice, packets on shelves, gold in the cases) become plain meshes, so the
-// bake can merge them with everything else of the same material (strings of coloured bulbs stay instanced)
+// small instanced batches that never move (ice, packets on shelves, gold in the cases, the stalls' clutter) become
+// plain meshes, so the bake can merge them with everything else of the same material; a batch with a colour per
+// instance keeps its colours as vertex colours (one shared vertex-colour copy of its material). Strings of coloured
+// bulbs stay instanced (the halos are found from them).
+const vcMats = new Map();
+const vcMat = (m) => { if (!vcMats.has(m)) { const c = m.clone(); c.vertexColors = true; vcMats.set(m, c); } return vcMats.get(m); };
 function flattenInstances(root) {
-  const list = [], m = new THREE.Matrix4();
-  root.traverse((o) => { if (o.isInstancedMesh && !o.instanceColor) list.push(o); });
+  const list = [], m = new THREE.Matrix4(), c = new THREE.Color();
+  root.traverse((o) => { if (o.isInstancedMesh && !(o.instanceColor && o.material.isMeshBasicMaterial)) list.push(o); });
   for (const im of list) {
     let moving = false;
     for (let p = im.parent; p && p !== root; p = p.parent) if (p.userData.keep || p.userData.dynamic || p.userData.kind === 'person') moving = true;
     if (moving) continue;
     const base = im.geometry.index ? im.geometry.toNonIndexed() : im.geometry.clone();
     for (const name of Object.keys(base.attributes)) if (!['position', 'normal', 'uv'].includes(name)) base.deleteAttribute(name);
-    const parts = Array.from({ length: im.count }, (_, i) => { im.getMatrixAt(i, m); return base.clone().applyMatrix4(m); });
-    const mesh = new THREE.Mesh(mergeGeometries(parts), im.material);
+    const parts = Array.from({ length: im.count }, (_, i) => {
+      im.getMatrixAt(i, m); const p = base.clone().applyMatrix4(m);
+      if (im.instanceColor) { im.getColorAt(i, c); p.setAttribute('color', new THREE.BufferAttribute(new Float32Array(p.attributes.position.count * 3).map((_, k) => c.toArray()[k % 3]), 3)); }
+      return p;
+    });
+    const mesh = new THREE.Mesh(mergeGeometries(parts), im.instanceColor ? vcMat(im.material) : im.material);
     im.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
     mesh.castShadow = im.castShadow; mesh.receiveShadow = im.receiveShadow;
     im.parent.add(mesh); im.removeFromParent();
@@ -193,19 +222,25 @@ function setCart(mode) {
 }
 const openNoi = () => { cart.fold = 1; noiOpen = true; noiStall.userData.open(true); };
 
-// ---------- traffic: four lanes, tuk-tuks and taxis inside, motorbikes at the edge; they stop for people ----------
-const LANES = [{ z: -1.3, d: 1 }, { z: -2.3, d: 1 }, { z: 1.3, d: -1 }, { z: 2.3, d: -1 }];
-const SPAN = 84;
-const traffic = [
-  [W.tuktuk(W.TUK_LIVERIES.blue), 0, 3.0, 2.1], [W.taxi('pink'), 0, 3.4, 3.4], [W.tuktuk(W.TUK_LIVERIES.red), 0, 2.8, 2.1], [W.taxi('greenYellow'), 0, 3.2, 3.4],
-  [W.scooter({ color: 0xf2b84b, rider: 'bkGirl' }), 1, 3.8, 1.3], [W.motoTaxi(), 1, 3.6, 1.3], [W.scooter({ color: 0x3a7fd0, rider: 'bkBoy' }), 1, 4.0, 1.3],
-  [W.taxi('greenYellow'), 2, 3.3, 3.4], [W.tuktuk(W.TUK_LIVERIES.green), 2, 2.9, 2.1], [W.sidecarStall(), 2, 1.8, 1.8], [W.taxi('pink'), 2, 3.4, 3.4],
-  [W.scooter({ color: 0xd9342b, rider: 'bkWorker' }), 3, 3.8, 1.3], [W.sidecarStall({ food: 'fruit', color: 0x2f8a4a }), 3, 1.8, 1.8], [W.motoTaxi(), 3, 3.7, 1.3],
-].map(([v, lane, v0, len], i) => {
-  const L0 = LANES[lane];
-  v.userData.car = { lane, v0, len, v: v0, x: -SPAN / 2 + ((i * 37) % SPAN) };
-  v.rotation.y = L0.d > 0 ? 0 : Math.PI;
-  v.position.set(v.userData.car.x, 0, L0.z);
+// ---------- traffic: east on the north half of the road, west on the south half, but nobody keeps to a lane. Bikes
+// weave through the gaps and ride along the kerb, tuk-tuks nose past the taxis, and anyone boxed in drifts over the
+// centre line for a moment to get round. They all stop for people crossing. ----------
+const SPAN = 84, KERB = 2.75; // (the tables stand from |z| 2.75 out)
+const T = W.TUK_LIVERIES;
+const traffic = [ // vehicle, direction (+1 east), speed, length, half-width, where it likes to be (z)
+  [W.tuktuk(T.blue), 1, 3.0, 2.1, 0.55, -1.3], [W.taxi('pink'), 1, 3.4, 3.4, 0.68, -1.2], [W.tuktuk(T.red), 1, 2.8, 2.1, 0.55, -1.6], [W.taxi('greenYellow'), 1, 3.2, 3.4, 0.68, -1.1],
+  [W.scooter({ color: 0xf2b84b, rider: 'bkGirl' }), 1, 3.8, 1.3, 0.22, -2.3], [W.motoTaxi(), 1, 3.6, 1.3, 0.22, -2.4], [W.scooter({ color: 0x3a7fd0, rider: 'bkBoy' }), 1, 4.0, 1.3, 0.22, -0.6],
+  [W.scooter({ color: 0xe8673c, rider: 'bkWorker', pillion: 'bkGirl' }), 1, 3.9, 1.3, 0.22, -2.2], [W.motoTaxi(), 1, 4.1, 1.3, 0.22, -1.8], [W.tuktuk(T.green), 1, 3.1, 2.1, 0.55, -2.0],
+  [W.taxi('greenYellow'), -1, 3.3, 3.4, 0.68, 1.2], [W.tuktuk(T.green), -1, 2.9, 2.1, 0.55, 1.4], [W.sidecarStall(), -1, 1.8, 1.8, 0.7, 2.0], [W.taxi('pink'), -1, 3.4, 3.4, 0.68, 1.1],
+  [W.scooter({ color: 0xd9342b, rider: 'bkWorker' }), -1, 3.8, 1.3, 0.22, 2.3], [W.sidecarStall({ food: 'fruit', color: 0x2f8a4a }), -1, 1.8, 1.8, 0.7, 2.0], [W.motoTaxi(), -1, 3.7, 1.3, 0.22, 2.4],
+  [W.scooter({ color: 0x5fae6a, rider: 'bkBoy' }), -1, 4.0, 1.3, 0.22, 0.7], [W.scooter({ color: 0xf09a9a, rider: 'bkAuntie' }), -1, 3.5, 1.3, 0.22, 1.9], [W.tuktuk(T.blue), -1, 3.0, 2.1, 0.55, 1.6],
+  [W.taxi('pink'), 1, 3.3, 3.4, 0.68, -1.4], [W.scooter({ color: 0x1c2232, rider: 'bkUncle' }), 1, 3.7, 1.3, 0.22, -2.5], [W.scooter({ color: 0xf4f0e8, rider: 'bkGirl', pillion: 'bkBoy' }), 1, 4.2, 1.3, 0.22, -0.9],
+  [W.tuktuk(T.red), -1, 2.9, 2.1, 0.55, 1.3], [W.motoTaxi(), -1, 3.9, 1.3, 0.22, 2.5], [W.scooter({ color: 0x3a7fd0, rider: 'bkWorker' }), -1, 4.1, 1.3, 0.22, 0.9],
+].map(([v, d, v0, len, hw, home], i) => {
+  const off = hw === 0.7 ? 0.5 * d : 0; // (a sidecar stall: the box sits beside the bike, on the centre-line side)
+  v.userData.car = { d, v0, len, hw, off, home, z: home - off, zt: home - off, v: v0, x: -SPAN / 2 + ((i * 37) % SPAN), bike: hw < 0.3, stuck: 0, next: 0, rnd: rng(i * 13 + 5) };
+  v.rotation.y = d > 0 ? 0 : Math.PI;
+  v.position.set(v.userData.car.x, 0, v.userData.car.z);
   scene.add(v); life.push(v); bakeStatic(v); // (one mesh per material; wheels, riders and the bulbs stay apart)
   return v;
 });
@@ -214,27 +249,70 @@ const traffic = [
   for (const x of [4.6, 6.0]) life.push(bakeStatic(put(scene, W.scooter({ color: 0x2c3a57, rider: 'motoTaxi' }), x, -3.35, 0, Math.PI))); }
 const motoBike = bakeStatic(put(scene, W.scooter({ color: 0x5f7f9a }), 7.4, -3.35, 0, Math.PI)); // the regular's own
 const BLOCKS = ['sit', 'sitEat', 'sitSip', 'sit'];
+const wrap = (dx) => ((((dx + SPAN / 2) % SPAN) + SPAN) % SPAN) - SPAN / 2; // (−SPAN/2 … SPAN/2: the road is a loop)
+// how far ahead is clear for car c at lateral position z: the nearest vehicle in its way going the same way, or coming
+// the other way (kept well clear of), and anyone crossing on foot
+function clearAhead(v, z) {
+  const c = v.userData.car;
+  let gap = Infinity;
+  for (const u of traffic) {
+    const o = u.userData.car;
+    if (u === v || Math.abs(o.z + o.off - z) > o.hw + c.hw + 0.12) continue;
+    const ahead = o.d === c.d ? ((((o.x - c.x) * c.d) % SPAN) + SPAN) % SPAN : wrap(o.x - c.x) * c.d;
+    if (ahead < 0) continue;
+    gap = Math.min(gap, ahead - (o.len + c.len) / 2 - (o.d === c.d ? 0 : 3));
+  }
+  for (const a of people) {
+    if (!a.p.visible || BLOCKS.includes(a.p.userData.mode)) continue;
+    const P = a.p.position;
+    if (Math.abs(P.z) > 3.9 || Math.abs(P.z - z) > c.hw + 0.35) continue;
+    const ahead = (P.x - c.x) * c.d - c.len / 2;
+    if (ahead > -0.4) gap = Math.min(gap, ahead + 0.2);
+  }
+  return gap;
+}
+// is anyone alongside in the way of moving over to z?
+function beside(v, z) {
+  const c = v.userData.car, lo = Math.min(z, c.z) + c.off - c.hw, hi = Math.max(z, c.z) + c.off + c.hw;
+  for (const u of traffic) {
+    const o = u.userData.car;
+    if (u !== v && Math.abs(wrap(o.x - c.x)) < (o.len + c.len) / 2 + 0.3 && o.z + o.off + o.hw > lo - 0.1 && o.z + o.off - o.hw < hi + 0.1) return true;
+  }
+  return false;
+}
 function drive(dt) {
   for (const v of traffic) {
-    const c = v.userData.car, { z, d } = LANES[c.lane];
-    let want = c.v0;
-    for (const u of traffic) { // the one ahead in the same lane
-      const o = u.userData.car;
-      if (u === v || o.lane !== c.lane) continue;
-      const gap = ((((o.x - c.x) * d) % SPAN) + SPAN) % SPAN - (o.len + c.len) / 2;
-      if (gap < 6) want = Math.min(want, Math.max(0, (gap - 0.9) * 1.4));
-    }
-    for (const a of people) { // anyone walking in the lane ahead
-      if (!a.p.visible || BLOCKS.includes(a.p.userData.mode)) continue;
-      const P = a.p.position;
-      if (Math.abs(P.z) > 3.9 || Math.abs(P.z - z) > 0.8) continue;
-      const ahead = (P.x - c.x) * d - c.len / 2;
-      if (ahead > -0.4 && ahead < 4) want = Math.min(want, Math.max(0, (ahead - 0.7) * 1.6));
-    }
+    const c = v.userData.car, d = c.d;
+    const lo = d > 0 ? -KERB + c.hw : -0.5, hi = d > 0 ? 0.5 : KERB - c.hw; // (where the middle of it may go)
+    const gap = clearAhead(v, c.z + c.off);
+    const want = gap < 6 ? Math.min(c.v0, Math.max(0, (gap - 0.9) * 1.4)) : c.v0;
     c.v += (want - c.v) * Math.min(1, dt * (want < c.v ? 5 : 1.2));
+    // where to be across the road: boxed in → the side with the most room (bikes at once, the rest after a moment);
+    // on the wrong side with someone coming → back; otherwise drift about (bikes anywhere, the rest near home)
+    c.stuck = gap < 5 ? c.stuck + dt : 0; c.next -= dt;
+    const wrong = (c.z + c.off) * d > 0.1;
+    if (wrong && clearAhead(v, c.z + c.off) < 12) c.zt = c.home - c.off;
+    else if (c.stuck > (c.bike ? 0.1 : 0.7) && c.next <= 0) {
+      let best = c.z + c.off, room = gap;
+      for (const s of [0.6, -0.6, 1.0, -1.0, 1.5, -1.5]) {
+        const z = c.z + c.off + s * (c.bike ? 1 : 1.3);
+        if (z < lo || z > hi || beside(v, z - c.off)) continue;
+        const g = clearAhead(v, z);
+        if (g > room + 1.5) { best = z; room = g; }
+      }
+      c.zt = best - c.off; c.next = 0.5;
+    } else if (c.next <= 0) {
+      c.next = 1.2 + c.rnd() * 3;
+      c.zt = (c.bike ? lo + c.rnd() * (hi - lo) : Math.min(hi, Math.max(lo, c.home + (c.rnd() - 0.5) * 0.9))) - c.off;
+    }
+    const lat = (c.bike ? 1.1 : 0.5) * Math.min(1, c.v / 1.5 + 0.2) * dt;
+    let dz = Math.max(-lat, Math.min(lat, c.zt - c.z));
+    if (dz && beside(v, c.z + dz)) { dz = 0; c.zt = c.z; }
+    c.z += dz;
     c.x += c.v * d * dt;
     if (c.x > SPAN / 2) c.x -= SPAN; else if (c.x < -SPAN / 2) c.x += SPAN;
-    v.position.x = c.x; v.visible = Math.abs(c.x) < 33.2;
+    v.position.set(c.x, 0, c.z); v.visible = Math.abs(c.x) < 33.2;
+    v.rotation.y = yawTo(d * Math.max(c.v, 0.4), dt ? dz / dt : 0); // (nosing over as it changes its line)
     v.userData.speed = c.v;
   }
 }
@@ -247,8 +325,9 @@ const WHO = {
   thaiStudent: ['学生', 'A student'], studentA: ['学生', 'A student'], veiBag: ['買い物の人', 'Out shopping'], togoB: ['夕ごはんを買いに来た人', 'Buying dinner'],
   bkAuntie: ['近所のおばさん', 'An auntie from round the corner'], bkUncle: ['近所のおじさん', 'An uncle from round the corner'], bkWorker: ['会社帰りの人', 'An office worker'], bkGirl: ['友だちと夜市へ', 'Out with friends'], bkBoy: ['友だちと夜市へ', 'Out with friends'],
 };
-const NAMES = { padthai: ['パッタイ', 'pad thai'], fruit: ['果物', 'fruit'], noodle: ['麺', 'noodles'], kuayjub: ['クイジャップ', 'kuay jub'], chestnut: ['焼き栗', 'roast chestnuts'], khaomangai: ['カオマンガイ', 'khao man gai'], roti: ['ロティ', 'roti'], nest: ['ツバメの巣', "bird's nest"], mooping: ['ムーピン', 'moo ping'], satay: ['サテ', 'satay'], seafood: ['海鮮焼き', 'grilled seafood'], somtam: ['ソムタム', 'som tam'], tea: ['タイティー', 'Thai tea'], fried: ['揚げ物', 'fried snacks'], mango: ['マンゴーもち米', 'mango sticky rice'], coconut: ['ココナツ', 'coconut'], durian: ['ドリアン', 'durian'], sweets: ['タイのお菓子', 'Thai sweets'], insects: ['虫の揚げ物', 'fried insects'], hoytod: ['ホイトード', 'hoy tod'], kaprao: ['ガパオ', 'kaprao'], tomyum: ['トムヤムクン', 'tom yum'], drinks: ['飲み物', 'a drink'], porkLeg: ['カオカームー', 'khao kha moo'], khanomkrok: ['カノムクロック', 'khanom krok'] };
-const buying = (s) => { const n = NAMES[s.g.userData.type] ?? ['屋台', 'a stall']; return [`${n[0]}の列に並ぶ`, `Queueing for ${n[1]}`]; };
+const NAMES = { padthai: ['パッタイ', 'pad thai'], fruit: ['果物', 'fruit'], noodle: ['麺', 'noodles'], kuayjub: ['クイジャップ', 'kuay jub'], chestnut: ['焼き栗', 'roast chestnuts'], khaomangai: ['カオマンガイ', 'khao man gai'], roti: ['ロティ', 'roti'], nest: ['ツバメの巣', "bird's nest"], mooping: ['ムーピン', 'moo ping'], satay: ['サテ', 'satay'], seafood: ['海鮮焼き', 'grilled seafood'], somtam: ['ソムタム', 'som tam'], tea: ['タイティー', 'Thai tea'], fried: ['揚げ物', 'fried snacks'], mango: ['マンゴーもち米', 'mango sticky rice'], coconut: ['ココナツ', 'coconut'], durian: ['ドリアン', 'durian'], sweets: ['タイのお菓子', 'Thai sweets'], insects: ['虫の揚げ物', 'fried insects'], hoytod: ['ホイトード', 'hoy tod'], kaprao: ['ガパオ', 'kaprao'], clothes: ['服', 'clothes'], toys: ['おもちゃ', 'toys'], accessories: ['アクセサリー', 'accessories'], records: ['レコード', 'records'], tomyum: ['トムヤムクン', 'tom yum'], drinks: ['飲み物', 'a drink'], porkLeg: ['カオカームー', 'khao kha moo'], khanomkrok: ['カノムクロック', 'khanom krok'] };
+const GOODS = ['clothes', 'toys', 'accessories', 'records']; // (not food: people look rather than queue)
+const buying = (s) => { const n = NAMES[s.g.userData.type] ?? ['屋台', 'a stall']; return GOODS.includes(s.g.userData.type) ? [`${n[0]}を見る`, `Looking at ${n[1]}`] : [`${n[0]}の列に並ぶ`, `Queueing for ${n[1]}`]; };
 const all = []; // every Shopper (so the story can clear them out of lines and seats)
 function shopper(role, route, o = {}) { const a = new Shopper(scene, role, route, { heightAt, ...o, who: o.who ?? WHO[role] ?? ['夜市の客', 'At the market'] }); people.push(a); all.push(a); return a; }
 
@@ -290,6 +369,16 @@ function shopperRoute(n) {
   return r;
 }
 for (let n = 0; n < 40; n++) shopper(ROLES[n % ROLES.length], shopperRoute(n), { seed: n, speed: 0.75 + (n % 5) * 0.08, delay: (n * 1.7) % 34, phase: n });
+// and the crowd round them: both pavements packed in both directions, a loop up and down the lane between the tents
+const offEnd = (x) => Math.abs(x) > 33.2;
+const throng = new Throng(scene, [
+  ...[-1, 1].flatMap((side) => [
+    { pts: [[-34.5, side * 6.15], [34.5, side * 6.15]], n: 68, hide: offEnd, browse: (x) => [x, side * 4.6] }, // (the stalls)
+    { pts: [[34.5, side * 6.98], [-34.5, side * 6.98]], n: 68, hide: offEnd, browse: (x) => [x, side * 8.5] }, // (the shops)
+  ]),
+  ...[[7.6, 10.4], [8.35, 9.65]].map(([a, b]) => ({ pts: [[a, 9.0], [a, 34.6], [b, 34.6], [b, 9.0]], closed: true, n: 30, spread: 0.3, browse: (x, z) => [x < 9 ? 6 : 12, z] })),
+], { heightAt, others: people, seed: 9 });
+steps.push((t, dt) => throng.update(t, dt));
 
 // ---------- the story's people (DESIGN.md §0): the regular, the traveller, three students — on the evening's clock ----------
 // Each waits (hidden or idle) until their moment, and starts again with the next evening.
@@ -400,6 +489,8 @@ const lamps = [[-20, 0], [0, 0], [20, 0], [9, 24]].map(([x, z]) => { const l = n
   town.traverse((o) => { if (o.userData.kind === 'vSign') signs.push(o); });
   signs.forEach((sg, i) => {
     const x = sg.getWorldPosition(new THREE.Vector3()).x, b = i === 5 || i === 21 ? `f${i}` : Math.floor((x + 34) / 8.6);
+    const { h, d, neon } = sg.userData;
+    HALO.push([sg.localToWorld(new THREE.Vector3(0, h / 2, d / 2 + 0.12)), neon, Math.max(h, d) * 1.15, typeof b === 'number' ? 0.2 + b * 0.075 : 0.5]);
     sg.traverse((m) => {
       if (!m.isMesh || !(m.material.emissiveIntensity >= 1.5)) return;
       const key = `${b}|${m.material.uuid}`;
@@ -408,6 +499,8 @@ const lamps = [[-20, 0], [0, 0], [20, 0], [9, 24]].map(([x, z]) => { const l = n
     });
   });
 }
+scene.updateMatrixWorld(true);
+scene.traverse((o) => { if (o.userData.halo) HALO.push([o.getWorldPosition(new THREE.Vector3()), ...o.userData.halo, 0.2]); }); // (bulbs and coals on the stalls)
 flattenInstances(town); flattenInstances(stallsRoot);
 bakeStatic(town); bakeStatic(stallsRoot);
 { const seen = new Set(glow.map(([m]) => m));
@@ -418,6 +511,53 @@ bakeStatic(town); bakeStatic(stallsRoot);
     if (m.isMeshBasicMaterial && o.isInstancedMesh) bulbs.push(m);
     else if (m.emissiveIntensity > 0 && m.emissive && m.emissive.getHex() !== 0) glow.push([m, m.emissiveIntensity, 0.25, false]);
   }); }
+// ---------- halos: a soft glow round every bulb, lantern, sign and neon tube once it is dark, so the street glitters
+// without a bloom pass (no extra render targets). One draw of points, additive, behind whatever stands in front. ----------
+const halo = (() => {
+  const v = new THREE.Vector3(), m4 = new THREE.Matrix4(), c = new THREE.Color();
+  scene.updateMatrixWorld(true);
+  scene.traverse((o) => { // the bulbs and lanterns (instanced spheres)
+    if (!o.isInstancedMesh || !o.material.isMeshBasicMaterial || !o.instanceColor) return;
+    o.geometry.computeBoundingSphere();
+    const r = o.geometry.boundingSphere.radius;
+    for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); v.setFromMatrixPosition(m4).applyMatrix4(o.matrixWorld); o.getColorAt(i, c); HALO.push([v.clone(), c.getHex(), Math.min(1.3, r * 8 + 0.12), 0.15]); }
+  });
+  const n = HALO.length, pos = new Float32Array(n * 3), col = new Float32Array(n * 3), size = new Float32Array(n), on = new Float32Array(n), ph = new Float32Array(n);
+  HALO.forEach(([p, hex, s, k], i) => { p.toArray(pos, i * 3); c.set(hex).convertLinearToSRGB().toArray(col, i * 3); size[i] = s; on[i] = k; ph[i] = (i * 0.618) % 1; });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
+  g.setAttribute('aSize', new THREE.BufferAttribute(size, 1)); g.setAttribute('aOn', new THREE.BufferAttribute(on, 1)); g.setAttribute('aPh', new THREE.BufferAttribute(ph, 1));
+  const material = new THREE.ShaderMaterial({
+    uniforms: { uK: { value: 0 }, uT: { value: 0 }, uScale: { value: 400 } },
+    vertexShader: `attribute vec3 aColor; attribute float aSize, aOn, aPh; uniform float uK, uT, uScale; varying vec3 vC; varying float vA;
+      void main() { vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv;
+        gl_PointSize = min(aSize * uScale / -mv.z, 360.0);
+        vA = smoothstep(aOn, aOn + 0.12, uK) * (0.78 + 0.22 * sin(uT * (2.0 + aPh * 3.0) + aPh * 40.0)); vC = aColor; }`,
+    fragmentShader: `varying vec3 vC; varying float vA;
+      void main() { float r = length(gl_PointCoord - 0.5) * 2.0; if (r > 1.0) discard; float a = exp(-r * r * 4.0) * (1.0 - r); gl_FragColor = vec4(vC * a * vA * 0.6, 1.0); }`,
+    blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
+  });
+  const pts = new THREE.Points(g, material);
+  pts.frustumCulled = false; pts.renderOrder = 2;
+  const sz = new THREE.Vector2();
+  pts.onBeforeRender = (r, s, cam) => { material.uniforms.uScale.value = r.getDrawingBufferSize(sz).y / (2 * Math.tan((cam.fov * Math.PI) / 360)); };
+  scene.add(pts);
+  return material.uniforms;
+})();
+// ---------- pools of light on the ground under the lights (ground.js), from the same list as the halos ----------
+const pools = (() => {
+  const pts = [];
+  HALO.forEach(([p, color, size, on], i) => {
+    const y = heightAt(p.x, p.z) + (p.z > 11.6 ? 0.03 : 0.01);
+    if (p.y < 0.3) return;
+    if (size >= 2.7) pts.push([p.x, y, p.z, color, 1.7, on]); // a sign: a wide wash of its colour
+    else if (size >= 1.2) pts.push([p.x, y, p.z, color, 1.5, on]); // a lantern
+    else if (size >= 0.95) pts.push([p.x, y, p.z, color, 1.3, on]); // a stall's bulb, the coals
+    else if (size >= 0.5 && p.y > 2.5 && p.y < 2.7 && i % 2) pts.push([p.x, y, p.z, color, 0.8, on, 1.6]); // a fascia's neon
+    else if (size < 0.5 && i % 3 === 0) pts.push([p.x, y, p.z, color, 0.7, on]); // bulbs on strings
+  });
+  return lightPools(scene, pts);
+})();
 const SKY = [new THREE.Color('#e9a47c'), new THREE.Color('#6a4f86'), new THREE.Color('#1d2440')], sky = new THREE.Color();
 const HEMI = [[1.05, '#ffe0cc', '#8a7a8a'], [0.55, '#8a98d8', '#2a2434']], SUN = [[1.3, '#ff9a5a', [-60, 16, 12]], [0.3, '#a9b8e8', [-30, 50, 20]]];
 const c0 = new THREE.Color(), c1 = new THREE.Color();
@@ -435,6 +575,7 @@ function light(k, t) {
   }
   for (const m of bulbs) m.color.setScalar(0.35 + 0.65 * Math.min(1, k * 1.6));
   for (const l of lamps) l.intensity = 28 * Math.max(0, (k - 0.3) / 0.7);
+  halo.uK.value = k; halo.uT.value = t; pools.uK.value = k;
   world.sun.castShadow = k < 0.8; // (by moonlight the shadows hardly show: skip the shadow pass)
 }
 
@@ -466,4 +607,4 @@ steps.push((t, dt) => {
 setMode('auto');
 setInterval(followLine, 400);
 world.start();
-window.__market = { clock, STALLS, traffic, cast: () => cast, people, setMode, tale, follow };
+window.__market = { clock, STALLS, traffic, throng, cast: () => cast, people, setMode, tale, follow };

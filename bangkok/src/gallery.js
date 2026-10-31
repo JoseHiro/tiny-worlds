@@ -113,6 +113,8 @@ const abreast = (parts, gap) => { const g = new THREE.Group(); parts.forEach((o,
 const ITEMS = [
   { group: 'overview', tag: 'Overview', wide: true, build: overview, view: [0.15, 0.85, 1.0], zoom: 0.5,
     name: ['屋台の見本（6軒）', 'Six stalls'], note: ['パッタイ（ノーイと父、鍋の炎、行列、客席）· ムーピン · 果物 · ソムタム · 麺 · タイティー', 'Pad thai (Noi and her father, wok fire, a queue, a table) · moo ping · fruit · som tam · noodles · Thai tea'] },
+  { group: 'overview', tag: 'v0.2 · Samples', wide: true, build: () => row([Kit.mooPing(), Kit.fruit(), Kit.tentStall('clothes', { colors: BK.tents[4] })], 2.7), view: [0.1, 0.55, 1.0], zoom: 0.62,
+    name: ['作り直した屋台（見本3軒）', 'Three stalls, redone'], note: ['§12：ムーピン（串でびっしりの炭火・煙・生と焼けた串のトレー・吊るしたもち米）· 果物（色の列・丸ごとの果物のかご・木箱のスイカとパイナップル・値札）· 服のテント（Tシャツとワンピースの列・畳んだ服の山・帽子・サンダル）', '§12: moo ping (a grill packed with skewers, smoke, trays raw and cooked, sticky rice hung up) · fruit (rows of colour, baskets of whole fruit, crates of watermelons and pineapples, price cards) · a clothes tent (T-shirts and dresses on rails, folded stacks, hats, flip-flops)'] },
 
   { group: 'stall', tag: 'K1 · Cart', build: () => K.cart(), name: ['ステンレスの屋台車', 'Stainless cart (rot khen)'], note: ['1.2×0.6 · 台の高さ0.66 · ガラスのケース · 車輪2つ · ガスボンベ · 光る看板（文字は1枚のアトラス）', '1.2 × 0.6 · counter 0.66 · glass case · two wheels · gas bottle · lit sign (all lettering on one atlas)'] },
   { group: 'stall', tag: 'K2 · Table', build: () => K.foldTable(), name: ['折りたたみテーブル', 'Folding table'], note: ['チェックのビニールクロス', 'Checked vinyl cloth'] },

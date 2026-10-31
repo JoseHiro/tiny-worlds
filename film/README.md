@@ -28,3 +28,19 @@ Each pocket video shows one café as a small object on a plain table. The camera
 ```bash
 film/make.sh pocket-nordic 0.35
 ```
+
+## Yaowarat (`film/yaowarat.js`)
+
+This 30-second film covers the Bangkok night market from dusk to night. It has seven shots: the road, a grill, the neon signs coming on, a tuk-tuk, the tent lane, the stage and the overview. Each shot sets the evening's clock itself, so the page's two minutes of dusk fit into the film without the crowd rushing. Film it from the plain `bangkok/` page with `(await import('/film/yaowarat.js')).run()`. Then rename the frame folder `film/out/yaowarat` to `yaowarat1` and join it:
+
+```bash
+film/make.sh yaowarat 0.12
+```
+
+## Yaowarat, two views (`film/yaowarat-split.js`)
+
+The same evening as a 9:16 split screen, like the airport's `split.js`. The top half cuts through nine close-ups: the road at dusk, a grill, the signs, a weaving scooter, the packed pavement, the tent lane, a stall, the stage, and the road at night. The bottom half turns slowly over the whole market, with a ring on the close-up, the time, and how many stalls are open and people are out. Film it from `bangkok/` with `(await import('/film/yaowarat-split.js')).run()` (or `run(true)` for each cut's first and last frames). The frames go to `film/out/yaowarat-split1`.
+
+```bash
+film/make.sh yaowarat-split 0.12
+```

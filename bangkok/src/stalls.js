@@ -77,7 +77,8 @@ export function grill({ len = 0.7, smoke = true } = {}) {
   const rnd = rng(4);
   bits(g, BOX(0.045, 0.03, 0.04), COAL, Array.from({ length: Math.round(len * 40) }, () => [(rnd() - 0.5) * (len - 0.06), H + 0.06 + rnd() * 0.02, (rnd() - 0.5) * 0.22, rnd(), rnd() * 3, rnd()]));
   for (let i = 0; i < 6; i++) { const b = cy(g, 0.004, 0.004, len, M.steel, 0, H + 0.085, -0.11 + i * 0.044, 4); b.rotation.z = Math.PI / 2; }
-  if (smoke) addTo(g, puffs('smoke', { n: 5, rise: 0.9, size: 0.3, spread: len * 0.6, seed: 3 })).position.set(0, H + 0.12, 0);
+  if (smoke) addTo(g, puffs('smoke', { n: 8, rise: 1.5, size: 0.42, spread: len * 0.7, seed: 3 })).position.set(0, H + 0.12, 0);
+  for (let i = 0; i < 3; i++) { const h = new THREE.Object3D(); h.position.set((i - 1) * len * 0.3, H + 0.08, 0); h.userData.halo = [0xff7a2a, 0.9]; g.add(h); } // (the coals' glow, at night)
   g.userData = { kind: 'grill', grate: H + 0.09, len };
   return liveAll(g);
 }

@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { PALETTE, BK, M, mat, bx, rb, cy, sp, cn, put, pivot, group, bits, rng, addTo, BOX, CYL, SPH, CONE, stripeMat, checkMat, signPlane, liveAll } from './common.js';
 import { metalTable, stool, foodShelf } from './stalls.js';
+import { surfaces, patch } from './ground.js';
 
 const G_H = 2.6, F_H = 2.3;
 export const FACADES = [0xe9dfc8, 0xd8c8b0, 0xc9d4c8, 0xe6c8b8, 0xd0d4dc, 0xe8d890];
@@ -12,6 +13,8 @@ export const VLABELS = {
   gold: ['金行', 0xd9342b, 0xe8b64a], hotel: ['旅社', 0xf4f0e8, 0xd9342b], tea: ['茶樓', 0xe8b64a, 0xa0201a],
   medicine: ['藥行', 0x2f7a4a, 0xf4f0e8], restaurant: ['大酒家', 0xd9342b, 0xf4f0e8], shark: ['魚翅', 0xf4f0e8, 0x2c5aa0],
   noodle: ['粿汁', 0xf2b84b, 0xa0201a], bank: ['銀行', 0x1c2232, 0xe8b64a],
+  jewel: ['珠寶', 0xa0201a, 0xe8b64a], seafood: ['海鮮', 0x2c5aa0, 0xf4f0e8], duck: ['燒鴨', 0xf4f0e8, 0xa0201a],
+  herbal: ['涼茶', 0x2f7a4a, 0xe8b64a], massage: ['按摩', 0x1c2232, 0x5ce1ff], pawn: ['大押', 0xa0201a, 0xf4f0e8],
 };
 const VCELL = [64, 256];
 let VATLAS = null;
@@ -58,7 +61,7 @@ export function vSign(key = 'gold', { h = 2.4, d = 0.8, neon = BK.neonPink } = {
     }
   }
   for (const y of [0.15, h - 0.15]) bx(g, 0.04, 0.04, 0.14, M.darkSteel, 0, y, 0.06); // brackets into the wall
-  g.userData = { kind: 'vSign' };
+  g.userData = { kind: 'vSign', h, d, neon };
   return g;
 }
 
@@ -72,7 +75,8 @@ const SHOP = {
   eatery: { inside: 0xc9a07a, light: 0xffe0b0, label: 'eatery' },
   mart: { inside: 0xf4f6f6, light: 0xffffff, label: 'minimart' },
 };
-export function shophouse({ floors = 4, w = 3.0, depth = 4.0, color = FACADES[0], shop = 'goods', seed = 1, signs = [] } = {}) {
+// signs: [key, x, y, neon?, h?, d?]; neon: a colour for a neon tube along the top and foot of the fascia (or none)
+export function shophouse({ floors = 4, w = 3.0, depth = 4.0, color = FACADES[0], shop = 'goods', seed = 1, signs = [], neon = null } = {}) {
   const g = new THREE.Group();
   const rnd = rng(seed);
   const S = SHOP[shop];
@@ -91,6 +95,7 @@ export function shophouse({ floors = 4, w = 3.0, depth = 4.0, color = FACADES[0]
   bx(g, w - 0.4, 0.22, 0.22, M.darkSteel, 0, G_H - 0.12, -0.12);
   bx(g, w, 0.55, 0.12, trim, 0, G_H + 0.27, 0.0);
   const fs = signPlane(S.label, w - 0.3, 0.45); fs.position.set(0, G_H + 0.27, 0.065); g.add(fs);
+  if (neon) for (const y of [G_H - 0.01, G_H + 0.55]) bx(g, w, 0.035, 0.035, M.glow(neon, 1.8), 0, y, 0.09).castShadow = false;
   if (shop === 'mart') { // stripes under the sign and a glass front
     [0xe8673c, 0x2f8a4a, 0xd9342b].forEach((c, i) => bx(g, w - 0.1, 0.05, 0.13, mat(c), 0, G_H - 0.03 - i * 0.055, 0.0));
     bx(g, w - 0.5, G_H - 0.3, 0.03, M.glass, 0, (G_H - 0.3) / 2 + 0.05, -0.05);
@@ -121,7 +126,7 @@ export function shophouse({ floors = 4, w = 3.0, depth = 4.0, color = FACADES[0]
   cy(g, 0.012, 0.012, 1.2, M.darkSteel, -w * 0.25, H + 0.6, -depth * 0.4, 4);
   bx(g, 0.5, 0.02, 0.02, M.darkSteel, -w * 0.25, H + 1.0, -depth * 0.4);
   // vertical signs hung on the facade
-  signs.forEach(([key, x, y, neon], i) => addTo(g, vSign(key, { neon: neon ?? [BK.neonPink, BK.neonBlue, BK.neonGreen][i % 3] })).position.set(x, y, 0));
+  signs.forEach(([key, x, y, tube, h = 2.4, d = 0.8], i) => addTo(g, vSign(key, { h, d, neon: tube ?? [BK.neonPink, BK.neonBlue, BK.neonGreen][i % 3] })).position.set(x, y, 0));
   g.userData = { kind: 'shophouse', w, height: H };
   return g;
 }
@@ -258,7 +263,8 @@ export function spiritHouse() {
 export function sidewalk({ len = 4, d = 2.2 } = {}) {
   const g = new THREE.Group();
   const top = 0.14;
-  bx(g, len, top, d, checkMat(0xb8b4ac, 0xa8a49c, 10), 0, top / 2, 0);
+  bx(g, len, top, d, mat(0xa8a49c, { roughness: 0.9 }), 0, top / 2, 0);
+  g.add(patch(surfaces().tiles, len, d - 0.12, 0, top + 0.002, -0.06)); // (tiles of 0.5, square whatever the length)
   const n = Math.round(len / 0.5);
   bits(g, BOX(0.5, 0.15, 0.12), mat(0xd9342b), Array.from({ length: Math.ceil(n / 2) }, (_, i) => [-len / 2 + 0.25 + i * 1.0, top / 2, d / 2 - 0.06]));
   bits(g, BOX(0.5, 0.15, 0.12), mat(0xf4f0e8), Array.from({ length: Math.floor(n / 2) }, (_, i) => [-len / 2 + 0.75 + i * 1.0, top / 2, d / 2 - 0.06]));

@@ -4,9 +4,9 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const mergeable = (o) => o.isMesh && !o.isInstancedMesh && !Array.isArray(o.material) && o.visible && o.children.length === 0;
 
-function prepare(geo, matrix) {
+function prepare(geo, matrix, keepColor = false) {
   let g = geo.index ? geo.toNonIndexed() : geo.clone();
-  for (const name of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(name)) g.deleteAttribute(name);
+  for (const name of Object.keys(g.attributes)) if (!['position', 'normal', 'uv', ...(keepColor ? ['color'] : [])].includes(name)) g.deleteAttribute(name);
   if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
   g.clearGroups();
   g.applyMatrix4(matrix);
@@ -21,7 +21,7 @@ function mergeInto(parent, meshes, matrixOf) {
   }
   for (const [material, list] of byMat) {
     if (list.length < 2) continue;
-    const merged = mergeGeometries(list.map((m) => prepare(m.geometry, matrixOf(m))));
+    const merged = mergeGeometries(list.map((m) => prepare(m.geometry, matrixOf(m), material.vertexColors))); // (vertex colours: baked instance colours)
     if (!merged) continue;
     const out = new THREE.Mesh(merged, material);
     out.castShadow = list.some((m) => m.castShadow);
