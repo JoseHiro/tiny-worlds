@@ -7,6 +7,10 @@ Small 3D dioramas with stories inside, built in the browser with [three.js](http
 
 ## Worlds
 
+### Bangkok night market (work in progress) — [`bangkok/`](bangkok/)
+
+A street-food night in Bangkok: a neon main road and a lane of coloured tents. So far the design notes and the parts: stall kit, twenty-six dishes, vendors. Pages: [`bangkok/parts.html`](bangkok/parts.html) (parts catalogue) · [`bangkok/DESIGN.md`](bangkok/DESIGN.md)
+
 ### World Map — [`world/`](world/)
 
 Every world on one low-poly globe, with the routes out of Mini Airport and aircraft flying them. Fly to Naha: a 45-second flight over the clouds, then the landing at Naha Airport on the Naha road. Pages: [`world/index.html`](world/index.html) (the map) · [`world/flight.html`](world/flight.html) (in flight) · [`world/DESIGN.md`](world/DESIGN.md) · in-flight cabin (work in progress): [`world/cabin.html`](world/cabin.html) (the whole cabin through the flight) · [`world/cabin-parts.html`](world/cabin-parts.html) (parts catalogue) · [`world/CABIN.md`](world/CABIN.md)

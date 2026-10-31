@@ -939,6 +939,22 @@ export function person(role = 'crew', { mode = 'idle', seed } = {}) {
         legs[0].rotation.z = Math.sin(t * 4 + ph) * 0.3; legs[1].rotation.z = -Math.sin(t * 4 + ph) * 0.3;
         arms[0].rotation.z = arms[1].rotation.z = 1.2; arms[0].rotation.x = 0.15; arms[1].rotation.x = -0.15; body.rotation.z = -0.1;
       }
+    } else if (m === 'wok' || m === 'fan' || m === 'pound' || m === 'shake' || m === 'chop') { // street-food vendors (bangkok/DESIGN.md §7)
+      const ph = ud.phase ?? 0;
+      for (const l of legs) l.rotation.z = 0;
+      body.position.y = 0; arms[0].rotation.x = arms[1].rotation.x = 0;
+      if (m === 'wok') { // one hand tosses the wok, the other stirs with the ladle
+        const k = Math.max(0, Math.sin(t * 5 + ph));
+        arms[0].rotation.z = 1.05 + k * 0.35; arms[1].rotation.z = 1.35; arms[1].rotation.x = -0.25 + Math.sin(t * 6 + ph) * 0.25; body.rotation.z = -0.08 - k * 0.05; head.rotation.z = -0.25;
+      } else if (m === 'fan') { // turning skewers, fanning the coals
+        arms[0].rotation.z = 1.15; arms[0].rotation.x = 0.2; arms[1].rotation.z = 0.95; arms[1].rotation.x = -0.3 + Math.sin(t * 11 + ph) * 0.45; head.rotation.z = -0.3;
+      } else if (m === 'pound') { // the pestle up and down in the mortar
+        arms[0].rotation.z = 1.25 + Math.max(0, Math.sin(t * 7 + ph)) * 0.55; arms[1].rotation.z = 0.95; arms[1].rotation.x = -0.2; head.rotation.z = -0.35;
+      } else if (m === 'shake') { // shaking the noodle basket in the pot
+        arms[0].rotation.z = arms[1].rotation.z = 1.2 + Math.sin(t * 13 + ph) * 0.1; arms[0].rotation.x = 0.15; arms[1].rotation.x = -0.15; head.rotation.z = -0.3;
+      } else { // chopping fruit
+        arms[0].rotation.z = 1.15 + Math.abs(Math.sin(t * 6 + ph)) * 0.35; arms[1].rotation.z = 1.05; arms[1].rotation.x = -0.25; head.rotation.z = -0.35;
+      }
     } else if (m === 'pour' || m === 'wipe') { // the barista at work
       for (const l of legs) l.rotation.z = 0;
       body.position.y = 0; arms[0].rotation.x = arms[1].rotation.x = 0;
