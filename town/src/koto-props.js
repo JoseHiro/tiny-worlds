@@ -247,8 +247,8 @@ export function cat({ color = 0xe8a050, mode = 'sit' } = {}) {
   const g = new THREE.Group(), m = M(color, { roughness: 0.9 }), w = M(0xf6f2ea);
   const body = mesh(new THREE.SphereGeometry(0.13, 12, 8), m, 0, 0.16, 0); body.scale.set(1.7, 1, 1); g.add(body);
   const head = mesh(new THREE.SphereGeometry(0.1, 12, 10), m, 0.22, 0.27, 0); g.add(head);
-  for (const z of [0.05, -0.05]) g.add(mesh(new THREE.ConeGeometry(0.035, 0.07, 4), m, 0.22, 0.37, z));
-  g.add(mesh(new THREE.SphereGeometry(0.05, 8, 6), w, 0.29, 0.24, 0));
+  for (const z of [0.05, -0.05]) head.add(mesh(new THREE.ConeGeometry(0.035, 0.07, 4), m, 0, 0.1, z)); // (on the head, so they go where it goes)
+  head.add(mesh(new THREE.SphereGeometry(0.05, 8, 6), w, 0.07, -0.03, 0));
   const tail = new THREE.Group(); tail.position.set(-0.2, 0.18, 0);
   const tl = mesh(new THREE.CapsuleGeometry(0.025, 0.22, 3, 6), m, 0, 0.12, 0); tail.add(tl); g.add(tail);
   const legs = [];

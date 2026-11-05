@@ -544,6 +544,7 @@ const ROLES = {
   barista: { top: 0xf2ede2, apron: 0x4a5f7a, legs: 0x3a3f4a, hat: 'bun', hair: 0x6b4a35, shoes: 0x6b4a35 },
   barista2: { top: 0x2a2a2c, apron: 0x8a5a3a, legs: 0x3a3f4a, hat: 'baseball', capColor: 0x2a2a2c },
   macWorker: { top: 0x8a9aa8, legs: 0x2f3e57, hat: 'hair', glasses: true, carry: 'mug' },
+  coder: { top: 0x5a6270, legs: 0x2f3e57, hat: 'hair', glasses: true, carry: 'mug' }, // the engineer's room (room/DESIGN.md §5): a grey sweatshirt
   callWorker: { top: 0x2f3e57, legs: 0x3a3f4a, hat: 'long', hair: 0x2a2018, headphones: 0xf2ede2, carry: 'mug' },
   designer: { top: 0xd9a441, legs: 0x3a3f4a, hat: 'beret', capColor: 0xc9714a, hair: 0x2a2018, carry: 'mug' },
   studentA: { top: 0xe2a9a0, legs: 0x2f3e57, hat: 'bob', backpack: 0x9db59a },
