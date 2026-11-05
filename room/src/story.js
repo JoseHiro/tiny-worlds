@@ -23,7 +23,8 @@ const jump = (o, a, b, u, h = 0.22) => { o.position.lerpVectors(a, b, ease(u)); 
 
 export function roomStory({ stage, desk, sleeping, scene, out, bedLamp, lampShade, clock, hour0 }) {
   const me = desk.me, screens = desk.screens;
-  const SEAT = { p: me.position.clone(), yaw: me.rotation.y };
+  const fwd = new THREE.Vector3(1, 0, 0).applyQuaternion(me.quaternion); // (not me.rotation.y: attached from the turned desk, the yaw past π/2 is kept as x = z = π and a small y)
+  const SEAT = { p: me.position.clone(), yaw: Math.atan2(-fwd.z, fwd.x) };
   const CAT_BED = { p: sleeping.position.clone(), yaw: sleeping.rotation.y };
   const awake = cat({ color: 0xc98a50, mode: 'sit' }); awake.scale.setScalar(0.5); awake.visible = false; scene.add(awake); // (a shade darker than the sleeping one: under the desk lamp it glows)
   const walk = (pts, u, mode = 'walk') => { const { p, yaw } = along(pts, u); me.position.copy(p); me.rotation.set(0, yaw, 0); me.userData.mode = mode; };
