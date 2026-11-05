@@ -52,3 +52,11 @@ This film is the engineer's room on a rainy night, about 50 seconds long. It cut
 ```bash
 film/make.sh room 0.2
 ```
+
+## Rush hour (`film/rails.js`)
+
+This film is the Tokyo rail world on a weekday morning, about 65 seconds long. It follows the story "the first morning": Sora takes the Chūō Rapid from Shinjuku to Tokyo, changes to the Yamanote Line and gets off at Shinagawa. Each shot uses the story's own camera, which is either fixed on a platform or rides beside Sora's train. The film ends by pulling back over the whole board with the name. Film it from `rails/?story=1` with `(await import('/film/rails.js')).run()` (or `run(true)` for each shot's first and last frames). The frames go to `film/out/rails1`. There is no rain, so join it dry:
+
+```bash
+film/make.sh rails 0
+```
