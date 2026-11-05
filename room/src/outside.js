@@ -28,7 +28,7 @@ const CITY = (w, h) => canvasTex(w, h, (x) => {
 
 const STREAKS = () => canvasTex(256, 256, (x, w, h) => {
   x.clearRect(0, 0, w, h);
-  for (let i = 0; i < 260; i++) { const px = Math.random() * w, py = Math.random() * h, l = 10 + Math.random() * 24; x.strokeStyle = `rgba(200,215,235,${0.12 + Math.random() * 0.25})`; x.lineWidth = 1; x.beginPath(); x.moveTo(px, py); x.lineTo(px - l * 0.08, py + l); x.stroke(); }
+  for (let i = 0; i < 120; i++) { const px = Math.random() * w, py = Math.random() * h, l = 10 + Math.random() * 24; x.strokeStyle = `rgba(200,215,235,${0.08 + Math.random() * 0.16})`; x.lineWidth = 1; x.beginPath(); x.moveTo(px, py); x.lineTo(px - l * 0.08, py + l); x.stroke(); }
 });
 
 // cx, cy: the window's centre; z: the wall's outer face
@@ -52,7 +52,7 @@ export function outside(scene, { cx, cy, z, x0, x1, h = 1.6 }) { // x0…x1: kep
   // the rain: two sheets of streaks falling at different speeds
   const sheets = [0.18, 0.32].map((d, i) => {
     const t = STREAKS(); t.repeat.set(2 + i, 1.5 + i);
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, 1.3), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, opacity: 0.8 - i * 0.25 }));
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, 1.3), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, opacity: 0.5 - i * 0.18 }));
     m.position.set(mx, cy, z - d); g.add(m); return t;
   });
   let next = 4, run = -1;
@@ -62,7 +62,7 @@ export function outside(scene, { cx, cy, z, x0, x1, h = 1.6 }) { // x0…x1: kep
     if (run >= 0) { run += dt; train.position.x = cx - 2.4 + run * 0.55; if (run > 9) run = -1; }
     train.children.forEach((c) => (c.visible = Math.abs(train.position.x + c.position.x - mx) < w / 2 - 0.2)); // (only while it is behind the wall)
     train.visible = run >= 0;
-    sheets.forEach((s, i) => { s.offset.y += dt * (1.6 + i * 0.9); s.offset.x += dt * 0.05; });
+    sheets.forEach((s, i) => { s.offset.y += dt * (1.3 + i * 0.7); s.offset.x += dt * 0.05; });
   };
   return { group: g, update, train: () => { run = 0; next = 30; } }; // (train(): one now, for the story)
 }

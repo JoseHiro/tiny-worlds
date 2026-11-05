@@ -50,5 +50,5 @@ film/make.sh yaowarat-split 0.12
 This film is the engineer's room on a rainy night, about 50 seconds long. It cuts the story "the bug on a rainy night" down to twelve shots: the red tests, the duck, the cat waking and walking over the keyboard, the pour-over, the last train, the fix, lights out, the cat at the feet, and the name. The room has its own stage, so the script passes it to `film.js` dressed as the koto one. Film it from `room/?story=1` with `(await import('/film/room.js')).run()`. The frames go straight to `film/out/room1`. Join them with the rain:
 
 ```bash
-film/make.sh room 0.5
+film/make.sh room 0.2
 ```

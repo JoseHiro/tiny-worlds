@@ -85,7 +85,7 @@ life.push((t, dt) => {
   brew.mat.uniforms.uOn.value = tale.brewing() ? 1 : 0; brew.mat.uniforms.uScale.value = stage.px * 1.4; brew.update(t, dt);
   neko.userData.update(t);
   out.update(t, dt);
-  drops.update(dt, 0.8);
+  drops.update(dt, 0.45); // (a steady rain, not a storm)
   if (tale.beat() < 0) { hour += dt / 60 / 6; clock.userData.set(hour); } // (an hour every six minutes; the story sets its own time)
 });
 bakeStatic(room); bakeStatic(desk.group);
