@@ -55,7 +55,8 @@ export function railsStory({ stage, net, scene, world }) {
       fn: (u) => { put(S1); if (u > 0.82) sora.visible = false; } },
     { dur: 8, t: [dep1 + 6, tYotsuya + 20], cam: ride(chuo, 0, k1, V(0.55, 0.42, 0.75)), say: ['四ツ谷へ。となりを黄色い総武線が並んで走る。', 'On toward Yotsuya, the yellow Sōbu Line running alongside.'] },
     { dur: 6, t: [tOcha - 50, tOcha + 30], cam: fixed(...near('ochanomizu', V(0.5, 0.55, -1.25))), say: ['御茶ノ水。神田川の谷を、朝日が照らしている。', 'Ochanomizu. Morning sun on the Kanda River valley.'] },
-    { dur: 6, t: [arr1 - 45, arr1 + 25], cam: fixed(...near('tokyo', V(-1.5, 0.75, 1.5))), say: [`${clock(arr1)}、東京。赤レンガの駅舎のとなりに着く。`, `${clock(arr1)}, Tokyo, beside the red-brick station.`] },
+    { dur: 6, t: [arr1 - 45, arr1 + 25], cam: fixed(V(4.75, 1.25, 1.75), V(3.95, 0.05, -0.3)), // (from the south: the red-brick front, the Chūō terminal beside it)
+      say: [`${clock(arr1)}、東京。赤レンガの駅舎のとなりに着く。`, `${clock(arr1)}, Tokyo, beside the red-brick station.`] },
     { dur: 7, t: [dep2 - 100, dep2 + 6], cam: fixed(T2.p.clone().add(V(-0.5, 0.22, 0.25)), T2.p.clone().add(V(0, 0.03, 0))), say: ['山手線に乗りかえ。外回り、品川方面。', 'Change to the Yamanote Line: the outer loop, for Shinagawa.'],
       fn: (u) => { if (u < 0.45) walk(T1, T2, u / 0.45); else put(T2); if (u > 0.85) sora.visible = false; } },
     { dur: 8, t: [dep2 + 6, tHama + 25], cam: ride(yam, 0, k2, V(0.85, 0.45, 0.3)), say: ['有楽町、新橋、浜松町。窓の外に東京タワー。', 'Yūrakuchō, Shimbashi, Hamamatsuchō. Tokyo Tower out of the window.'] },

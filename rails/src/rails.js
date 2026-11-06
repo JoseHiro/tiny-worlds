@@ -56,9 +56,7 @@ scene.add(fixed); bakeStatic(fixed);
 // ---------- the trains and the people waiting for them ----------
 const lines = Object.values(net.lines);
 const fleet = new Fleet(scene, lines.reduce((n, l) => n + l.runs.reduce((m, r) => m + r.n, 0), 0) * CAR.cars);
-const sides = [...waitingSides(net)];
-const crowd = new Crowd(scene, sides.length * 24);
-for (const { line, run, ev, side } of sides) crowd.addSide(line, run, ev, side);
+const crowd = new Crowd(scene, [...waitingSides(net)]);
 
 // ---------- riding along: click a train ----------
 const WHERE = { yamanote: [['外回り', 'Outer loop'], ['内回り', 'Inner loop']], chuo: [['新宿・中野方面', 'for Shinjuku, Nakano'], ['東京行', 'for Tokyo']], sobu: [['新宿・中野方面', 'for Shinjuku, Nakano'], ['秋葉原・千葉方面', 'for Akihabara, Chiba']] };
@@ -104,7 +102,7 @@ life.push((t, dt) => {
   if (world.auto) { world.time += dt * SPEED; if (world.time >= END) world.time = START; } // (after the story: on from where it left off)
   const time = world.time;
   fleet.begin(); for (const l of lines) l.draw(fleet, time); fleet.end();
-  crowd.update(time, t);
+  crowd.update(time);
   signs.face(camera);
   if (ride) { // keep the train in the middle of the view, the camera keeping its distance
     ride.line.centre(ride.r, ride.k, time, c); now.set(c[0], c[1] + 0.06, c[2]);

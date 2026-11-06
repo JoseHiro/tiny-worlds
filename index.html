@@ -58,7 +58,7 @@
     .stops::before { content: ''; position: absolute; left: 9px; top: 30px; bottom: 30px; border-left: 2px dashed var(--route); opacity: .35; }
     .stop { position: relative; display: grid; grid-template-columns: 220px 1fr; gap: 28px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; margin-top: 18px; scroll-margin-top: 24px; }
     .stop::before { content: ''; position: absolute; left: -31px; top: 32px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--bg); }
-    .stop svg { width: 100%; height: auto; border-radius: 12px; background: #e5dccc; }
+    .stop svg, .stop img { width: 100%; height: auto; border-radius: 12px; background: #e5dccc; }
     .stop h2 { font: italic 400 40px/1 'Instrument Serif', serif; margin: 4px 0 10px; }
     .stop p { margin: 0 0 14px; color: var(--muted); }
     .where { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
@@ -314,17 +314,7 @@
     </article>
 
     <article class="stop">
-      <svg viewBox="0 0 220 140" aria-hidden="true">
-        <rect width="220" height="140" rx="10" fill="#cfe3f2" />
-        <rect x="14" y="20" width="192" height="104" rx="4" fill="#d8d2c6" /><rect x="14" y="120" width="192" height="8" fill="#5a3e2b" />
-        <path d="M150 124 Q140 96 170 90 Q206 86 206 60 L206 124 Z" fill="#6fa8c8" />
-        <rect x="88" y="52" width="34" height="28" fill="#5d8a45" />
-        <ellipse cx="104" cy="70" rx="62" ry="40" fill="none" stroke="#80c241" stroke-width="5" />
-        <path d="M44 66 Q80 52 104 60 Q130 50 162 62 L212 58" fill="none" stroke="#f15a22" stroke-width="3.5" />
-        <path d="M40 72 Q80 58 104 66 Q130 56 168 66 L212 64" fill="none" stroke="#ffd400" stroke-width="3.5" />
-        <path d="M128 98 l4 -24 l4 24 Z" fill="#e8562a" />
-        <g transform="translate(58 100)"><rect width="40" height="12" rx="3" fill="#d5d9de" /><rect x="6" y="2" width="5" height="9" fill="#80c241" /><rect x="28" y="2" width="5" height="9" fill="#80c241" /></g>
-      </svg>
+      <img src="./rails/thumb.jpg" width="660" height="420" alt="" loading="lazy">
       <div>
         <div class="where" data-city="HND"></div>
         <div class="eyebrow">World 07 · Rush hour（東京 · Tokyo）</div>

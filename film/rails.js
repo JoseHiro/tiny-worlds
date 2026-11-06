@@ -22,9 +22,9 @@ const card = (g, u, W, H, ts) => { // the name over the board
 };
 
 export const SHOTS = [
-  { start: () => R().story.start(), dur: 6, cam: { fn: story }, cap: ['Shinjuku. Sora’s first day at a new job'] },
+  { start: () => R().story.start(), dur: 6, cam: { fn: story }, cap: ['Sora’s first day at work'] },
   { at: 'オレンジの中央線', dur: 6, cam: { fn: story }, cap: ['The orange Chūō Line pulls in'] },
-  { at: '四ツ谷へ', dur: 8, cam: { fn: story }, cap: ['East, beside the yellow Sōbu Line'] },
+  { at: '四ツ谷へ', dur: 8, cam: { fn: story }, cap: ['East, beside the Sōbu Line'] },
   { at: '御茶ノ水。', dur: 6, cam: { fn: story }, cap: ['Ochanomizu, over the river'] },
   { at: '赤レンガ', dur: 6, cam: { fn: story }, cap: ['Tokyo Station'] },
   { at: '山手線に乗りかえ', dur: 7, cam: { fn: story }, cap: ['Change to the Yamanote Line'] },

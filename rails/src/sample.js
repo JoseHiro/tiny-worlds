@@ -53,8 +53,7 @@ const label = signs.label('shinjuku', ['yamanote', 'chuo', 'sobu']);
 path.at(sShinjuku, 0, a); label.position.set(a[0], 0.75, a[1]); scene.add(label);
 signs.draw();
 
-const crowd = new Crowd(scene, 64);
-for (const run of [outer, inner]) for (const ev of run.events) crowd.addSide(yamanote, run, ev, -ev.dir);
+const crowd = new Crowd(scene, [outer, inner].flatMap((run) => run.events.map((ev) => ({ line: yamanote, run, ev, side: -ev.dir }))));
 
 Object.assign(ROLE_LOOKS, { sora: { top: 0x2f3a4f, legs: 0x2f3a4f, hat: 'hair', tie: 0x5f8fc0, backpack: 0x1d1f23, fixed: true } }); // a new suit for the first day
 const sora = person('sora', { seed: 7 });
@@ -88,7 +87,7 @@ const gameTime = (t) => START + ((t * SPEED) % (END - START));
 life.push((t) => {
   const time = gameTime(t);
   fleet.begin(); yamanote.draw(fleet, time); fleet.end();
-  crowd.update(time, t);
+  crowd.update(time);
   sora.userData.update?.(t, 0);
   signs.face(camera);
   if (clk) clk.textContent = clock(time);

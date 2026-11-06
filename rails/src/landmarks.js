@@ -19,12 +19,12 @@ export function towers() {
   const stone = 0xd2ccc0;
   return [
     // the Tokyo Metropolitan Government Building: a wide base, twin towers, their tops turned
-    { x: tx, z: tz + 0.08, w: 0.62, d: 0.3, h: 0.5, color: stone },
-    { x: tx - 0.17, z: tz - 0.02, w: 0.24, d: 0.24, h: 1.05, color: stone }, { x: tx + 0.17, z: tz - 0.02, w: 0.24, d: 0.24, h: 1.05, color: stone },
-    { x: tx - 0.17, z: tz - 0.02, w: 0.17, d: 0.17, h: 1.13, yaw: Math.PI / 4, color: stone }, { x: tx + 0.17, z: tz - 0.02, w: 0.17, d: 0.17, h: 1.13, yaw: Math.PI / 4, color: stone },
-    { x: sx, z: sz, w: 0.3, d: 0.2, h: 0.98, color: 0xc4c8cc }, // Sunshine 60
-    { x: rx, z: rz, w: 0.3, d: 0.3, h: 0.92, yaw: 0.4, color: 0x9fb2c2 }, // Roppongi Hills
-    { x: qx, z: qz, w: 0.22, d: 0.2, h: 0.9, color: 0xb9c6cf }, // Shibuya Scramble Square
+    { x: tx, z: tz + 0.08, w: 0.62, d: 0.3, h: 0.5, color: stone, kind: 2 },
+    { x: tx - 0.17, z: tz - 0.02, w: 0.24, d: 0.24, h: 1.05, color: stone, kind: 2 }, { x: tx + 0.17, z: tz - 0.02, w: 0.24, d: 0.24, h: 1.05, color: stone, kind: 2 },
+    { x: tx - 0.17, z: tz - 0.02, w: 0.17, d: 0.17, h: 1.13, yaw: Math.PI / 4, color: stone, kind: 2 }, { x: tx + 0.17, z: tz - 0.02, w: 0.17, d: 0.17, h: 1.13, yaw: Math.PI / 4, color: stone, kind: 2 },
+    { x: sx, z: sz, w: 0.3, d: 0.2, h: 0.98, color: 0xc4c8cc, kind: 2 }, // Sunshine 60
+    { x: rx, z: rz, w: 0.3, d: 0.3, h: 0.92, yaw: 0.4, color: 0x9fb2c2, kind: 3 }, // Roppongi Hills
+    { x: qx, z: qz, w: 0.22, d: 0.2, h: 0.9, color: 0xb9c6cf, kind: 3 }, // Shibuya Scramble Square
   ];
 }
 

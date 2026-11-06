@@ -103,6 +103,7 @@ const TRACK = {
   edge: new THREE.MeshStandardMaterial({ color: 0xf2c94c, roughness: 0.7 }), // the yellow tactile strip
   roof: new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: 0.6 }),
   post: new THREE.MeshStandardMaterial({ color: 0x7d838c, roughness: 0.5, metalness: 0.3 }),
+  well: new THREE.MeshStandardMaterial({ color: 0x2e3136, roughness: 0.9 }),
 };
 export const RAIL_TOP = 0.022; // above the bed
 
@@ -157,7 +158,16 @@ export function layPlatform(path, c) {
   const posts = [], a = [0, 0, 0, 0];
   for (let s = r0 + 0.04; s < r1; s += 0.14) { path.at(s, 0, a); posts.push(new THREE.CylinderGeometry(0.0035, 0.0035, 0.08, 6).translate(a[0], top(s) + 0.04, a[1])); }
   g.add(shade(new THREE.Mesh(mergeGeometries(posts), TRACK.post)));
+  // two stairs down to the concourse, STAIR either side of the middle: a dark well between two low walls
+  const well = [], walls = [], W = 0.013, D = 0.035;
+  for (const k of [-1, 1]) {
+    const s = c + k * STAIR, ang = () => Math.atan2(-a[3], a[2]);
+    path.at(s, 0, a); well.push(new THREE.BoxGeometry(D * 2, 0.002, W * 2).rotateY(ang()).translate(a[0], top(s) + 0.0004, a[1]));
+    for (const d of [-W, W]) { path.at(s, d, a); walls.push(new THREE.BoxGeometry(D * 2, 0.014, 0.003).rotateY(ang()).translate(a[0], top(s) + 0.007, a[1])); }
+  }
+  g.add(new THREE.Mesh(mergeGeometries(well), TRACK.well), shade(new THREE.Mesh(mergeGeometries(walls), TRACK.post)));
   return g;
 }
+export const STAIR = 0.2; // the stairs: this far either side of a platform's middle
 
 function shade(o) { o.castShadow = o.receiveShadow = true; return o; }
