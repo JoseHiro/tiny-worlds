@@ -60,3 +60,11 @@ This film is the Tokyo rail world on a weekday morning, about 65 seconds long. I
 ```bash
 film/make.sh rails 0
 ```
+
+## Fuji Mart (`film/fuji.js`)
+
+This 33-second film has no story. It shows the mountain and birds, the doors, the till, the road and the tourist's view, then pulls back over the board with the name. Open `fuji/` on the recorder's port and run `(await import('/film/fuji.js')).run()`. Then:
+
+```bash
+film/make.sh fuji 0
+```

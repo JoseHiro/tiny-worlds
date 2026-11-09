@@ -20,7 +20,7 @@ export function chibi({ top = 0x5bc0eb, legs = 0x3c4778, hair = 0x3a2a20, skin =
   add(g, ballG, skin, 0, 0.405, 0.04, [0.138, 0.112, 0.112], false); // (the face, over the hair)
   for (const s of [-1, 1]) { add(g, ballG, 0x25304f, s * 0.056, 0.41, 0.142, [0.015, 0.02, 0.008], false); add(g, ballG, 0xf7a8a8, s * 0.092, 0.375, 0.122, [0.024, 0.015, 0.01], false); }
   if (long) add(g, ballG, hair, 0, 0.34, -0.09, [0.12, 0.13, 0.07]);
-  if (hat) { add(g, ballG, hat, 0, 0.5, -0.005, [0.158, 0.09, 0.15]); add(g, ballG, hat, 0, 0.47, 0.13, [0.09, 0.015, 0.07]); }
+  if (hat) { add(g, ballG, hat, 0, 0.5, -0.01, [0.176, 0.088, 0.168]); add(g, ballG, hat, 0, 0.47, 0.13, [0.09, 0.015, 0.07]); }
   if (pack) add(g, ballG, pack, 0, 0.22, -0.12, [0.085, 0.1, 0.06]);
   g.userData = { swing, arms };
   return g;
@@ -55,12 +55,12 @@ export function people(scene, life, shop) {
   // the shoppers, in by the door and out again
   const walkers = [
     { p: chibi({ top: 0xf7a8b8, legs: 0x4c6fd1, hair: 0x2a2018, long: true }), r: route([[-6.2, 3.4], [DOOR, 2.1], [DOOR, -0.8], [-1.05, -0.8, 5], [DOOR, -0.8], [DOOR, 2.1], [5.8, 3.4], [5.8, 3.4, 1], [-6.2, 3.4, 0]]), ph: 0 },
-    { p: chibi({ top: 0xffc857, legs: 0x5c6680, hair: 0x6b5a48, hat: 0x3e6a6a }), r: route([[5.4, 3.5], [DOOR + 0.1, 2.2], [DOOR + 0.1, -0.85], [-0.55, -0.85, 4], [DOOR + 0.1, -0.85], [DOOR + 0.1, 2.2], [-5.8, 3.6], [-5.8, 3.6, 2], [5.4, 3.5, 0]]), ph: 7 },
+    { p: chibi({ top: 0xffc857, legs: 0x5c6680, hair: 0x6b5a48, hat: 0x3e6a6a }), r: route([[5.4, 3.5], [DOOR + 0.1, 2.2], [DOOR + 0.1, -0.85], [-0.55, -0.85, 4], [DOOR + 0.1, -0.85], [DOOR + 0.1, 2.2], [-5.8, 3.6], [-5.8, 3.6, 2], [5.4, 3.5, 0]]), ph: 20 },
   ];
   for (const w of walkers) { w.at = {}; scene.add(w.p); }
 
   // the tourist, with a backpack and a phone held up to the mountain
-  const t = chibi({ top: 0xe8483f, legs: 0x3c4778, hair: 0x1d1a18, hat: 0xfdfbf4, pack: 0x4a7a72 }); t.position.set(-1.8, LOT, 3.1); t.rotation.y = Math.PI + 0.1; scene.add(t);
+  const t = chibi({ top: 0xe8483f, legs: 0x3c4778, hair: 0x1d1a18, hat: 0xfdfbf4, pack: 0x4a7a72 }); t.position.set(-2, LOT, 1.95); t.rotation.y = Math.PI - 0.34; scene.add(t);
   for (const a of t.userData.arms) a.rotation.x = -2.2;
   const phone = new THREE.Group(); phone.position.set(0, 0.34, 0.2); t.add(phone);
   add(phone, new THREE.BoxGeometry(1, 1, 1), 0x25304f, 0, 0, 0, [0.075, 0.12, 0.012], false);

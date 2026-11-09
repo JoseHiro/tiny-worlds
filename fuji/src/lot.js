@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { Kit, toy, lit, label, picture, FONT } from './kit.js';
 import { DOOR, mark } from './shop.js';
+import { vehicle } from './traffic.js';
 
 export const X0 = -8.6, X1 = 8.6, Z0 = -9.2, Z1 = 6.6;
 export const LOT = 0.09; // the car park's surface
@@ -74,22 +75,18 @@ export function lot(scene) {
       k.box(1.03, 0.03, 0.3, 0x8d919c, x, fy + 0.2, fz + fd / 2 + 0.16, { r: 0.01 });
     }
   }
-  // a kei car in the bays on the right: tall, short, round, mint
-  const car = (x, z, ry, col) => {
-    const G = new THREE.Group(), c = new Kit();
-    c.box(1.04, 0.3, 0.62, col, 0, 0.27, 0, { r: 0.12 });
-    c.box(0.72, 0.3, 0.58, col, -0.1, 0.52, 0, { r: 0.12 });
-    c.box(0.3, 0.2, 0.595, 0x3f4d6e, 0.1, 0.54, 0, { r: 0.05 });
-    c.box(0.3, 0.2, 0.595, 0x3f4d6e, -0.27, 0.54, 0, { r: 0.05 });
-    c.box(0.03, 0.2, 0.46, 0x3f4d6e, 0.255, 0.54, 0, { r: 0.012 });
-    c.box(0.76, 0.05, 0.6, 0xfdfbf4, -0.1, 0.68, 0, { r: 0.02 });
-    for (const a of [-0.32, 0.32]) for (const b of [-0.31, 0.31]) { c.add(new THREE.CylinderGeometry(0.12, 0.12, 0.09, 14).rotateX(Math.PI / 2), 0x2d3346, a, 0.13, b); c.add(new THREE.CylinderGeometry(0.06, 0.06, 0.1, 10).rotateX(Math.PI / 2), 0xe8e6e0, a, 0.13, b); }
-    for (const b of [-0.2, 0.2]) { c.ball(0.05, 0xfff5d5, 0.52, 0.3, b); c.ball(0.035, 0xe8483f, -0.52, 0.3, b); }
-    c.box(0.04, 0.05, 0.2, 0xfdfbf4, 0.53, 0.18, 0, { r: 0.01 });
-    const m = c.bake(toy()); m.castShadow = m.receiveShadow = true; G.add(m);
-    G.position.set(x, LOT, z); G.rotation.y = ry; scene.add(G);
-  };
-  car(2.8, 1.25, Math.PI / 2 + 0.02, 0xa8dcc8);
+  // the tunnels at either end of the road: the traffic comes out of one and goes into the other, under a grassy mound
+  const CONCRETE = 0xc9c6c4, DARK = 0x171c30;
+  for (const s of [-1, 1]) {
+    const cx = s * 8.08;
+    k.box(0.08, 0.9, 2.26, DARK, s * 8.6, 0.53, 5.45, { r: 0 }); // (the back, dark)
+    k.box(1.04, 0.05, 2.26, DARK, cx, 0.98, 5.45, { r: 0 });
+    for (const z of [4.34, 6.56]) { k.box(1.1, 0.96, 0.16, CONCRETE, cx, 0.56, z, { r: 0.03 }); k.box(1.04, 0.9, 0.02, DARK, cx, 0.53, z + (z < 5 ? 0.09 : -0.09), { r: 0 }); }
+    k.box(1.18, 0.16, 2.48, CONCRETE, cx, 1.08, 5.45, { r: 0.05 });
+    k.ball(1, 0x6f9a70, s * 8.15, 1.12, 5.45, { s: [0.72, 0.52, 1.5] });
+    k.ball(0.26, 0x4a7a72, s * 8.28, 1.52, 4.92); k.ball(0.2, 0x578676, s * 8.05, 1.5, 5.98);
+  }
+  const parked = vehicle('kei', 0xa8dcc8, false); parked.position.set(2.8, LOT, 1.25); parked.rotation.y = Math.PI / 2 + 0.02; scene.add(parked);
 
   const mesh = k.bake(toy()); mesh.castShadow = mesh.receiveShadow = true; scene.add(mesh);
   scene.add(g.bake(lit()));

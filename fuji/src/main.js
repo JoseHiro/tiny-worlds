@@ -6,6 +6,8 @@ import { mountain, foot, clouds } from './mountain.js';
 import { shop } from './shop.js';
 import { lot } from './lot.js';
 import { people } from './people.js';
+import { traffic } from './traffic.js';
+import { birds } from './birds.js';
 
 // each view: its name, then eye and target wide, then eye and target tall (9:16: further back, so the shop still fits across)
 const VIEWS = {
@@ -47,5 +49,7 @@ clouds(scene, life);
 lot(scene);
 const s = shop(scene, life);
 people(scene, life, s);
+traffic(scene, 0.085, life);
+birds(scene, life);
 
 stage.start();
