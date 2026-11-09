@@ -29,6 +29,26 @@ export function caption(g, [ja, en], a, W, H, top = false) {
   g.restore();
 }
 
+// the closing card every Tiny Worlds film ends on (the user's pick, 2026-11-10): high in the frame and centred, the
+// number spaced out small, the name large in an italic serif, "Made with Claude Opus 5.5" under it, all in white with a
+// soft shadow; fades in after `delay` s. wash: a soft dark band behind it, for a pale or busy background.
+export const nameCard = (no, name, { delay = 1.8, shadow = 'rgba(6,60,110,0.6)', wash = false } = {}) => (g, u, W, H, ts) => {
+  const SANS = '"Avenir Next", "Helvetica Neue", sans-serif';
+  const a = Math.min(1, Math.max(0, (ts - delay) / 0.8));
+  g.save(); g.globalAlpha = a; g.textAlign = 'center';
+  if (wash) {
+    const w = g.createLinearGradient(0, 140, 0, 660); w.addColorStop(0, 'rgba(14,22,40,0)'); w.addColorStop(0.35, 'rgba(14,22,40,0.5)'); w.addColorStop(0.7, 'rgba(14,22,40,0.5)'); w.addColorStop(1, 'rgba(14,22,40,0)');
+    g.fillStyle = w; g.fillRect(0, 140, W, 520);
+  }
+  g.fillStyle = '#ffffff'; g.shadowColor = shadow; g.shadowBlur = 16;
+  g.font = `600 24px ${SANS}`; g.letterSpacing = '6px'; g.fillText(`TINY WORLDS · NO. ${no}`, W / 2, 300);
+  g.letterSpacing = '0px'; g.font = 'italic 400 124px "Hoefler Text", Georgia, serif';
+  const fit = Math.min(124, 124 * (W - 160) / g.measureText(name).width); /* (a long name: smaller, never wider than the frame) */
+  g.font = `italic 400 ${fit}px "Hoefler Text", Georgia, serif`; g.fillText(name, W / 2, 430);
+  g.font = `400 34px ${SANS}`; g.fillText('Made with Claude Opus 5.5', W / 2, 505);
+  g.restore();
+};
+
 // near / far: the depth range (a big diorama from far off: push near out too, or the ground flickers); bg: a plain backdrop instead of the sky (the diorama as an object on a table); floor: [y, size] a pale floor
 // under it that only takes the diorama's shadow
 export async function film({ name, shots, W = 1080, H = 1920, fps = 30, fov = 44, near = null, far = null, preview = false, bg = null, floor = null }) {

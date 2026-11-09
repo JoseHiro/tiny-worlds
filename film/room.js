@@ -3,19 +3,11 @@
 // the screen, the pour-over, the last train in the rain, the one-line fix, lights out, the cat at the feet, the name.
 // Open room/?story=1 and run (await import('/film/room.js')).run(); run(true) for the first and last frames only.
 // The room has its own stage (room/src/stage.js), so it is handed to film.js dressed as the koto one.
-import { film } from './film.js';
+import { film, nameCard } from './film.js';
 
 const R = () => window.__room;
-const SANS = '"Avenir Next", "Helvetica Neue", sans-serif';
 const move = (from, to) => ({ from, to }); // (the captions are English only: cap: [en] shows it alone, large)
-const card = (g, u, W, H, ts) => { // the name over the dark room
-  const a = Math.min(1, Math.max(0, (ts - 1.2) / 0.8));
-  g.save(); g.globalAlpha = a; g.textAlign = 'center'; g.fillStyle = '#fffaf2'; g.shadowColor = 'rgba(0,0,0,0.6)'; g.shadowBlur = 18;
-  g.font = `600 24px ${SANS}`; g.letterSpacing = '6px'; g.fillText('TINY WORLDS · NO. 6', W / 2, 330);
-  g.letterSpacing = '0px'; g.font = `italic 400 120px "Hoefler Text", Georgia, serif`; g.fillText('Late commit.', W / 2, 460);
-  g.font = `400 34px ${SANS}`; g.fillText('A rainy night in a Tokyo one-room flat', W / 2, 540);
-  g.restore();
-};
+const card = nameCard(6, 'Late commit.', { delay: 1.2, shadow: 'rgba(0,0,0,0.6)' }); // the name over the dark room (film.js: every film ends on it)
 
 export const SHOTS = [
   { start: () => R().story.start(), dur: 4.5, cam: move([[3.0, 2.9, 3.8], [-0.2, 0.55, -0.3]], [[2.4, 2.4, 3.1], [-0.4, 0.6, -0.4]]), cap: ['A rainy night, 23:40'] },

@@ -11,6 +11,10 @@ Makes 1080 × 1920 videos (TikTok / Reels / Shorts) from the café story pages. 
    `run(n, true)` films only the first and last frame of each shot, so you can check the framing.
 3. Run `film/make-mina.sh`. It adds the cross-fades and the rain sound, and writes `film/out/mina.mp4` and `mina-silent.mp4`.
 
+## The closing card
+
+Every film ends on the same card, `nameCard(no, name)` in `film/film.js`. It sits high in the frame, centred. "TINY WORLDS · NO. n" is spaced out small, the name is large in an italic serif, and "Made with Claude Opus 5.5" goes under it, all in white. Use it as a shot's `draw`. Over a pale or busy background, pass `{ wash: true }` to put a soft dark band behind it.
+
 ## Café life (`film/cafes.js`)
 
 This film has no story and no single main character. Each café goes about its day, with English captions. Film it from the plain pages (`cafe/nordic.html`, `wa.html` and `barcelona.html`, without `?story`) with `(await import('/film/cafes.js')).run(n)`. Then join the three pieces:

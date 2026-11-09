@@ -2,24 +2,16 @@
 // each shot through the story's own camera (fixed on a platform, or riding beside Sora's train), then a pull back over
 // the whole board with the name. Open rails/?story=1 and run (await import('/film/rails.js')).run(); run(true) for the
 // first and last frames only. The rails world has the room's stage, so it is handed to film.js dressed as the koto one.
-import { film } from './film.js';
+import { film, nameCard } from './film.js';
 
 const R = () => window.__room;
-const SANS = '"Avenir Next", "Helvetica Neue", sans-serif';
 const story = (u, P, T) => { // the story's camera (and the shadow and near plane follow it, as they follow the controls)
   const c = R().story.cam, cam = R().camera;
   P.copy(c.P); T.copy(c.T); R().controls.target.copy(T);
   const near = Math.min(0.25, Math.max(0.004, P.distanceTo(T) * 0.006));
   if (Math.abs(cam.near - near) > near * 0.2) { cam.near = near; cam.updateProjectionMatrix(); }
 };
-const card = (g, u, W, H, ts) => { // the name over the board
-  const a = Math.min(1, Math.max(0, (ts - 1.4) / 0.8));
-  g.save(); g.globalAlpha = a; g.textAlign = 'center'; g.fillStyle = '#1f2430'; g.shadowColor = 'rgba(255,255,255,0.7)'; g.shadowBlur = 16;
-  g.font = `600 24px ${SANS}`; g.letterSpacing = '6px'; g.fillText('TINY WORLDS · NO. 7', W / 2, 330);
-  g.letterSpacing = '0px'; g.font = `italic 400 124px "Hoefler Text", Georgia, serif`; g.fillText('Rush hour.', W / 2, 460);
-  g.font = `400 34px ${SANS}`; g.fillText('Tokyo by rail, 7:30 – 9:00', W / 2, 540);
-  g.restore();
-};
+const card = nameCard(7, 'Rush hour.', { delay: 1.4, wash: true }); // the name over the pale board (film.js: every film ends on it)
 
 export const SHOTS = [
   { start: () => R().story.start(), dur: 6, cam: { fn: story }, cap: ['Sora’s first day at work'] },

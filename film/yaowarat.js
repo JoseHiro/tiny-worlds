@@ -3,7 +3,7 @@
 // stage, and up over the roofs once it is night. The evening's clock is taken in hand so the dusk→night of the page
 // (two minutes) fits in the film without the people rushing.
 // Open bangkok/ and run (await import('/film/yaowarat.js')).run(); run(true) for the first and last frames only.
-import { film } from './film.js';
+import { film, nameCard } from './film.js';
 
 const M = () => window.__market;
 const SANS = '"Avenir Next", "Helvetica Neue", sans-serif', JP = '"Hiragino Sans", sans-serif';
@@ -24,17 +24,7 @@ const tag = (en, ja) => (g, u, W, H, ts) => {
   g.restore();
 };
 // the closing card
-const card = (g, u, W, H, ts) => {
-  const a = Math.min(1, Math.max(0, (ts - 1) / 0.8));
-  g.save(); g.globalAlpha = a;
-  const shade = g.createLinearGradient(0, 120, 0, 680); // (a soft dusk behind the words, over the lit shophouses)
-  shade.addColorStop(0, 'rgba(20, 24, 44, 0)'); shade.addColorStop(0.35, 'rgba(20, 24, 44, 0.55)'); shade.addColorStop(0.7, 'rgba(20, 24, 44, 0.55)'); shade.addColorStop(1, 'rgba(20, 24, 44, 0)');
-  g.fillStyle = shade; g.fillRect(0, 120, W, 560); g.textAlign = 'center'; g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 16; g.fillStyle = '#fffaf2';
-  g.font = `600 24px ${SANS}`; g.letterSpacing = '6px'; g.fillText('TINY WORLDS · NO. 5', W / 2, 300);
-  g.letterSpacing = '0px'; g.font = `italic 400 112px "Hoefler Text", Georgia, serif`; g.fillText('Yaowarat.', W / 2, 420);
-  g.font = `400 34px ${SANS}`; g.fillText('A night market in Bangkok, from dusk to night.', W / 2, 490);
-  g.restore();
-};
+const card = nameCard(5, 'Yaowarat.', { delay: 1, shadow: 'rgba(0,0,0,0.5)', wash: true }); // over the lit shophouses (film.js: every film ends on it)
 
 const tuk = () => M().traffic[0]; // the blue tuk-tuk, heading east in the inside lane
 

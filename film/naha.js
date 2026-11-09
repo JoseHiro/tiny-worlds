@@ -2,20 +2,13 @@
 // like a drone, the beach, the turtle, the garden eels, the clownfish, dolphins leaping, the whale shark through the cut
 // face, then a pull back with the name. Captions are a lower third of their own (say), not film.js's rounded box. Open naha/ and run (await import('/film/naha.js')).run(); run(true) for the first and last frames only.
 import * as THREE from 'three';
-import { film } from './film.js';
+import { film, nameCard } from './film.js';
 
 const N = () => window.__naha;
 const SANS = '"Avenir Next", "Helvetica Neue", sans-serif';
 const glass = (a) => { N().shared.uCutAlpha.value = a; };
 const pass = (i, along, dir = 1) => { const e = N().sea.events[i]; e.run = along; e.wait = 0; e.dir = dir; e.pod.visible = true; e.pod.position.x = -dir * 57 + dir * along; }; // (a passer already this far along its way)
-const card = (g, u, W, H, ts) => { // the name in the pale sky
-  const a = Math.min(1, Math.max(0, (ts - 1.8) / 0.8));
-  g.save(); g.globalAlpha = a; g.textAlign = 'center'; g.fillStyle = '#ffffff'; g.shadowColor = 'rgba(6,60,110,0.6)'; g.shadowBlur = 16;
-  g.font = `600 24px ${SANS}`; g.letterSpacing = '6px'; g.fillText('TINY WORLDS · NO. 2', W / 2, 300);
-  g.letterSpacing = '0px'; g.font = `italic 400 124px "Hoefler Text", Georgia, serif`; g.fillText('Okinawa blue.', W / 2, 430);
-  g.font = `400 34px ${SANS}`; g.fillText('Made with Claude Opus 5.5', W / 2, 505);
-  g.restore();
-};
+const card = nameCard(2, 'Okinawa blue.'); // the name in the sky (film.js: every film ends on it)
 const track = (i, ox, y, z, ty) => (u, P, T) => { const x = N().sea.events[i].pod.position.x; P.set(x + ox, y, z); T.set(x, ty, -26.6); }; // (alongside a passer)
 const sky = () => { // a tropical sky behind the block (the page's is pale, for its panel)
   const c = document.createElement('canvas'); c.width = 256; c.height = 512; const g = c.getContext('2d');

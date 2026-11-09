@@ -1,18 +1,10 @@
 // "Fuji Mart": the shop at dusk, 9:16, about 30 seconds and no story (fuji/DESIGN.md §0): the mountain and the birds, the
 // doors, the till, the road, the tourist's view, then a pull back over the board with the name. Open fuji/ and run
 // (await import('/film/fuji.js')).run(); run(true) for the first and last frames only. It has the room's stage, handed to film.js dressed as the koto one.
-import { film } from './film.js';
+import { film, nameCard } from './film.js';
 
 const R = () => window.__room;
-const SANS = '"Avenir Next", "Helvetica Neue", sans-serif';
-const card = (g, u, W, H, ts) => { // the name in the sky
-  const a = Math.min(1, Math.max(0, (ts - 1.8) / 0.8));
-  g.save(); g.globalAlpha = a; g.textAlign = 'center'; g.fillStyle = '#fdfbf4'; g.shadowColor = 'rgba(30,36,70,0.45)'; g.shadowBlur = 14;
-  g.font = `600 24px ${SANS}`; g.letterSpacing = '6px'; g.fillText('TINY WORLDS · NO. 8', W / 2, 300);
-  g.letterSpacing = '0px'; g.font = `italic 400 132px "Hoefler Text", Georgia, serif`; g.fillText('Fuji Mart.', W / 2, 430);
-  g.font = `400 34px ${SANS}`; g.fillText('Made with Claude Opus 5.5', W / 2, 505);
-  g.restore();
-};
+const card = nameCard(8, 'Fuji Mart.', { shadow: 'rgba(30,36,70,0.45)' }); // the name in the sky (film.js: every film ends on it)
 
 // (a close camera stays on the car park side of z = 4.2: further out, the road's traffic would drive through the lens)
 export const SHOTS = [

@@ -3,7 +3,7 @@
 // from the runway edge as it rolls, lifts off and climbs away into the evening.
 // Open airport/ and run (await import('/film/runway.js')).run(); run(true) for the first and last frames only.
 import * as THREE from 'three';
-import { film } from './film.js';
+import { film, nameCard } from './film.js';
 
 const A = () => window.__airport;
 const SANS = '"Avenir Next", "Helvetica Neue", sans-serif', JP = '"Hiragino Sans", sans-serif';
@@ -20,14 +20,7 @@ const tag = (en, ja) => (g, u, W, H, ts) => {
   g.restore();
 };
 // the closing card: the name, and what it was
-const card = (g, u, W, H, ts) => {
-  const a = Math.min(1, ts / 0.8);
-  g.save(); g.globalAlpha = a; g.textAlign = 'center'; g.shadowColor = 'rgba(0,0,0,0.3)'; g.shadowBlur = 14; g.fillStyle = '#fffaf2';
-  g.font = `600 24px ${SANS}`; g.letterSpacing = '6px'; g.fillText('TINY WORLDS · NO. 4', W / 2, 300);
-  g.letterSpacing = '0px'; g.font = `italic 400 112px "Hoefler Text", Georgia, serif`; g.fillText('Runway 09.', W / 2, 420);
-  g.font = `400 34px ${SANS}`; g.fillText('Takeoffs and landings at the Mini Airport.', W / 2, 490);
-  g.restore();
-};
+const card = nameCard(4, 'Runway 09.', { delay: 0, shadow: 'rgba(0,0,0,0.3)' }); // (film.js: every film ends on it)
 
 // eye P and target T around a flight: offset in the aircraft's own frame (x forward, y up, z to its right)
 const around = (f, [fx, fy, fz], [lx, ly, lz] = [0, 1.5, 0]) => (P, T) => {
