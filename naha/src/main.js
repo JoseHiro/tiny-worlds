@@ -236,10 +236,9 @@ addEventListener('resize', resize);
 resize();
 
 const clock = new THREE.Clock();
-let dropT = 0;
-renderer.setAnimationLoop(() => {
-  const dt = Math.min(clock.getDelta(), 0.05);
-  const t = clock.elapsedTime;
+let dropT = 0, t = 0;
+function step(dt) { // one step of the world (film/naha.js steps it by a fixed 1/30 s)
+  t += dt;
   shared.uTime.value = t;
   // the sea is never still: a few soft drops, and the swimmer's own ripples
   dropT -= dt;
@@ -262,6 +261,10 @@ renderer.setAnimationLoop(() => {
   bh.userData.update(t);
   story.update(t, dt);
   if ((uiT -= dt) <= 0) { uiT = 0.5; showEvents(); }
+}
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  step(dt);
 
   if (fly) {
     fly.t = Math.min(1, fly.t + dt / 1.6);
@@ -317,7 +320,8 @@ const story = new SeaStory({
 $('hanaDay').addEventListener('click', () => { $('tripLink').hidden = true; story.start(); });
 if (new URLSearchParams(location.search).get('from') === 'road') { $('tripLink').hidden = true; story.start(); }
 
-window.__naha = { renderer, scene, camera, controls, ripples, water, snapshot, sea, goView, VIEWS, story,
+window.__naha = { renderer, scene, camera, controls, ripples, water, snapshot, sea, goView, VIEWS, story, step, draw, shared,
+  size(w, h) { refractRT.setSize(w, h); water.material.uniforms.uRes.value.set(w, h); }, // (the film's own size, at pixel ratio 1)
   // (debug) put the camera where the story wants it right now
   settle() {
     if (fly) { camera.position.copy(fly.p1); controls.target.copy(fly.t1); fly = null; }
