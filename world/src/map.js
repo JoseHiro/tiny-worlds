@@ -21,7 +21,7 @@ export function ll(lat, lon, r = R) {
   const phi = (90 - lat) * D, th = (lon + 180) * D;
   return vec(-r * Math.sin(phi) * Math.cos(th), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(th));
 }
-const at = (code, r = R) => ll(CITIES[code][2], CITIES[code][3], r);
+const at = (code, r = R) => ll(CITIES[code][4] ?? CITIES[code][2], CITIES[code][5] ?? CITIES[code][3], r);
 const name = (code) => L([CITIES[code][0], CITIES[code][1]]);
 
 // ---------- renderer, scene ----------
@@ -138,6 +138,14 @@ const MODELS = {
     g.add(cyl(0.05, 0.07, 1.2, mat(0xc9a24a), 0, 5.0, 0, 6));
     return g;
   },
+  fuji() { // Fuji Mart: the mountain with its snow, a little shop at its foot
+    const g = new THREE.Group();
+    g.add(cyl(0.5, 1.75, 2.4, mat(0x4a5488), 0, 1.2, -0.3, 16));
+    g.add(cyl(0.26, 0.82, 1.4, mat(0xffc4cb), 0, 3.05, -0.3, 16));
+    g.add(box(1.5, 0.65, 0.7, mat(0xf4f1ea), 0, 0.33, 1.2));
+    g.add(box(1.56, 0.2, 0.76, mat(0x2f55c4), 0, 0.68, 1.2));
+    return g;
+  },
   sagrada() { // Barcelona: the towers of the Sagrada Família
     const g = new THREE.Group(), stone = mat(0xd9c49a), tip = mat(0xe8673c);
     g.add(box(2.4, 1.2, 1.2, stone, 0, 0.6, 0));
@@ -183,7 +191,7 @@ for (const [code, c] of Object.entries(CITIES)) {
     const m = MODELS[world.model]();
     m.position.y = 0.25;
     g.add(m);
-    g.scale.setScalar(1.1);
+    g.scale.setScalar(world.scale ?? 1.1);
     stand(g, p);
     picks.push({ pos: at(code, R + 2.5), kind: 'world', ref: world });
   } else {
@@ -354,7 +362,7 @@ function flyTo([lat, lon, dist], dur = 2.2) {
   fly = { t: 0, dur, d0: p0.length(), dir0: p0.normalize(), dir1: ll(lat, lon, 1).normalize(), d1: dist };
   for (const b of $('views')?.children ?? []) b.classList.toggle('on', VIEWS[b.dataset.v]?.[0] === lat && VIEWS[b.dataset.v]?.[1] === lon);
 }
-const goTo = (code, dist) => flyTo([CITIES[code][2] - 10, CITIES[code][3], dist], 1.4);
+const goTo = (code, dist) => flyTo([(CITIES[code][4] ?? CITIES[code][2]) - 10, CITIES[code][5] ?? CITIES[code][3], dist], 1.4);
 if ($('views')) $('views').onclick = (e) => { const v = e.target.closest('button')?.dataset.v; if (v) flyTo(VIEWS[v]); };
 controls.addEventListener('start', () => { fly = null; });
 
