@@ -146,6 +146,24 @@ const MODELS = {
     g.add(box(1.56, 0.2, 0.76, mat(0x2f55c4), 0, 0.68, 1.2));
     return g;
   },
+  karst() { // Longtail lagoon: two limestone towers, green on top, and a longtail boat on turquoise water
+    const g = new THREE.Group(), rock = mat(0xddd5c2), green = mat(0x4f8a2e);
+    g.add(cyl(1.6, 1.6, 0.12, mat(0x1fc2b8, { roughness: 0.2 }), 0, 0.06, 0, 16));
+    for (const [x, z, h] of [[-0.75, -0.4, 3.2], [0.8, -0.2, 2.4]]) { g.add(cyl(0.5, 0.58, h, rock, x, h / 2, z, 9)); g.add(cyl(0.05, 0.56, 0.8, green, x, h + 0.38, z, 9)); }
+    g.add(box(1.1, 0.16, 0.26, mat(0xc9733c), 0.1, 0.18, 0.95));
+    g.add(box(0.08, 0.5, 0.1, mat(0xc9733c), 0.66, 0.4, 0.95)).rotation.z = -0.3;
+    g.add(box(0.12, 0.12, 0.12, mat(0x7cc94a), 0.74, 0.67, 0.95));
+    return g;
+  },
+  domes() { // Blue domes: white cubes stepping down to deep blue water, and a blue-domed church on top
+    const g = new THREE.Group(), white = mat(0xf7f3ea), blue = mat(0x1f5fbf, { roughness: 0.3 });
+    g.add(cyl(1.6, 1.6, 0.12, mat(0x1767c2, { roughness: 0.2 }), 0, 0.06, 0, 16));
+    for (const [x, y, z, w] of [[-0.8, 0.35, 0.4, 0.6], [0.1, 0.35, 0.6, 0.7], [0.85, 0.35, 0.35, 0.55], [-0.5, 0.95, -0.2, 0.65], [0.55, 0.95, -0.1, 0.6], [0.0, 1.55, -0.6, 0.8]]) g.add(box(w, 0.6, 0.55, white, x, y, z));
+    g.add(cyl(0.3, 0.3, 0.2, white, 0, 1.95, -0.6, 12));
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), blue); dome.position.set(0, 2.05, -0.6); g.add(dome);
+    g.add(box(0.05, 0.3, 0.05, white, 0, 2.5, -0.6)); g.add(box(0.18, 0.05, 0.05, white, 0, 2.55, -0.6));
+    return g;
+  },
   sagrada() { // Barcelona: the towers of the Sagrada Família
     const g = new THREE.Group(), stone = mat(0xd9c49a), tip = mat(0xe8673c);
     g.add(box(2.4, 1.2, 1.2, stone, 0, 0.6, 0));

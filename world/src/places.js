@@ -18,6 +18,8 @@ export const CITIES = {
   BKK: ['バンコク', 'Bangkok', 13.75, 100.50],
   KYO: ['京都', 'Kyoto', 35.01, 135.77],
   FUJ: ['富士山', 'Mt Fuji', 35.36, 138.73, 37.5, 137.6], // (its model stands at the last two: at its real place it would sit on top of Mini Airport's)
+  PHI: ['ピピ島', 'Phi Phi Islands', 7.68, 98.77],
+  JTR: ['サントリーニ島', 'Santorini', 36.46, 25.38],
   BCN: ['バルセロナ', 'Barcelona', 41.39, 2.17],
   ARN: ['ストックホルム', 'Stockholm', 59.33, 18.07],
 };
@@ -40,6 +42,12 @@ export const WORLDS = [
   { city: 'BKK', model: 'tuktuk', title: ['バンコクの夜市', 'Bangkok night market'],
     text: ['ネオン看板のヤワラート通りと色テントの路地。夕方から夜へ、屋台が開いていく。パッタイ屋の娘ノーイの物語。', 'Yaowarat Road under its neon signs and a lane of coloured tents. Dusk turns to night and the stalls open; the story of Noi, of the pad thai stall.'],
     links: [{ href: '../bangkok/', label: ['夜市', 'Night market'] }, { href: '../bangkok/?story=1', label: ['物語', 'Story'] }, { href: '../bangkok/parts.html', label: ['パーツ', 'Parts'] }] },
+  { city: 'PHI', model: 'karst', scale: 0.8, title: ['ロングテールの入り江', 'Longtail lagoon'],
+    text: ['石灰岩の崖にかこまれた、透きとおったエメラルドの入り江。リボンを結んだロングテールボート、サンゴと魚。', 'Clear emerald water ringed by limestone cliffs, with ribbon-tied longtail boats, coral and fish.'],
+    links: [{ href: '../lagoon/', label: ['開く', 'Open'] }] },
+  { city: 'JTR', model: 'domes', scale: 0.8, title: ['青いドームの村', 'Blue domes'],
+    text: ['火山の崖にしがみつく白い村と、青いドームの教会。深い青のカルデラに黒い火山島。', 'A white village on a volcanic cliff, a blue-domed church, and the deep blue caldera with its dark volcano island.'],
+    links: [{ href: '../santorini/', label: ['開く', 'Open'] }] },
   { city: 'BCN', model: 'sagrada', title: ['バルセロナ', 'Barcelona'],
     text: ['テラスのカフェと、本当の大きさのサグラダ・ファミリア。', 'A café terrace, and the Sagrada Família at full size.'],
     links: [{ href: '../cafe/barcelona.html', label: ['テラス', 'Terrace'] }, { href: '../cafe/sagrada.html', label: ['サグラダ（制作中）', 'Sagrada (WIP)'] }, { href: '../cafe/parts.html', label: ['カフェのパーツ', 'Café parts'] }] },

@@ -20,7 +20,7 @@ const sky = () => { // a tropical sky behind the block (the page's is pale, for 
 };
 // a lower third: a small spaced label over a short line, then the words, sliding up as they come in and fading at the end
 // (bottom left, above the app's own buttons and caption, clear of its column of icons on the right)
-const say = (kick, text) => (g, u, W, H, ts, dur = 4) => {
+export const say = (kick, text) => (g, u, W, H, ts, dur = 4) => {
   const a = Math.min(1, Math.max(0, (ts - 0.25) / 0.5)) * Math.min(1, (1 - u) * 8), e = 1 - (1 - a) ** 3, x = 84, y = H - 470 + (1 - e) * 36;
   g.save(); g.globalAlpha = a; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
   const sc = g.createLinearGradient(0, H - 720, 0, H); sc.addColorStop(0, 'rgba(2,28,52,0)'); sc.addColorStop(0.55, 'rgba(2,28,52,0.38)'); sc.addColorStop(1, 'rgba(2,28,52,0.5)');
