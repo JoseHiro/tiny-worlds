@@ -4,6 +4,8 @@
 // it, the windmill on the ridge, the zigzag steps down the face to the harbour with its tavernas and pier. Everything that
 // doesn't move is one mesh (and the domes, the pools: one each, for their gloss).
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Kit, toy } from '../../fuji/src/kit.js';
 import { at, facing, terraceY, rim, faceTop, profile, ROWS, ROW, FACE, HARBOR, RC } from './land.js';
 
@@ -21,7 +23,26 @@ const cellD = (row) => (row < ROWS ? FACE + row * ROW + 0.38 : FACE + ROWS * ROW
 const vaultG = new THREE.CylinderGeometry(1, 1, 1, 16, 1, false, 0, Math.PI).rotateZ(Math.PI / 2); // (along x, arched up)
 const archG = new THREE.CylinderGeometry(1, 1, 1, 16, 1, false, -Math.PI / 2, Math.PI).rotateX(-Math.PI / 2); // (along z: an arch seen from the front)
 const domeG = new THREE.SphereGeometry(1, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2);
-const drumG = new THREE.CylinderGeometry(1, 1, 1, 24), coneG = new THREE.ConeGeometry(1, 1, 18), ballG = new THREE.IcosahedronGeometry(1, 1);
+const drumG = new THREE.CylinderGeometry(1, 1, 1, 24), coneG = new THREE.ConeGeometry(1, 1, 18), ballG = new THREE.SphereGeometry(1, 9, 7);
+
+// fuji's toy box, but kept indexed: its Kit unshares every vertex, three times the memory for a village this size. So every
+// part here is an indexed geometry (no icosahedra), and boxes are rounder (three segments to the corner: soft plaster).
+const M4 = new THREE.Matrix4(), Q4 = new THREE.Quaternion(), E4 = new THREE.Euler(), P4 = new THREE.Vector3(), S4 = new THREE.Vector3(), C4 = new THREE.Color();
+// a rounded box with its corners' vertices shared (three's comes unshared: 1764 vertices at three segments, ~300 shared)
+const rounded = (w, h, d, seg, r) => { const g = new RoundedBoxGeometry(w, h, d, seg, r); g.deleteAttribute('uv'); const m = mergeVertices(g, 1e-5); g.dispose(); return m; };
+class IKit extends Kit {
+  add(geo, color, x = 0, y = 0, z = 0, { rx = 0, ry = 0, rz = 0, s = 1 } = {}) {
+    const g = geo.clone();
+    for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal') g.deleteAttribute(k);
+    g.applyMatrix4(M4.compose(P4.set(x, y, z), Q4.setFromEuler(E4.set(rx, ry, rz)), Array.isArray(s) ? S4.set(...s) : S4.setScalar(s)));
+    C4.set(color); const n = g.attributes.position.count, a = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { a[i * 3] = C4.r; a[i * 3 + 1] = C4.g; a[i * 3 + 2] = C4.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(a, 3));
+    if (!g.index) g.setIndex([...Array(n).keys()]);
+    this.parts.push(g); return this;
+  }
+  box(w, h, d, color, x, y, z, { r = Math.min(w, h, d) * 0.22, seg = 3, ...o } = {}) { return this.add(r > 0 ? rounded(w, h, d, seg, r) : new THREE.BoxGeometry(w, h, d), color, x, y, z, o); }
+}
 
 // the special places: [angle, row, width, what]
 const SPECIAL = [
@@ -32,15 +53,16 @@ const SPECIAL = [
 const blocked = (a, row, w) => SPECIAL.some(([sa, sr, sw]) => sr === row && Math.abs(a - sa) * rad * (RC + cellD(row)) < (w + sw) / 2 + 0.08);
 
 function house(k, pools, f, w, h, dp, { col = WHITE, vault = false, top = true } = {}) {
-  k.box(w, h, dp, col, ...f.P(0, h / 2, 0), { ry: f.ry, r: 0.06 });
+  k.box(w, h, dp, col, ...f.P(0, h / 2, 0), { ry: f.ry, r: 0.13 });
   const door = rnd() < 0.85 ? BLUE : rnd() < 0.5 ? 0x5fb6e6 : 0xb8473a;
   const dx = (rnd() - 0.5) * Math.max(0, w - 0.42);
-  k.box(0.19, 0.32, 0.03, door, ...f.P(dx, 0.27, dp / 2), { ry: f.ry, r: 0 });
+  k.box(0.19, 0.24, 0.03, door, ...f.P(dx, 0.21, dp / 2), { ry: f.ry, r: 0 });
+  k.add(archG, door, ...f.P(dx, 0.33, dp / 2), { ry: f.ry, s: [0.095, 0.095, 0.03] }); // (an arched top)
   const wx = dx > 0 ? dx - 0.3 : dx + 0.3;
-  if (Math.abs(wx) < w / 2 - 0.1) k.box(0.14, 0.15, 0.03, door, ...f.P(wx, 0.4, dp / 2), { ry: f.ry, r: 0 });
-  if (h > 1.25) k.box(0.15, 0.17, 0.03, door, ...f.P(-dx * 0.6, h - 0.32, dp / 2), { ry: f.ry, r: 0 });
+  if (Math.abs(wx) < w / 2 - 0.1) k.box(0.14, 0.15, 0.03, door, ...f.P(wx, 0.4, dp / 2), { ry: f.ry, r: 0.012, seg: 1 });
+  if (h > 1.25) k.box(0.15, 0.17, 0.03, door, ...f.P(-dx * 0.6, h - 0.32, dp / 2), { ry: f.ry, r: 0.012, seg: 1 });
   if (vault) { k.add(vaultG, col, ...f.P(0, h - 0.01, 0), { ry: f.ry, s: [w * 0.97, dp * 0.36, dp * 0.49] }); return; }
-  k.box(w, 0.1, 0.05, col, ...f.P(0, h + 0.04, dp / 2 - 0.025), { ry: f.ry, r: 0.02 }); // (the terrace's low wall)
+  k.box(w - 0.06, 0.11, 0.06, col, ...f.P(0, h + 0.03, dp / 2 - 0.05), { ry: f.ry, r: 0.028, seg: 2 }); // (the terrace's low wall)
   if (!top) return;
   const r = rnd();
   if (r < 0.14 && w > 0.85) pools.box(w * 0.6, 0.03, dp * 0.5, 0x3fd6e8, ...f.P(0, h + 0.005, 0.02), { ry: f.ry, r: 0 }); // a pool
@@ -62,7 +84,7 @@ function flowers(k, f, x, y, z) {
 }
 
 function church(k, domes, f, w, h, dp, dr) {
-  k.box(w, h, dp, WHITE, ...f.P(0, h / 2, 0), { ry: f.ry, r: 0.05 });
+  k.box(w, h, dp, WHITE, ...f.P(0, h / 2, 0), { ry: f.ry, r: 0.12 });
   k.box(0.2, 0.36, 0.03, BLUE, ...f.P(0, 0.28, dp / 2), { ry: f.ry, r: 0 });
   k.add(archG, WHITE, ...f.P(0, 0.46, dp / 2 + 0.005), { ry: f.ry, s: [0.12, 0.12, 0.03] });
   k.add(drumG, WHITE, ...f.P(0, h + 0.1, 0), { ry: f.ry, s: [dr * 0.9, 0.22, dr * 0.9] });
@@ -76,9 +98,9 @@ function church(k, domes, f, w, h, dp, dr) {
 
 function belfry(k, f, scene) {
   const T = 0.28;
-  k.box(0.86, 0.8, T, WHITE, ...f.P(0, 0.4, 0), { ry: f.ry, r: 0.03 });
+  k.box(0.86, 0.8, T, WHITE, ...f.P(0, 0.4, 0), { ry: f.ry, r: 0.05 });
   for (const lx of [-0.37, 0, 0.37]) k.box(0.12, 0.5, T, WHITE, ...f.P(lx, 1.05, 0), { ry: f.ry, r: 0.02 });
-  k.box(0.86, 0.14, T, WHITE, ...f.P(0, 1.36, 0), { ry: f.ry, r: 0.03 });
+  k.box(0.86, 0.14, T, WHITE, ...f.P(0, 1.36, 0), { ry: f.ry, r: 0.05 });
   for (const lx of [-0.21, 0.21]) k.box(0.1, 0.36, T, WHITE, ...f.P(lx, 1.6, 0), { ry: f.ry, r: 0.02 });
   k.add(archG, WHITE, ...f.P(0, 1.78, 0), { ry: f.ry, s: [0.26, 0.2, T] });
   k.box(0.03, 0.22, 0.03, WHITE, ...f.P(0, 2.08, 0), { ry: f.ry, r: 0 });
@@ -121,19 +143,28 @@ function steps(k) {
     for (let s = j ? 1 : 0; s <= N; s++) {
       const u = s / N, a = from + (to - from) * u, y = y0 + (y1 - y0) * (j + u) / LEGS;
       const d = FACE * Math.pow(Math.max(0.01, y) / faceTop(a), 1 / 0.7) + 0.08;
-      const [x, z] = at(a, d); path.push([x, y, z, a]);
+      const [x, z] = at(a, d); path.push([x, y, z, a, j]);
     }
   }
+  // the way: one smooth white ribbon down the face (a top, a sea side and a cliff side, each with its own normal, both
+  // windings, since the legs run both ways), and a low rounded wall along its sea side
+  const pos = [], nor = [], idx = [], W = 0.22, DEEP = 0.42;
   for (const [x, y, z, a] of path) {
-    const ry = facing(a), f = frame(x, y, z, ry);
-    k.box(0.26, 0.5, 0.44, PAVE, ...f.P(0, -0.25, 0), { ry, r: 0 });
-    k.box(0.26, 0.13, 0.05, WHITE, ...f.P(0, 0.06, 0.21), { ry, r: 0 });
+    const f = frame(x, y, z, facing(a)), sea = [Math.sin(f.ry), 0, Math.cos(f.ry)];
+    for (const [lz, ly, n] of [[-W, 0, [0, 1, 0]], [W, 0, [0, 1, 0]], [W, 0, sea], [W, -DEEP, sea], [-W, -DEEP, sea.map((v) => -v)], [-W, 0, sea.map((v) => -v)]]) { pos.push(...f.P(0, ly, lz)); nor.push(...n); }
+  }
+  for (let i = 0; i < path.length - 1; i++) for (const [p, q] of [[0, 1], [2, 3], [4, 5]]) { const A = i * 6, B = A + 6; idx.push(A + p, B + p, A + q, A + q, B + p, B + q, A + q, B + p, A + p, B + q, B + p, A + q); }
+  const way = new THREE.BufferGeometry(); way.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); way.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); way.setIndex(idx);
+  k.add(way, PAVE);
+  for (let j = 0; j < LEGS; j++) {
+    const leg = path.filter((p) => p[4] === j);
+    k.tube(leg.map(([x, y, z, a]) => frame(x, y, z, facing(a)).P(0, 0.06, W - 0.03)), 0.05, WHITE, 28);
   }
   return path;
 }
 
 export function village(scene) {
-  const k = new Kit(), domes = new Kit(), pools = new Kit();
+  const k = new IKit(), domes = new IKit(), pools = new IKit();
 
   // the houses, row by row up the terraces, and along the top
   for (let row = 0; row <= ROWS; row++) {
@@ -163,16 +194,16 @@ export function village(scene) {
   flowers(k, ch, 0.66, 1.1, 0.39);
 
   // the hero's terrace at the top: paved, a low wall at its edge, a bench
-  { const f = slot(-101, 6.55, rim(-101)); k.box(4.4, 0.06, 0.9, PAVE, ...f.P(0, 0.03, 0.1), { ry: f.ry, r: 0.02 }); k.box(4.4, 0.16, 0.08, WHITE, ...f.P(0, 0.08, 0.53), { ry: f.ry, r: 0.03 }); }
+  { const f = slot(-101, 6.55, rim(-101)); k.box(4.4, 0.06, 0.9, PAVE, ...f.P(0, 0.03, 0.1), { ry: f.ry, r: 0.02 }); k.box(4.4, 0.16, 0.08, WHITE, ...f.P(0, 0.08, 0.53), { ry: f.ry, r: 0.05 }); }
   // the café terrace: two tables under parasols
-  { const f = slot(-88, cellD(5), rim(-88)); k.box(1.5, 0.06, 0.8, PAVE, ...f.P(0, 0.03, 0), { ry: f.ry, r: 0.02 }); k.box(1.5, 0.16, 0.07, WHITE, ...f.P(0, 0.08, 0.4), { ry: f.ry, r: 0.03 });
+  { const f = slot(-88, cellD(5), rim(-88)); k.box(1.5, 0.06, 0.8, PAVE, ...f.P(0, 0.03, 0), { ry: f.ry, r: 0.02 }); k.box(1.5, 0.16, 0.07, WHITE, ...f.P(0, 0.08, 0.4), { ry: f.ry, r: 0.05 });
     for (const lx of [-0.4, 0.4]) { const [x, y, z] = f.P(lx, 0, 0); k.add(drumG, BLUE, x, y + 0.17, z, { s: [0.11, 0.03, 0.11] }); k.add(drumG, BLUE, x, y + 0.085, z, { s: [0.02, 0.17, 0.02] }); k.add(drumG, 0xe8e2d4, x, y + 0.3, z, { s: [0.012, 0.6, 0.012] }); k.add(coneG, 0xfbfaf6, x, y + 0.62, z, { s: [0.32, 0.12, 0.32] }); } }
 
   // the windmill on the ridge
   const sails = windmill(k, slot(-68, cellD(5) - 0.2, rim(-68)), scene);
 
   // cave houses dug into the top of the face
-  for (const a of [-131, -127.5, -84, -79.5, -75, -168, -172.5]) { const d = 1.72, f = slot(a, d, profile(d, a) - 0.25); k.box(0.7, 0.62, 0.3, WHITE, ...f.P(0, 0.31, 0.05), { ry: f.ry, r: 0.05 }); k.box(0.17, 0.3, 0.03, BLUE, ...f.P(0, 0.2, 0.2), { ry: f.ry, r: 0 }); k.add(archG, BLUE, ...f.P(0, 0.35, 0.2), { ry: f.ry, s: [0.085, 0.085, 0.03] }); }
+  for (const a of [-131, -127.5, -84, -79.5, -75, -168, -172.5]) { const d = 1.72, f = slot(a, d, profile(d, a) - 0.25); k.box(0.7, 0.62, 0.3, WHITE, ...f.P(0, 0.31, 0.05), { ry: f.ry, r: 0.1 }); k.box(0.17, 0.3, 0.03, BLUE, ...f.P(0, 0.2, 0.2), { ry: f.ry, r: 0 }); k.add(archG, BLUE, ...f.P(0, 0.35, 0.2), { ry: f.ry, s: [0.085, 0.085, 0.03] }); }
 
   // the steps down to the harbour
   const path = steps(k);
