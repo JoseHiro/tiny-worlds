@@ -31,7 +31,7 @@ export const terraceY = (a, i) => faceTop(a) + (rim(a) - faceTop(a)) * Math.min(
 export const vill = (a) => sm(-192, -180, a) * (1 - sm(-63, -57, a));
 export function profile(d, a) {
   const H = rim(a), R = faceTop(a);
-  if (d < 0) return Math.max(FLOOR + 0.15, d * 1.1); // (the sea floor falls away fast: the caldera is deep)
+  if (d < 0) return Math.max(FLOOR + 0.15, d * 0.55 - 0.05); // (a shelf at the cliffs' foot you can see through the water, then the deep caldera)
   if (d < FACE) return R * Math.pow(d / FACE, 0.7);
   if (d < FACE + ROWS * ROW) {
     const u = (d - FACE) / ROW, i = Math.floor(u), v = vill(a);
@@ -103,7 +103,7 @@ function groundMat(side) {
         vec3 lava = mix(mix(vec3(0.17, 0.15, 0.15), vec3(0.3, 0.27, 0.26), n3(vWP * 2.6)), vec3(0.42, 0.22, 0.16), smoothstep(0.55, 0.75, n3(vWP * 1.1 + 4.0)));
         if (vS > 0.5) col = vWP.y > 0.0 ? strata(vWP) : mix(vec3(0.3, 0.28, 0.3), vec3(0.18, 0.18, 0.22), smoothstep(0.0, -2.0, vWP.y));
         else if (vI < 1.0) col = lava; /* (the volcano island: dark, with rusty patches) */
-        else if (vWP.y < -0.03) col = mix(mix(vec3(0.88, 0.85, 0.76), vec3(0.3, 0.29, 0.32), smoothstep(-0.25, -1.4, vWP.y)), lava, 1.0 - smoothstep(1.0, 2.2, vI)); /* (the sea floor: pale in the shallows, dark round the island) */
+        else if (vWP.y < -0.03) col = mix(mix(mix(vec3(0.9, 0.87, 0.78), vec3(0.16, 0.24, 0.42), smoothstep(-0.3, -1.9, vWP.y)), vec3(0.32, 0.3, 0.32), smoothstep(0.62, 0.78, n3(vWP * 3.0)) * 0.45 * (1.0 - smoothstep(-0.6, -1.6, vWP.y))), lava, 1.0 - smoothstep(1.0, 2.2, vI)); /* (pale sand and pebbles, dark volcanic rocks scattered over it) */ /* (the sea floor: pale in the shallows, dark round the island) */
         else if (vD < ${FACE.toFixed(1)} + 0.05) col = mix(strata(vWP), vec3(0.93, 0.9, 0.84), (1.0 - steep) * step(vWP.y, 0.6)); /* (the face; the quay paved) */
         else if (vD < ${(FACE + ROWS * ROW + 0.25).toFixed(2)}) col = mix(mix(earth, strata(vWP), steep), mix(vec3(0.94, 0.91, 0.85), vec3(0.97, 0.96, 0.93), steep), vV); /* (the village: paving and white walls; beyond it rough slope) */
         else col = mix(earth, vec3(0.94, 0.91, 0.85), vV * (1.0 - smoothstep(0.6, 1.8, vD - ${(FACE + ROWS * ROW).toFixed(1)}))); /* (paved along the top of the village) */

@@ -45,7 +45,7 @@ export function sea(scene, life, sunDir) {
         float ang = degrees(atan(q.y, q.x)); if (ang > 0.0) ang -= 360.0;
         float hb = (1.0 - smoothstep(4.0, 9.0, abs(ang - (${f(HARBOR)})))) * smoothstep(-5.5, -2.0, d); /* (the harbour's shallows) */
         float e = length((vWP.xz - vec2(${f(ISLE.x)}, ${f(ISLE.z)})) / vec2(${f(ISLE.rx)}, ${f(ISLE.rz)}));
-        vec3 deep = vec3(0.004, 0.05, 0.22), mid = vec3(0.01, 0.16, 0.5), shallow = vec3(0.02, 0.5, 0.6);
+        vec3 deep = vec3(0.008, 0.1, 0.38), mid = vec3(0.02, 0.27, 0.62), shallow = vec3(0.03, 0.55, 0.62);
         vec3 col = mix(deep, mid, smoothstep(-7.0, -0.5, d) * 0.85 + (1.0 - smoothstep(1.0, 1.6, e)) * 0.2);
         col = mix(col, shallow, hb);
         float lap = (smoothstep(-0.55, 0.05, d) + (1.0 - smoothstep(0.9, 1.12, e))) * (0.55 + 0.45 * sin(uTime * 1.5 + vWP.x * 0.7 + vWP.z * 0.5)); /* (the foam at the cliffs' foot and round the island) */
@@ -54,7 +54,7 @@ export function sea(scene, life, sunDir) {
         col = mix(col, vec3(0.92, 0.97, 1.0), foam);
         diffuseColor.rgb = col;
         { vec3 V = normalize(cameraPosition - vWP); float look = 1.0 - max(dot(V, vec3(0.0, 1.0, 0.0)), 0.0);
-          diffuseColor.a = clamp(mix(0.72, 0.95, pow(look, 1.5)) - hb * 0.42 + foam, 0.0, 0.97); }`)
+          diffuseColor.a = clamp(mix(0.32, 0.86, 1.0 - smoothstep(-5.0, -0.6, d)) + pow(look, 2.0) * 0.22 - hb * 0.25 + foam, 0.0, 0.95); } /* (clear: the floor shows near the cliffs, the bay deepens to cobalt) */`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         { vec2 s = slope(vWP.xz); normal = normalize((viewMatrix * vec4(normalize(vec3(-s.x, 1.0, -s.y)), 0.0)).xyz); }`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
