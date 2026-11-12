@@ -20,6 +20,7 @@ export const CITIES = {
   FUJ: ['富士山', 'Mt Fuji', 35.36, 138.73, 37.5, 137.6], // (its model stands at the last two: at its real place it would sit on top of Mini Airport's)
   PHI: ['ピピ島', 'Phi Phi Islands', 7.68, 98.77],
   JTR: ['サントリーニ島', 'Santorini', 36.46, 25.38],
+  VCE: ['ヴェネツィア', 'Venice', 45.44, 12.33],
   BCN: ['バルセロナ', 'Barcelona', 41.39, 2.17],
   ARN: ['ストックホルム', 'Stockholm', 59.33, 18.07],
 };
@@ -51,6 +52,9 @@ export const WORLDS = [
   { city: 'CTS', model: 'snowcastle', scale: 0.8, title: ['雪まつり', 'Snow festival'],
     text: ['札幌の雪まつりのような雪の町。雪の城、氷像、屋台、路面電車。', 'A snowy town at festival time, like Sapporo: a snow castle, ice sculptures, food stalls and trams.'],
     links: [{ href: '../snowfest/', label: ['開く', 'Open'] }, { href: '../snowfest/parts.html', label: ['部品', 'Parts'] }] },
+  { city: 'VCE', model: 'venice', title: ['運河の町', 'Venice'],
+    text: ['ヴェネツィアのような運河の町。水から立ち上がる館、ゴンドラ、水上バス、大広場の鐘楼と鳩。', 'A canal town like Venice: palaces rising out of the water, gondolas, the water bus, the bell tower and the pigeons of the great square.'],
+    links: [{ href: '../venice/', label: ['開く', 'Open'] }, { href: '../venice/parts.html', label: ['部品', 'Parts'] }] },
   { city: 'BCN', model: 'sagrada', title: ['バルセロナ', 'Barcelona'],
     text: ['テラスのカフェと、本当の大きさのサグラダ・ファミリア。', 'A café terrace, and the Sagrada Família at full size.'],
     links: [{ href: '../cafe/barcelona.html', label: ['テラス', 'Terrace'] }, { href: '../cafe/sagrada.html', label: ['サグラダ（制作中）', 'Sagrada (WIP)'] }, { href: '../cafe/parts.html', label: ['カフェのパーツ', 'Café parts'] }] },
@@ -60,5 +64,5 @@ export const WORLDS = [
 ];
 
 // every route starts at Mini Airport
-export const ROUTES = ['CTS', 'SDJ', 'ITM', 'FUK', 'OKA', 'HIJ', 'ICN', 'TPE', 'PVG', 'HKG', 'BKK', 'BCN', 'ARN'];
+export const ROUTES = ['CTS', 'SDJ', 'ITM', 'FUK', 'OKA', 'HIJ', 'ICN', 'TPE', 'PVG', 'HKG', 'BKK', 'BCN', 'ARN', 'VCE'];
 export const LIVERY_KEYS = ['sunrise', 'lagoon', 'midnight'];

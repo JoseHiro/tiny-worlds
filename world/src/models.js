@@ -147,4 +147,21 @@ export const JAPAN = {
     put(g, rb(0.12, 0.03, 0.12, 0.01), 0xe8673c, 0.45, y + 0.25, 1.05);
     return g;
   },
+  venice() { // Venice (outside Japan, made the same new way): a canal through coloured houses, the bell tower, a domed church, a gondola
+    const g = new THREE.Group(), y = patch(g, 2.1, 0xd9cfbf, 6);
+    put(g, rb(4.0, 0.04, 0.9, 0.02), 0x3fa79a, 0, y + 0.0, 0.55, { ry: 0.25, opts: { roughness: 0.15 } }); // the canal
+    for (const [x, z, col, h] of [[-1.2, -0.25, 0xe2b867, 1.1], [-0.6, -0.4, 0xec9b85, 1.3], [1.3, 1.25, 0xd27a4f, 1.0], [0.5, 1.45, 0xb9cfa6, 0.9], [-1.5, 1.0, 0xb8513f, 0.95]]) {
+      put(g, rb(0.55, h, 0.5, 0.06), col, x, y + h / 2, z);
+      put(g, coneG(0.42, 0.22, 4), 0xc7643f, x, y + h + 0.11, z, { ry: Math.PI / 4 });
+      put(g, rb(0.12, 0.2, 0.02, 0.01), 0x2c3a4f, x, y + h * 0.6, z + 0.26);
+    }
+    put(g, rb(0.36, 2.6, 0.36, 0.04), 0xb5533c, 1.2, y + 1.3, -0.6); // the bell tower
+    put(g, rb(0.4, 0.3, 0.4, 0.04), 0xf4efe6, 1.2, y + 2.75, -0.6);
+    put(g, coneG(0.3, 0.6, 4), 0x6fa594, 1.2, y + 3.2, -0.6, { ry: Math.PI / 4 });
+    put(g, rb(1.1, 0.6, 0.8, 0.08), 0xf4efe6, 0.25, y + 0.3, -0.75); // the church
+    for (const [x, s] of [[0.25, 0.28], [-0.12, 0.18], [0.62, 0.18]]) put(g, new THREE.SphereGeometry(s, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0x6fa594, x, y + 0.6, -0.75);
+    put(g, rb(0.9, 0.06, 0.16, 0.03), 0x1e2433, -0.3, y + 0.05, 0.45, { ry: 0.25 }); // a gondola
+    put(g, rb(0.06, 0.16, 0.06, 0.02), 0xd8383a, -0.62, y + 0.15, 0.53);
+    return g;
+  },
 };
