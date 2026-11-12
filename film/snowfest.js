@@ -16,11 +16,13 @@ const card = nameCard(11, 'Snow festival.', { shadow: 'rgba(20,50,100,0.6)' });
 const ease = (u) => u * u * (3 - 2 * u);
 const beside = (get, [ox, oy, oz], [tx, ty, tz] = [0, 0.4, 0]) => (u, P, T) => { const g = get(); g.updateMatrixWorld(); P.set(ox, oy, oz).applyMatrix4(g.matrixWorld); T.set(tx, ty, tz).applyMatrix4(g.matrixWorld); };
 const lane = (i) => () => S().world.lanes[i].v;
-const CASTLE = [[2.6, 1.9, 10.2], [-0.2, 2.6, -1.4]];
+// the film opens out of the white that film/flyin.js (the flight from Mini Airport on the globe) ends in
+const outOfWhite = (d) => (g, u, W, H, ts) => { d(g, u, W, H, ts); const a = 1 - Math.min(1, ts / 0.8); if (a > 0) { g.fillStyle = `rgba(255,255,255,${a * a * (3 - 2 * a)})`; g.fillRect(0, 0, W, H); } };
+const CASTLE =[[2.6, 1.9, 10.2], [-0.2, 2.6, -1.4]];
 
 // every shot from a good way off and up (the user: close shots don't land; the pull-back over the board is the best angle)
 export const SHOTS = [
-  { dur: 5, cam: { from: [[0, 50, 28], [0, 0, 0]], to: [[10, 34, 32], [0, 1, 0]] }, draw: say('BUILT WITH CLAUDE', 'A snow festival in Hokkaido') },
+  { dur: 5, cam: { from: [[0, 50, 28], [0, 0, 0]], to: [[10, 34, 32], [0, 1, 0]] }, draw: outOfWhite(say('BUILT WITH CLAUDE', 'A snow festival in Hokkaido')) },
   { dur: 5, cam: { from: [[9, 12, 19], [0, 1.5, -0.5]], to: [[5, 10.5, 17], [-1, 1.5, -0.5]] }, draw: say('THE SNOW CASTLE', 'A concert at its gate') },
   { dur: 5, cam: { from: [[-2.5, 11, 13], [-11, 1.5, 0]], to: [[-5.5, 10, 12], [-11, 1.8, 0]] }, draw: say('BIG AIR', 'A flip off the ramp') },
   { dur: 5, cam: { from: [[-3.5, 10, 13], [-11, 1, -4]], to: [[-6, 9, 11], [-12, 1, -5]] }, draw: say('FOOD STALLS', 'Ramen, corn, crab soup') },

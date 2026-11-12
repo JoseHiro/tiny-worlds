@@ -7,6 +7,7 @@ import { airplane, LIVERIES, mat, box, cyl } from '../../airport/src/parts.js';
 import { palm } from '../../town/src/nature.js';
 import { L, onLang } from '../../koto/src/i18n.js';
 import { CITIES, WORLDS, ROUTES, LIVERY_KEYS } from './places.js';
+import { JAPAN } from './models.js';
 
 const $ = (id) => document.getElementById(id);
 // the map fills #app: the whole window on world/, the first screen of the home page (#app[data-home]), where the
@@ -54,11 +55,13 @@ sun.target.position.set(0, 0, -400);
 // ---------- the globe: a faceted sphere, the sea, shallows along the coasts, the land ----------
 
 const tex = (() => {
-  const W = 2048, H = 1024, c = document.createElement('canvas');
+  // (sharper for the films, which come in close over Japan: world/?film; the page keeps the lighter one)
+  const W = new URLSearchParams(location.search).has('film') ? 4096 : 2048, H = W / 2, c = document.createElement('canvas');
   c.width = W; c.height = H;
   const g = c.getContext('2d');
   g.fillStyle = '#8fcfd4'; g.fillRect(0, 0, W, H);
   g.strokeStyle = 'rgba(255,255,255,0.18)'; g.lineWidth = 1.5; // a faint graticule every 30°
+  g.lineWidth = 1.5 * W / 2048;
   for (let lon = -180; lon <= 180; lon += 30) { const x = (lon + 180) / 360 * W; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
   for (let lat = -60; lat <= 60; lat += 30) { const y = (90 - lat) / 180 * H; g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
   const t = new THREE.CanvasTexture(c);
@@ -101,9 +104,9 @@ scene.add(halo);
     };
     trace();
     g.lineJoin = 'round';
-    g.strokeStyle = '#b6e2da'; g.lineWidth = 9; g.stroke(); // the shallows
+    g.strokeStyle = '#b6e2da'; g.lineWidth = 5 * W / 2048; g.stroke(); // the shallows (a narrow band: a wide one smears the coast)
     g.fillStyle = '#f0e4c6'; g.fill('evenodd');
-    g.strokeStyle = '#d9c9a3'; g.lineWidth = 1.2; g.stroke(); // the coastline
+    g.strokeStyle = '#d9c9a3'; g.lineWidth = 1.2 * W / 2048; g.stroke(); // the coastline
     tex.needsUpdate = true;
   } catch (e) {
     console.warn('world map: land outlines could not load', e);
@@ -212,7 +215,10 @@ const cityLabels = [];
 for (const [code, c] of Object.entries(CITIES)) {
   const world = WORLDS.find((w) => w.city === code);
   const p = at(code);
-  if (world) {
+  if (world && JAPAN[world.model]) { // (the remade ones bring their own ground, at full size)
+    stand(JAPAN[world.model](), p);
+    picks.push({ pos: at(code, R + 2.5), kind: 'world', ref: world });
+  } else if (world) {
     const g = new THREE.Group();
     g.add(cyl(1.8, 2.0, 0.3, plinth, 0, 0.1, 0, 16));
     const m = MODELS[world.model]();
@@ -252,7 +258,7 @@ function arcPoint(a, b, u, lift, out = new THREE.Vector3()) {
 }
 for (const code of ROUTES) {
   const a = at('HND').normalize(), b = at(code).normalize(), ang = a.angleTo(b);
-  const lift = 1.2 + ang * R * 0.09;
+  const lift = 2.2 + ang * R * 0.09; // (high enough to clear the models along the way)
   const pts = Array.from({ length: 64 }, (_, i) => arcPoint(a, b, i / 63, lift));
   const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), routeMat);
   line.computeLineDistances();
@@ -268,7 +274,7 @@ const planeFor = ROUTES.filter((c, i) => i % 3 !== 2).concat(['OKA', 'BCN']); //
 const models = LIVERY_KEYS.map((k) => airplane(LIVERIES[k])); // one per livery; the copies share its geometry
 planeFor.slice(0, 9).forEach((code, i) => {
   const m = models[i % models.length].clone();
-  m.scale.setScalar(0.15);
+  m.scale.setScalar(0.1); // (smaller than the models: they are the places, the aircraft only pass)
   scene.add(m);
   const n = 100 + ((i * 137) % 880);
   planes.push({ m, code, out: i % 2 === 0, u: (i * 0.29) % 1, wait: 0, n: n - (n % 2) + 1 });
@@ -307,7 +313,7 @@ function driftClouds(dt) {
     const n = ll(c.lat, c.lon, 1);
     const east = vec(-n.z, 0, n.x).normalize(), north = new THREE.Vector3().crossVectors(n, east);
     for (let k = 0; k < PUFFS; k++) {
-      O.position.copy(n).multiplyScalar(R + 5).addScaledVector(east, (k - 1.5) * 0.9 * c.s).addScaledVector(north, Math.sin(k * 2.1) * 0.35 * c.s);
+      O.position.copy(n).multiplyScalar(R + 7.5).addScaledVector(east, (k - 1.5) * 0.9 * c.s).addScaledVector(north, Math.sin(k * 2.1) * 0.35 * c.s);
       O.scale.set(1.5, 0.9, 1.3).multiplyScalar(0.55 * c.s * (k === 1 || k === 2 ? 1.25 : 0.9));
       O.quaternion.setFromUnitVectors(UP, n);
       O.updateMatrix();
@@ -452,4 +458,6 @@ export function focus(code) {
   goTo(code, 230);
 }
 
-window.__map = { renderer, scene, camera, controls, planes, flyTo, VIEWS, showCard, frame };
+// (the films: film/flyin.js steps the planes and clouds itself and flies its own aircraft along a route)
+const step = (dt) => { flyPlanes(dt); driftClouds(dt); };
+window.__map = { renderer, scene, camera, controls, planes, flyTo, VIEWS, showCard, frame, step, arcPoint, arcs, at, models, R };
