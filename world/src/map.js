@@ -164,6 +164,15 @@ const MODELS = {
     g.add(box(0.05, 0.3, 0.05, white, 0, 2.5, -0.6)); g.add(box(0.18, 0.05, 0.05, white, 0, 2.55, -0.6));
     return g;
   },
+  snowcastle() { // Snow festival: a castle of snow, pointed towers, a flag, and the orange lattice tower beside it
+    const g = new THREE.Group(), snow = mat(0xf2f6fc), red = mat(0xe8673c);
+    g.add(cyl(1.6, 1.6, 0.12, mat(0xdfe8f4), 0, 0.06, 0, 16));
+    g.add(box(1.4, 1.0, 0.9, snow, -0.3, 0.6, 0));
+    for (const [x, z] of [[-1.0, 0.35], [0.4, 0.35], [-1.0, -0.35], [0.4, -0.35]]) { g.add(cyl(0.2, 0.2, 1.4, snow, x, 0.8, z, 10)); g.add(cyl(0.01, 0.26, 0.5, snow, x, 1.75, z, 10)); }
+    g.add(box(0.05, 0.25, 0.05, mat(0x9aa0aa), -0.3, 1.4, 0)); g.add(box(0.2, 0.12, 0.02, mat(0xf2c230), -0.2, 1.47, 0));
+    g.add(cyl(0.05, 0.4, 2.8, red, 1.05, 1.4, 0, 4));
+    return g;
+  },
   sagrada() { // Barcelona: the towers of the Sagrada Família
     const g = new THREE.Group(), stone = mat(0xd9c49a), tip = mat(0xe8673c);
     g.add(box(2.4, 1.2, 1.2, stone, 0, 0.6, 0));
